@@ -8,11 +8,11 @@ import StripeCheckout from './StripeCheckout'
 import DeliveryMap from './DeliveryMap'
 import AddressBar from './AddressBar'
 import AssistBot from './AssistBot'
-import CategoryPage from './CategoryPage'
+import CategoryPage, { AllProductsPage } from './CategoryPage'
 import ProductImage from '../shared/ProductImage'
 import { createOrder, subscribeToOrder } from '../../lib/supabase'
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -274,7 +274,7 @@ function SearchView({ t }) {
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -352,20 +352,27 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist 
             </div>
           )}
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
-            <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,padding:'0 16px',marginBottom:12,color:'white' }}>🔥 {t.bestSellers}</div>
+            <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
+              <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
+              <button onClick={onBest} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
+            </div>
             <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{BEST_SELLERS.map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
           </div>
           <div style={{ marginBottom:22 }}>
-            <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,padding:'0 16px',marginBottom:12,color:'white' }}>✨ {t.newIn}</div>
+            <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
+              <button onClick={onNewIn} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>✨ {t.newIn}</button>
+              <button onClick={onNewIn} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
+            </div>
             <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{NEW_IN.slice(0,10).map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
           </div>
-          <div style={{ padding:'0 16px' }}>
-            <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',marginBottom:12 }}>Browse categories</div>
-            <div style={{ display:'flex',gap:8,flexWrap:'wrap' }}>
+          <div style={{ marginBottom:20 }}>
+            <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',padding:'0 16px',marginBottom:12 }}>Browse categories</div>
+            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>
               {CATEGORIES.map(cat=>(
                 <button key={cat.key} onClick={()=>onCategorySelect(cat.key)}
-                  style={{ display:'flex',alignItems:'center',gap:6,padding:'9px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.12)',borderRadius:20,cursor:'pointer',fontFamily:'DM Sans,sans-serif',fontSize:12,color:'rgba(255,255,255,0.8)',whiteSpace:'nowrap' }}>
-                  <span style={{ fontSize:16 }}>{cat.emoji}</span>{cat.label}
+                  style={{ background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.13)',borderRadius:14,padding:'14px 12px',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:6,minWidth:100,maxWidth:100,flexShrink:0 }}>
+                  <span style={{ fontSize:28 }}>{cat.emoji}</span>
+                  <span style={{ fontFamily:'DM Sans,sans-serif',fontSize:11,fontWeight:500,color:'rgba(255,255,255,0.85)',textAlign:'center',lineHeight:1.2 }}>{cat.label}</span>
                 </button>
               ))}
             </div>
@@ -506,11 +513,13 @@ export default function CustomerApp() {
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>setView(VIEWS.ASSIST)} />}
+      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>setView(VIEWS.ASSIST)} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} />}
       {view===VIEWS.SEARCH   && <SearchView t={t} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
       {view===VIEWS.ASSIST   && <AssistBot onClose={()=>setView(VIEWS.HOME)} />}
+      {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>setView(VIEWS.HOME)} />}
+      {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>setView(VIEWS.HOME)} />}
 
       {/* Floating cart bar on home only */}
       {view===VIEWS.HOME && cart.itemCount>0 && (
