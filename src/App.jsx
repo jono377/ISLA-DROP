@@ -1,77 +1,96 @@
-import { useEffect } from 'react'
+import { useEffect, Component } from 'react'
 import { Toaster } from 'react-hot-toast'
-import { supabase, getProfile } from './lib/supabase'
 import { useAuthStore } from './lib/store'
 import CustomerApp from './components/customer/CustomerApp'
 import DriverApp from './components/driver/DriverApp'
 import OpsApp from './components/ops/OpsApp'
 import AuthScreen from './components/shared/AuthScreen'
 
-export default function App() {
+// Error boundary catches JS crashes and shows something instead of blank screen
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 40, fontFamily: 'sans-serif', textAlign: 'center', background: '#0D3B4A', minHeight: '100vh', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🌴</div>
+          <div style={{ fontFamily: 'serif', fontSize: 28, marginBottom: 8 }}>Isla Drop</div>
+          <div style={{ fontSize: 14, opacity: 0.7, marginBottom: 24 }}>Something went wrong loading the app</div>
+          <div style={{ fontSize: 11, opacity: 0.4, maxWidth: 400, wordBreak: 'break-all', background: 'rgba(0,0,0,0.3)', padding: 12, borderRadius: 8 }}>
+            {this.state.error?.message || 'Unknown error'}
+          </div>
+          <button onClick={() => window.location.reload()} style={{ marginTop: 24, padding: '12px 24px', background: '#C4683A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
+            Reload app
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+const toastStyle = {
+  position: 'top-center',
+  toastOptions: {
+    style: { fontFamily: 'DM Sans, sans-serif', fontSize: 14, borderRadius: 10, background: '#0D3B4A', color: 'white' }
+  }
+}
+
+function AppInner() {
   const { user, profile, setUser, setProfile, clear } = useAuthStore()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user)
-        getProfile(session.user.id).then(setProfile).catch(() => {})
-      }
-    })
+    // Only connect to Supabase if env vars are present
+    const url = import.meta.env.VITE_SUPABASE_URL
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+    if (!url || !key || url === '' || key === '') return
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user)
-        const p = await getProfile(session.user.id).catch(() => null)
-        if (p) setProfile(p)
-      }
-      if (event === 'SIGNED_OUT') clear()
-    })
+    import('./lib/supabase').then(({ supabase, getProfile }) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setUser(session.user)
+          getProfile(session.user.id).then(setProfile).catch(() => {})
+        }
+      }).catch(() => {})
 
-    return () => subscription.unsubscribe()
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user)
+          const p = await getProfile(session.user.id).catch(() => null)
+          if (p) setProfile(p)
+        }
+        if (event === 'SIGNED_OUT') clear()
+      })
+
+      return () => subscription.unsubscribe()
+    }).catch(() => {})
   }, [])
 
-  const toastStyle = {
-    position: 'top-center',
-    toastOptions: {
-      style: { fontFamily: 'DM Sans, sans-serif', fontSize: 14, borderRadius: 10, background: '#0D3B4A', color: 'white' }
-    }
-  }
-
-  // Drivers and Ops still require login
   if (user && profile?.role === 'driver') {
-    return (
-      <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}>
-        <Toaster {...toastStyle} />
-        <DriverApp />
-      </div>
-    )
+    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><DriverApp /></div>
   }
-
   if (user && profile?.role === 'ops') {
-    return (
-      <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}>
-        <Toaster {...toastStyle} />
-        <OpsApp />
-      </div>
-    )
+    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><OpsApp /></div>
   }
 
-  // Driver/Ops login gate — only if they somehow land here without a customer role
-  if (user && profile && profile.role !== 'customer') {
-    return (
-      <>
-        <AuthScreen />
-        <Toaster {...toastStyle} />
-      </>
-    )
-  }
-
-  // Customers (logged in or not) go straight to the app
-  // Sign-in is prompted only at checkout inside CustomerApp
   return (
     <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh', position:'relative' }}>
-      <Toaster {...toastStyle} />
       <CustomerApp />
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <Toaster {...toastStyle} />
+      <AppInner />
+    </ErrorBoundary>
   )
 }

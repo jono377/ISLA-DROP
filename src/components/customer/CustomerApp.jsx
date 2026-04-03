@@ -11,7 +11,7 @@ import AddressBar from './AddressBar'
 import AssistBot from './AssistBot'
 import CategoryPage, { AllProductsPage } from './CategoryPage'
 import ProductImage from '../shared/ProductImage'
-import { createOrder, subscribeToOrder } from '../../lib/supabase'
+// supabase imported dynamically inside functions to prevent blank screen
 
 const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
 
@@ -417,13 +417,14 @@ export default function CustomerApp() {
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
+      const { createOrder, subscribeToOrder: subToOrder } = await import('../../lib/supabase')
       const order = await createOrder({
         customerId:user.id, items:cart.items.map(i=>({productId:i.product.id,quantity:i.quantity,price:i.product.price})),
         deliveryLat:cart.deliveryLat, deliveryLng:cart.deliveryLng, deliveryAddress:cart.deliveryAddress,
         deliveryNotes:cart.deliveryNotes, what3words:cart.what3words, subtotal:cart.subtotal, total:cart.total, paymentIntentId,
       })
       cart.clearCart(); setActiveOrder(order); setView(VIEWS.TRACKING)
-      const sub = subscribeToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');sub.unsubscribe()} })
+      const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');sub.unsubscribe()} })
     } catch(err){ toast.error('Order failed: '+err.message) }
   }
 
