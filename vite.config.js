@@ -11,6 +11,7 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom'],
           'stripe': ['@stripe/stripe-js', '@stripe/react-stripe-js'],
           'supabase': ['@supabase/supabase-js'],
+          'mapbox': ['mapbox-gl'],
         },
       },
     },
