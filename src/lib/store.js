@@ -50,7 +50,7 @@ export const useCartStore = create(
           i.product.id === productId ? { ...i, quantity } : i) })
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set(s => ({ previousItems: s.items.map(i => i.product), items: [] })),
 
       setDeliveryLocation: (lat, lng, address, w3w = '') => {
         set({ deliveryLat: lat, deliveryLng: lng, deliveryAddress: address, what3words: w3w })

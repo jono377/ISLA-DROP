@@ -1,0 +1,202 @@
+# Isla Drop — AI Image Generation Prompts
+# ==========================================
+# Copy each prompt into ChatGPT (DALL-E) or Midjourney
+# Save the image and upload via the Ops Dashboard → Images tab
+# Recommended: 1:1 square, 800x800px minimum
+# ==========================================
+
+# BASE STYLE (append to every prompt):
+# "Warm Mediterranean lifestyle product photo, golden hour Ibiza sunlight,
+#  soft sandy warm background, photorealistic, no text overlays,
+#  square format, warm golden tones, luxury feel, clean composition"
+
+# ── CHAMPAGNE ──────────────────────────────────────────────────
+ch-001: Warm Mediterranean lifestyle product photo of a Dom Pérignon vintage champagne bottle, elegant black label, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, warm golden tones, luxury feel
+
+ch-002: Warm Mediterranean lifestyle product photo of an Armand de Brignac Ace of Spades gold champagne bottle, golden metallic surface, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+ch-003: Warm Mediterranean lifestyle product photo of a Louis Roederer Blanc de Blancs champagne bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, warm golden tones
+
+ch-004: Warm Mediterranean lifestyle product photo of a Pol Roger Blanc de Blancs champagne bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+ch-005: Warm Mediterranean lifestyle product photo of a Pol Roger Brut Rosé champagne bottle with pink label, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+ch-006: Warm Mediterranean lifestyle product photo of a Pol Roger Sir Winston Churchill prestige cuvée champagne bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+ch-007: Warm Mediterranean lifestyle product photo of a Rock Angels by Whispering Angel rosé champagne bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+ch-008: Warm Mediterranean lifestyle product photo of a Veuve Clicquot Brut Rosé champagne bottle with pink label, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+ch-009: Warm Mediterranean lifestyle product photo of a Moët & Chandon Grand Vintage champagne bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+ch-010: Warm Mediterranean lifestyle product photo of a Moët & Chandon Impérial champagne bottle, gold foil top, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+ch-011: Warm Mediterranean lifestyle product photo of a Veuve Clicquot Yellow Label champagne bottle with iconic yellow label, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+# ── WINE — ROSÉ ────────────────────────────────────────────────
+wn-015: Warm Mediterranean lifestyle product photo of a Laurent Perrier Cuvée Rosé champagne bottle with pink label, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-016: Warm Mediterranean lifestyle product photo of a Taittinger Comtes de Champagne Rosé bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-017: Warm Mediterranean lifestyle product photo of a Louis Roederer Cristal Rosé champagne bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-018: Warm Mediterranean lifestyle product photo of a Laurent Perrier Cuvée Rosé Magnum champagne bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-019: Warm Mediterranean lifestyle product photo of a Whispering Angel rosé double magnum 3 litre bottle, large format, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-020: Warm Mediterranean lifestyle product photo of a Whispering Angel rosé Magnum 1.5 litre bottle, elegant pale pink wine, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-021: Warm Mediterranean lifestyle product photo of a Whispering Angel rosé wine bottle, elegant pale pink Provence rosé, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+wn-022: Warm Mediterranean lifestyle product photo of a Château d'Esclans Garrus rosé wine bottle, premium Provence rosé, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── WINE — RED ─────────────────────────────────────────────────
+wn-001: Warm Mediterranean lifestyle product photo of an Antinori Tignanello Italian red wine bottle, Tuscany label, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-002: Warm Mediterranean lifestyle product photo of a Brunello di Montalcino Italian red wine bottle, Fattoria dei Barbi label, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-003: Warm Mediterranean lifestyle product photo of a Viña Izadi Rioja Reserva Spanish red wine bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-004: Warm Mediterranean lifestyle product photo of a Cune Organic Rioja Spanish red wine bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-005: Warm Mediterranean lifestyle product photo of a Gaja Barbaresco Italian red wine bottle, premium Piedmont wine, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-008: Warm Mediterranean lifestyle product photo of a Château Cheval Blanc Saint-Émilion Grand Cru French red wine bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, ultra luxury
+
+# ── WINE — WHITE ───────────────────────────────────────────────
+wn-010: Warm Mediterranean lifestyle product photo of a Yealands Estate Sauvignon Blanc New Zealand white wine bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-011: Warm Mediterranean lifestyle product photo of a Joseph Drouhin Meursault Burgundy white wine bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wn-013: Warm Mediterranean lifestyle product photo of a Jean-Marc Brocard Chablis French white wine bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── SPIRITS — TEQUILA ──────────────────────────────────────────
+sp-001: Warm Mediterranean lifestyle product photo of a Don Julio 1942 Añejo tequila tall bottle, golden amber liquid, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+sp-002: Warm Mediterranean lifestyle product photo of a Don Julio Reposado tequila bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-003: Warm Mediterranean lifestyle product photo of a Don Julio Blanco tequila bottle, clear liquid, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-005: Warm Mediterranean lifestyle product photo of a Clase Azul Mezcal ornate ceramic bottle, hand-painted blue and white pottery, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-006: Warm Mediterranean lifestyle product photo of a Clase Azul Reposado ornate ceramic tequila bottle, hand-painted design, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+sp-007: Warm Mediterranean lifestyle product photo of a Patrón Silver tequila clear bottle with silver stopper, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-010: Warm Mediterranean lifestyle product photo of a Tequila Rose strawberry cream liqueur bottle, pink liquid, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-011: Warm Mediterranean lifestyle product photo of a Casamigos Mezcal bottle, modern design, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── SPIRITS — VODKA ────────────────────────────────────────────
+sp-032: Warm Mediterranean lifestyle product photo of a Belvedere 10 Luminous Edition vodka frosted bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+sp-033: Warm Mediterranean lifestyle product photo of a Belvedere organic vodka bottle, elegant frosted glass, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-035: Warm Mediterranean lifestyle product photo of a Grey Goose vodka bottle, frosted glass, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+sp-037: Warm Mediterranean lifestyle product photo of a Beluga Gold Line premium vodka bottle in leather case, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, ultra luxury
+
+sp-039: Warm Mediterranean lifestyle product photo of an Absolut Original vodka bottle, distinctive shape, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── SPIRITS — GIN ──────────────────────────────────────────────
+sp-012: Warm Mediterranean lifestyle product photo of a Hendrick's gin unusual cylindrical bottle, dark glass, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-013: Warm Mediterranean lifestyle product photo of a Bombay Sapphire blue gin bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-014: Warm Mediterranean lifestyle product photo of a Roku Japanese Craft gin bottle, elegant Japanese design, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── SPIRITS — WHISKEY ──────────────────────────────────────────
+sp-015: Warm Mediterranean lifestyle product photo of a Johnnie Walker Blue Label whisky bottle in blue gift box, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, ultra luxury
+
+sp-016: Warm Mediterranean lifestyle product photo of a Johnnie Walker Black Label Scotch whisky bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-017: Warm Mediterranean lifestyle product photo of a Macallan 12 Year Sherry Oak single malt whisky bottle, amber liquid, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+sp-018: Warm Mediterranean lifestyle product photo of a Jack Daniel's Old No.7 Tennessee whiskey square bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-019: Warm Mediterranean lifestyle product photo of a Glenfiddich 12 Year single malt Scotch whisky bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-021: Warm Mediterranean lifestyle product photo of a Yamazaki Japanese single malt whisky bottle, elegant Japanese design, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+# ── SPIRITS — RUM ──────────────────────────────────────────────
+sp-022: Warm Mediterranean lifestyle product photo of a Captain Morgan Spiced Gold rum bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-024: Warm Mediterranean lifestyle product photo of a Bacardi White Rum bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-025: Warm Mediterranean lifestyle product photo of a Kraken Black Spiced Rum bottle, dark dramatic design, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-026: Warm Mediterranean lifestyle product photo of a Diplomatico Reserva Exclusiva rum bottle, Venezuelan rum, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── SPIRITS — COGNAC ───────────────────────────────────────────
+sp-027: Warm Mediterranean lifestyle product photo of a Hennessy XO cognac decanter bottle, golden amber liquid, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, ultra luxury
+
+sp-028: Warm Mediterranean lifestyle product photo of a Hennessy VS cognac bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-029: Warm Mediterranean lifestyle product photo of a Courvoisier XO cognac bottle, golden amber, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format, luxury feel
+
+sp-031: Warm Mediterranean lifestyle product photo of a Rémy Martin VSOP Fine Champagne Cognac bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── SPIRITS — LIQUEURS ─────────────────────────────────────────
+sp-040: Warm Mediterranean lifestyle product photo of a Baileys Irish Cream bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-041: Warm Mediterranean lifestyle product photo of a Jägermeister dark herbal liqueur bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-042: Warm Mediterranean lifestyle product photo of a Disaronno Amaretto square iconic bottle, golden amber liquid, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sp-044: Warm Mediterranean lifestyle product photo of a Cointreau triple sec liqueur bottle, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── BEER ───────────────────────────────────────────────────────
+br-001: Warm Mediterranean lifestyle product photo of 4 Corona Extra beer bottles in a pack, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+br-002: Warm Mediterranean lifestyle product photo of 12 Corona Extra beer bottles arranged together, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+br-004: Warm Mediterranean lifestyle product photo of 4 Peroni Nastro Azzurro beer bottles, Italian premium beer, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+br-007: Warm Mediterranean lifestyle product photo of 4 Heineken green beer bottles in a pack, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+br-010: Warm Mediterranean lifestyle product photo of 3 Desperados tequila-flavoured beer bottles, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+br-011: Warm Mediterranean lifestyle product photo of Estrella Damm beer bottles pack, Barcelona beer, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+br-013: Warm Mediterranean lifestyle product photo of Kopparberg mixed fruit cider bottles, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── SOFT DRINKS ────────────────────────────────────────────────
+sd-001: Warm Mediterranean lifestyle product photo of 4 Coca-Cola cans in a pack, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sd-015: Warm Mediterranean lifestyle product photo of 4 Fanta Orange cans in a pack, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sd-019: Warm Mediterranean lifestyle product photo of 6 San Pellegrino Sparkling Lemon cans, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sd-021: Warm Mediterranean lifestyle product photo of 4 Red Bull energy drink cans in a pack, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sd-028: Warm Mediterranean lifestyle product photo of 8 Fever-Tree Indian Tonic Water small bottles in a pack, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── WATER ──────────────────────────────────────────────────────
+wt-001: Warm Mediterranean lifestyle product photo of 6 Evian still water small bottles in a pack, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wt-002: Warm Mediterranean lifestyle product photo of 6 Fiji Artesian Water square bottles in a pack, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+wt-003: Warm Mediterranean lifestyle product photo of 6 San Pellegrino sparkling mineral water glass bottles in a pack, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── ICE ────────────────────────────────────────────────────────
+ic-001: Warm Mediterranean lifestyle product photo of a sealed bag of crushed ice, glistening cold ice cubes, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+ic-002: Warm Mediterranean lifestyle product photo of a large 5kg bag of crushed party ice, glistening, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── SNACKS ─────────────────────────────────────────────────────
+sn-001: Warm Mediterranean lifestyle product photo of Kinder chocolate bars multipack, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sn-004: Warm Mediterranean lifestyle product photo of a Doritos sharing bag of crisps, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sn-006: Warm Mediterranean lifestyle product photo of a Takis Fuego rolled tortilla chips bag, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+sn-009: Warm Mediterranean lifestyle product photo of a Pringles Original tube of crisps, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+# ── TOBACCO ────────────────────────────────────────────────────
+tb-001: Warm Mediterranean lifestyle product photo of a Marlboro Gold cigarette pack of 20, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+tb-003: Warm Mediterranean lifestyle product photo of a Marlboro Red cigarette pack of 20, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+tb-011: Warm Mediterranean lifestyle product photo of an Amber Leaf rolling tobacco pouch 30g, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
+
+tb-015: Warm Mediterranean lifestyle product photo of ZYN nicotine pouches tin, golden hour Ibiza sunlight, soft sandy warm background, photorealistic, no text overlays, square format
