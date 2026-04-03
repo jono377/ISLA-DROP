@@ -12,7 +12,7 @@ import CategoryPage from './CategoryPage'
 import ProductImage from '../shared/ProductImage'
 import { createOrder, subscribeToOrder } from '../../lib/supabase'
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -241,7 +241,15 @@ function SearchView({ t }) {
           <input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder={t.searchPlaceholder} style={{ flex:1,border:'none',background:'none',fontFamily:'DM Sans,sans-serif',fontSize:14,color:'white',outline:'none' }}/>
           {query&&<button onClick={()=>setQuery('')} style={{ border:'none',background:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:15,padding:0 }}>✕</button>}
         </div>
-        <AssistBot />
+        <button
+          onClick={() => {/* handled by parent */}}
+          title="Ask Isla AI"
+          style={{ width:44, height:44, background:'rgba(255,255,255,0.09)', border:'0.5px solid rgba(255,255,255,0.14)', borderRadius:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#E8A070" stroke="#E8A070" strokeWidth="1">
+            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+          </svg>
+        </button>
       </div>
       {query.length>1 && results.length>0 && (
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
@@ -266,7 +274,7 @@ function SearchView({ t }) {
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -300,7 +308,15 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins }) {
             <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder={t.searchPlaceholder} style={{ flex:1,border:'none',background:'none',fontFamily:'DM Sans,sans-serif',fontSize:14,color:'white',outline:'none' }}/>
             {searchQuery&&<button onClick={()=>setSearchQuery('')} style={{ border:'none',background:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:15,padding:0 }}>✕</button>}
           </div>
-          <AssistBot />
+          <button
+            onClick={() => onAssist()}
+            title="Ask Isla AI"
+            style={{ width:44, height:44, background:'rgba(255,255,255,0.09)', border:'0.5px solid rgba(255,255,255,0.14)', borderRadius:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#E8A070" stroke="#E8A070" strokeWidth="1">
+              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -490,10 +506,11 @@ export default function CustomerApp() {
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} />}
+      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>setView(VIEWS.ASSIST)} />}
       {view===VIEWS.SEARCH   && <SearchView t={t} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
+      {view===VIEWS.ASSIST   && <AssistBot onClose={()=>setView(VIEWS.HOME)} />}
 
       {/* Floating cart bar on home only */}
       {view===VIEWS.HOME && cart.itemCount>0 && (
