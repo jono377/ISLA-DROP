@@ -179,19 +179,19 @@ function AccountView({ t }) {
   const [showSupport, setShowSupport] = useState(false)
   const [supportInput, setSupportInput] = useState('')
   const [supportMessages, setSupportMessages] = useState([
-    { role:'assistant', text:'Hi! I'm Isla 🌴 I'm here to help. What can I assist you with today? You can ask about your order, delivery, products or anything else.' }
+    { role:'assistant', text:"Hi! I'm Isla 🌴 I'm here to help. What can I assist you with today? You can ask about your order, delivery, products or anything else." }
   ])
   const [supportLoading, setSupportLoading] = useState(false)
 
   const SUPPORT_MAP = [
-    { q:['order','where','tracking','delivery','late','arrived'], a:'Your order status updates in real time once a driver is assigned. If your order seems delayed please allow 30 minutes before contacting us — Ibiza traffic can be unpredictable! 🛵' },
-    { q:['refund','money back','charge','payment','wrong'], a:'We're sorry to hear that! For billing issues or refunds please contact our support team directly at support@isladrop.com and we'll resolve it within 24 hours. 💳' },
-    { q:['product','stock','available','item'], a:'Our catalogue updates regularly. If something is out of stock when you order, we'll contact you with alternatives. You can also check our categories for what's available right now. 🍾' },
-    { q:['driver','rude','behaviour','complaint'], a:'We're sorry to hear about your experience. Please email support@isladrop.com with your order number and we'll look into this immediately. Your feedback matters to us. 🙏' },
-    { q:['address','location','find','villa','hotel'], a:'Make sure to set your delivery pin on the map at checkout, or type your villa/hotel name. Our drivers know Ibiza well — adding any notes like gate codes really helps! 📍' },
-    { q:['cancel','cancellation'], a:'Orders can be cancelled within 2 minutes of placing them. After that our driver may already be en route. Contact support@isladrop.com as quickly as possible for assistance. ⏱️' },
-    { q:['hours','open','available','time'], a:'We're open 24/7 — every day, all night, all season! Whether it's 3am or midday we'll get your drinks to you. 🌙' },
-    { q:['minimum','min','order'], a:'There's no minimum order — you can order a single can if you like! Though delivery is €3.50 flat rate regardless of order size. 🛒' },
+    { q:['order','where','tracking','delivery','late','arrived'], a:"Your order status updates in real time once a driver is assigned. If your order seems delayed please allow 30 minutes before contacting us — Ibiza traffic can be unpredictable! 🛵" },
+    { q:['refund','money back','charge','payment','wrong'], a:"We're sorry to hear that! For billing issues or refunds please contact our support team directly at support@isladrop.com and we'll resolve it within 24 hours. 💳" },
+    { q:['product','stock','available','item'], a:"Our catalogue updates regularly. If something is out of stock when you order, we'll contact you with alternatives. You can also check our categories for what's available right now. 🍾" },
+    { q:['driver','rude','behaviour','complaint'], a:"We're sorry to hear about your experience. Please email support@isladrop.com with your order number and we'll look into this immediately. Your feedback matters to us. 🙏" },
+    { q:['address','location','find','villa','hotel'], a:"Make sure to set your delivery pin on the map at checkout, or type your villa/hotel name. Our drivers know Ibiza well — adding any notes like gate codes really helps! 📍" },
+    { q:['cancel','cancellation'], a:"Orders can be cancelled within 2 minutes of placing them. After that our driver may already be en route. Contact support@isladrop.com as quickly as possible for assistance. ⏱️" },
+    { q:['hours','open','available','time'], a:"We're open 24/7 — every day, all night, all season! Whether it's 3am or midday we'll get your drinks to you. 🌙" },
+    { q:['minimum','min','order'], a:"There's no minimum order — you can order a single can if you like! Though delivery is €3.50 flat rate regardless of order size. 🛒" },
   ]
 
   const handleSupport = async (text) => {
@@ -205,7 +205,7 @@ function AccountView({ t }) {
     for (const entry of SUPPORT_MAP) {
       if (entry.q.some(kw => q.includes(kw))) { answer = entry.a; break }
     }
-    if (!answer) answer = 'I'm not sure about that one! For anything I can't help with, please email us at support@isladrop.com or call +34 XXX XXX XXX and our team will be happy to help. 💙'
+    if (!answer) answer = "I'm not sure about that one! For anything I can't help with, please email us at support@isladrop.com or call +34 XXX XXX XXX and our team will be happy to help. 💙"
     setSupportMessages(prev => [...prev, { role:'assistant', text: answer }])
     setSupportLoading(false)
   }
@@ -256,9 +256,9 @@ function AccountView({ t }) {
             <div style={{ fontSize:13,color:'rgba(255,255,255,0.45)',marginTop:2 }}>{user.email}</div>
           </div>
           {[
-            {icon:'📦', label:'Order history',     content:'Your past orders will appear here once you've placed them. Track, reorder and view receipts all in one place.'},
+            {icon:'📦', label:'Order history',     content:"Your past orders will appear here once you've placed them. Track, reorder and view receipts all in one place."},
             {icon:'📍', label:'Saved addresses',   content:'Save your villa, hotel or favourite spots for fast checkout. Tap "Set delivery address" on the home screen to add one.'},
-            {icon:'🔔', label:'Notifications',     content:'Push notifications coming soon! You'll be able to get real-time updates on your order status, driver location and special offers.'},
+            {icon:'🔔', label:'Notifications',     content:"Push notifications coming soon! You'll be able to get real-time updates on your order status, driver location and special offers."},
             {icon:'🌍', label:'Language & region', content:'Use the flag icon in the top right of the home screen to switch between 13 languages including English, Spanish, French, German, Italian, Russian, Arabic, Dutch and more.'},
           ].map(({icon,label,content})=>(
             <AccordionItem key={label} icon={icon} label={label} content={content} />
