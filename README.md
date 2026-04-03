@@ -316,4 +316,4 @@ Once you're set up, logical next features to build:
 
 ---
 
-*Built for Isla Drop · Ibiza, Spain · © 2025*
+*Built for Isla Drop · Ibiza, Spain · © 2026*
