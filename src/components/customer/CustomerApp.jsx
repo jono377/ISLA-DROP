@@ -179,8 +179,7 @@ function AccountView({ t }) {
   const [showSupport, setShowSupport] = useState(false)
   const [supportInput, setSupportInput] = useState('')
   const [supportMessages, setSupportMessages] = useState([
-    { role:'assistant', text:'Hi! I'm Isla 🌴 I'm here to help. What can I assist you with today? You can ask about your order, delivery, products or anything else.' }
-  ])
+   { role:'assistant', text:"Hi! I'm Isla 🌴 I'm here to help. What can I assist you with today? You can ask about your order, delivery, products or anything else." }
   const [supportLoading, setSupportLoading] = useState(false)
 
   const SUPPORT_MAP = [
