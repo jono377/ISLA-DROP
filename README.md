@@ -6,7 +6,7 @@
 
  ## 📱 What's Included
 
- | App | Who Uses It | Key Features |
+   | App | Who Uses It | Key Features |
 |-----|-------------|--------------|
 | **Customer App** | Guests, tourists, villa renters | Browse catalogue, pinpoint map drop, age verification, Stripe payment, live order tracking |
 | **Driver App** | Delivery riders | GPS tracking, order queue, accept/decline, step-by-step delivery flow, navigation link |
