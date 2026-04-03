@@ -201,6 +201,43 @@ export const PRODUCTS = [
   { id: 'sp-043', name: 'Yeni Raki 70cl',            category: 'spirits', sub: 'liqueurs', emoji: '🍶', price: 29.90, age_restricted: true, popular: false },
   { id: 'sp-044', name: 'Cointreau Liqueur 70cl',    category: 'spirits', sub: 'liqueurs', emoji: '🍊', price: 33.80, age_restricted: true, popular: false },
 
+
+  // ── TOBACCO — CIGARS (+40%) ──────────────────────────────
+  { id: 'tb-018', name: 'Cohiba Siglo I Cuba 25 Pack',     category: 'tobacco', sub: 'cigars',  emoji: '🚬', price: 238.00, age_restricted: true, popular: true  },
+  { id: 'tb-019', name: 'Montecristo No.4 Cigar',          category: 'tobacco', sub: 'cigars',  emoji: '🚬', price: 18.20,  age_restricted: true, popular: true  },
+  { id: 'tb-020', name: 'Romeo y Julieta Mille Fleurs',    category: 'tobacco', sub: 'cigars',  emoji: '🚬', price: 15.40,  age_restricted: true, popular: false },
+  { id: 'tb-021', name: 'Partagas Series D No.4',          category: 'tobacco', sub: 'cigars',  emoji: '🚬', price: 19.60,  age_restricted: true, popular: false },
+  { id: 'tb-022', name: 'H. Upmann Half Corona',           category: 'tobacco', sub: 'cigars',  emoji: '🚬', price: 12.60,  age_restricted: true, popular: false },
+  { id: 'tb-023', name: 'Villiger Export Natural Cigar 5pk',category:'tobacco', sub: 'cigars',  emoji: '🚬', price: 14.00,  age_restricted: true, popular: true  },
+  { id: 'tb-024', name: 'Café Crème Blue 10 Pack',         category: 'tobacco', sub: 'cigars',  emoji: '🚬', price: 11.20,  age_restricted: true, popular: true  },
+  { id: 'tb-025', name: 'Henri Wintermans Half Corona 5pk',category: 'tobacco', sub: 'cigars',  emoji: '🚬', price: 13.30,  age_restricted: true, popular: false },
+  { id: 'tb-026', name: 'Davidoff Mini Cigarillos 20pk',   category: 'tobacco', sub: 'cigars',  emoji: '🚬', price: 22.40,  age_restricted: true, popular: false },
+  { id: 'tb-027', name: 'Agio Mehari Java 10 Pack',        category: 'tobacco', sub: 'cigars',  emoji: '🚬', price: 10.50,  age_restricted: true, popular: false },
+
+  // ── TOBACCO — VAPES (+40%) ───────────────────────────────
+  { id: 'tb-028', name: 'Lost Mary BM600 Disposable',      category: 'tobacco', sub: 'vapes',   emoji: '💨', price: 11.20,  age_restricted: true, popular: true  },
+  { id: 'tb-029', name: 'Elf Bar 600 Disposable',          category: 'tobacco', sub: 'vapes',   emoji: '💨', price: 9.80,   age_restricted: true, popular: true  },
+  { id: 'tb-030', name: 'SKE Crystal Bar 600',             category: 'tobacco', sub: 'vapes',   emoji: '💨', price: 9.80,   age_restricted: true, popular: false },
+  { id: 'tb-031', name: 'Randm Tornado 7000 Puff',         category: 'tobacco', sub: 'vapes',   emoji: '💨', price: 16.80,  age_restricted: true, popular: true  },
+  { id: 'tb-032', name: 'Vozol Star 12000 Puff',           category: 'tobacco', sub: 'vapes',   emoji: '💨', price: 19.60,  age_restricted: true, popular: false },
+  { id: 'tb-033', name: 'Vuse GO 800 Disposable',          category: 'tobacco', sub: 'vapes',   emoji: '💨', price: 11.20,  age_restricted: true, popular: false },
+  { id: 'tb-034', name: 'IVG 2400 Puff Disposable',        category: 'tobacco', sub: 'vapes',   emoji: '💨', price: 14.00,  age_restricted: true, popular: false },
+  { id: 'tb-035', name: 'Geek Bar Pulse 15000 Puff',       category: 'tobacco', sub: 'vapes',   emoji: '💨', price: 22.40,  age_restricted: true, popular: true  },
+  { id: 'tb-036', name: 'Smok Novo 2 Pod Kit',             category: 'tobacco', sub: 'vapes',   emoji: '💨', price: 28.00,  age_restricted: true, popular: false },
+  { id: 'tb-037', name: 'Juul2 Starter Kit',               category: 'tobacco', sub: 'vapes',   emoji: '💨', price: 33.60,  age_restricted: true, popular: false },
+
+  // ── TOBACCO — HEATED TOBACCO (+40%) ──────────────────────
+  { id: 'tb-038', name: 'IQOS ILUMA One Starter Kit',      category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 42.00,  age_restricted: true, popular: true  },
+  { id: 'tb-039', name: 'IQOS ILUMA Prime Kit',            category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 98.00,  age_restricted: true, popular: false },
+  { id: 'tb-040', name: 'HEETS Amber Label 20 Sticks',     category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 7.00,   age_restricted: true, popular: true  },
+  { id: 'tb-041', name: 'HEETS Turquoise Label 20 Sticks', category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 7.00,   age_restricted: true, popular: false },
+  { id: 'tb-042', name: 'HEETS Yellow Label 20 Sticks',    category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 7.00,   age_restricted: true, popular: false },
+  { id: 'tb-043', name: 'Glo Hyper X2 Device',             category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 35.00,  age_restricted: true, popular: false },
+  { id: 'tb-044', name: 'Neo Sticks Tobacco 20pk',         category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 6.30,   age_restricted: true, popular: false },
+  { id: 'tb-045', name: 'Ploom X Advanced Device',         category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 42.00,  age_restricted: true, popular: false },
+  { id: 'tb-046', name: 'EVO Tobacco Sticks 20pk',         category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 6.30,   age_restricted: true, popular: false },
+  { id: 'tb-047', name: 'Lil Solid 2.0 Device',            category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 28.00,  age_restricted: true, popular: false },
+
   // ── SEXUAL WELLNESS (+20%) ───────────────────────────────
   { id: 'sw-001', name: 'Durex Condoms 12 Pack',      category: 'wellness', sub: 'wellness', emoji: '❤️', price: 13.20, age_restricted: false, popular: false },
   { id: 'sw-002', name: 'Durex Condoms 24 Pack',      category: 'wellness', sub: 'wellness', emoji: '❤️', price: 22.80, age_restricted: false, popular: false },
@@ -247,6 +284,9 @@ export const CATEGORIES = [
     { key: 'cigarettes', label: 'Cigarettes'      },
     { key: 'rolling',    label: 'Rolling Tobacco' },
     { key: 'pouches',    label: 'Nicotine Pouches'},
+    { key: 'cigars',     label: 'Cigars'          },
+    { key: 'vapes',      label: 'Vapes'           },
+    { key: 'heated',     label: 'Heated Tobacco'  },
   ]},
   { key: 'wellness',   label: 'Wellness',     emoji: '❤️', subs: [{ key: 'wellness', label: 'Sexual Wellness' }] },
 ]
