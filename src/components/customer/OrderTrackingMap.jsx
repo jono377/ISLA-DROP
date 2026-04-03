@@ -54,7 +54,6 @@ export default function OrderTrackingMap({ order, driverId }) {
 
   return (
     <div style={{ borderRadius: 14, overflow: 'hidden', border: '0.5px solid rgba(255,255,255,0.1)' }}>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <div ref={containerRef} style={{ height: 240, width: '100%' }} />
       <div style={{ padding: '10px 14px', background: 'rgba(13,59,74,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'rgba(255,255,255,0.7)', fontFamily: 'DM Sans,sans-serif' }}>

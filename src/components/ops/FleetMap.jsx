@@ -52,8 +52,7 @@ export default function FleetMap({ drivers, orders }) {
 
   return (
     <div style={{ margin: '0 -16px' }}>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
+      
       {/* Legend */}
       <div style={{ padding: '8px 16px 10px', display: 'flex', gap: 16, fontSize: 12, color: '#7A6E60', background: 'white' }}>
         <span>🛵 {onlineCount} driver{onlineCount !== 1 ? 's' : ''} online</span>

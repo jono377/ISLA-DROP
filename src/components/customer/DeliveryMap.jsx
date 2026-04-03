@@ -74,7 +74,6 @@ export default function DeliveryMap({ onLocationSet }) {
 
   return (
     <div>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <div ref={containerRef} style={{ height:220, width:'100%', borderRadius:'0 0 14px 14px', overflow:'hidden' }} />
       <div style={{ padding:'10px 14px 14px', background:'rgba(13,59,74,0.98)' }}>
         {address && (

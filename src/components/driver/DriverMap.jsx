@@ -74,7 +74,6 @@ export default function DriverMap({ order, isVisible }) {
 
   return (
     <div style={{ borderRadius: 14, overflow: 'hidden', border: '0.5px solid rgba(90,107,58,0.3)', marginBottom: 12 }}>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <div ref={containerRef} style={{ height: 220, width: '100%' }} />
 
       {/* Delivery info bar */}
