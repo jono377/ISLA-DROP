@@ -175,13 +175,13 @@ function BasketView({ t, onCheckout }) {
 // ── Account ───────────────────────────────────────────────────
 function AccountView({ t }) {
   const { user, profile, clear } = useAuthStore()
-  const [showAuth, setShowAuth]       = useState(false)
+const [showAuth, setShowAuth] = useState(false)
   const [showSupport, setShowSupport] = useState(false)
   const [supportInput, setSupportInput] = useState('')
   const [supportMessages, setSupportMessages] = useState([
-  const [supportMessages, setSupportMessages] = useState([
-      { role:'assistant', text:"Hi! I'm Isla 🌴 I'm here to help. What can I assist you with today? You can ask about your order, delivery, products or anything else." }
-    ])
+    { role:'assistant', text:"Hi! I'm Isla 🌴 I'm here to help. What can I assist you with today? You can ask about your order, delivery, products or anything else." }
+  ])
+  const [supportLoading, setSupportLoading] = useState(false)
   const SUPPORT_MAP = [
     { q:['order','where','tracking','delivery','late','arrived'], a:'Your order status updates in real time once a driver is assigned. If your order seems delayed please allow 30 minutes before contacting us — Ibiza traffic can be unpredictable! 🛵' },
     { q:['refund','money back','charge','payment','wrong'], a:'We're sorry to hear that! For billing issues or refunds please contact our support team directly at support@isladrop.com and we'll resolve it within 24 hours. 💳' },
