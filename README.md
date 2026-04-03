@@ -1,12 +1,12 @@
-  # 🍾 Isla Drop — Ibiza 24/7 Beverage Delivery App
+# 🍾 Isla Drop — Ibiza 24/7 Beverage Delivery App
 
-  A full-stack, production-ready delivery app built for 24/7 alcohol and beverage distribution on the island of Ibiza. Three apps in one codebase: **Customer**, **Driver**, and **Ops Dashboard**.
+A full-stack, production-ready delivery app built for 24/7 alcohol and beverage distribution on the island of Ibiza. Three apps in one codebase: **Customer**, **Driver**, and **Ops Dashboard**.
 
 ---
 
-  ## 📱 What's Included
+## 📱 What's Included
 
-   | App | Who Uses It | Key Features |
+| App | Who Uses It | Key Features |
 |-----|-------------|--------------|
 | **Customer App** | Guests, tourists, villa renters | Browse catalogue, pinpoint map drop, age verification, Stripe payment, live order tracking |
 | **Driver App** | Delivery riders | GPS tracking, order queue, accept/decline, step-by-step delivery flow, navigation link |
@@ -14,7 +14,7 @@
 
 ---
 
-   ## 🛠 Tech Stack
+## 🛠 Tech Stack
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
@@ -316,4 +316,4 @@ Once you're set up, logical next features to build:
 
 ---
 
-*Built for Isla Drop · Ibiza, Spain · © 2026*
+*Built for Isla Drop · Ibiza, Spain · © 2025*

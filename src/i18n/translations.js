@@ -5,7 +5,13 @@ export const LANGUAGES = [
   { code: 'it', label: 'Italiano', flag: '🇮🇹' },
   { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
   { code: 'ru', label: 'Русский', flag: '🇷🇺' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'zh', label: '中文',      flag: '🇨🇳' },
+  { code: 'ar', label: 'العربية',   flag: '🇦🇪' },
+  { code: 'nl', label: 'Nederlands',flag: '🇳🇱' },
+  { code: 'pt', label: 'Português', flag: '🇵🇹' },
+  { code: 'sv', label: 'Svenska',   flag: '🇸🇪' },
+  { code: 'pl', label: 'Polski',    flag: '🇵🇱' },
+  { code: 'tr', label: 'Türkçe',    flag: '🇹🇷' },
 ]
 
 export const T = {

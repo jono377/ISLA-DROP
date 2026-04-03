@@ -1,104 +1,93 @@
 import { useState } from 'react'
-import { signIn, signUp } from '../../lib/supabase'
-import { useAuthStore } from '../../lib/store'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '../../lib/store'
 
-export default function AuthScreen() {
-  const [mode, setMode] = useState('signin')
-  const [form, setForm] = useState({ email: '', password: '', name: '', role: 'customer' })
+export default function AuthScreen({ onClose }) {
+  const [mode, setMode] = useState('signin') // signin | signup | reset
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const { setUser, setProfile } = useAuthStore()
 
-  const handle = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
-
-  const submit = async (e) => {
-    e.preventDefault()
+  const handle = async () => {
+    if (!email || !password) { toast.error('Please fill in all fields'); return }
     setLoading(true)
     try {
+      const { supabase, getProfile } = await import('../../lib/supabase')
       if (mode === 'signin') {
-        const { user } = await signIn(form.email, form.password)
-        setUser(user)
-        const { getProfile } = await import('../../lib/supabase')
-        const profile = await getProfile(user.id)
-        setProfile(profile)
-        toast.success('Welcome back!')
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+        setUser(data.user)
+        const profile = await getProfile(data.user.id).catch(() => null)
+        if (profile) setProfile(profile)
+        toast.success('Welcome back! 🌴')
+        onClose?.()
+      } else if (mode === 'signup') {
+        if (!name.trim()) { toast.error('Please enter your name'); setLoading(false); return }
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } })
+        if (error) throw error
+        if (data.user) {
+          await supabase.from('profiles').upsert({ id: data.user.id, full_name: name, role: 'customer' })
+          setUser(data.user)
+          setProfile({ id: data.user.id, full_name: name, role: 'customer' })
+        }
+        toast.success('Account created! Welcome to Isla Drop 🌴')
+        onClose?.()
       } else {
-        const { user } = await signUp(form.email, form.password, form.name, form.role)
-        setUser(user)
-        setProfile({ role: form.role, full_name: form.name })
-        toast.success('Account created!')
+        const { supabase: sb } = await import('../../lib/supabase')
+        const { error } = await sb.auth.resetPasswordForEmail(email)
+        if (error) throw error
+        toast.success('Reset email sent — check your inbox')
+        setMode('signin')
       }
     } catch (err) {
-      toast.error(err.message)
+      toast.error(err.message || 'Something went wrong')
     }
     setLoading(false)
   }
 
+  const inp = { border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:14, background:'rgba(255,255,255,0.08)', color:'white', outline:'none', padding:'13px 14px', width:'100%', boxSizing:'border-box' }
+
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #D4EEF2 0%, #F5F0E8 50%, #F0DDD3 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ width: '100%', maxWidth: 380 }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 36, color: '#2A2318', letterSpacing: '-0.5px' }}>Isla Drop</div>
-          <div style={{ fontSize: 14, color: '#7A6E60', marginTop: 4 }}>Ibiza · 24/7 Beverage Delivery</div>
-        </div>
-
-        <div style={{ background: '#FEFCF9', borderRadius: 20, padding: 28, boxShadow: '0 4px 32px rgba(42,35,24,0.08)' }}>
-          <div style={{ display: 'flex', gap: 4, background: '#F5F0E8', borderRadius: 10, padding: 4, marginBottom: 24 }}>
-            {['signin', 'signup'].map(m => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                style={{ flex: 1, padding: '9px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: mode === m ? 500 : 400, background: mode === m ? '#FEFCF9' : 'none', color: mode === m ? '#2A2318' : '#7A6E60', boxShadow: mode === m ? '0 1px 4px rgba(42,35,24,0.08)' : 'none' }}
-              >
-                {m === 'signin' ? 'Sign in' : 'Sign up'}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={submit}>
-            {mode === 'signup' && (
-              <>
-                <Field label="Full name" value={form.name} onChange={handle('name')} placeholder="Maria García" />
-                <div style={{ marginBottom: 14 }}>
-                  <label style={lbl}>Account type</label>
-                  <select value={form.role} onChange={handle('role')} style={inp}>
-                    <option value="customer">Customer</option>
-                    <option value="driver">Driver</option>
-                    <option value="ops">Operations</option>
-                  </select>
-                </div>
-              </>
-            )}
-            <Field label="Email" type="email" value={form.email} onChange={handle('email')} placeholder="you@example.com" />
-            <Field label="Password" type="password" value={form.password} onChange={handle('password')} placeholder="••••••••" />
-
-            <button
-              type="submit"
-              disabled={loading}
-              style={{ width: '100%', padding: 15, background: loading ? '#7A6E60' : '#2B7A8B', color: 'white', border: 'none', borderRadius: 12, fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer', marginTop: 8 }}
-            >
-              {loading ? 'Loading…' : mode === 'signin' ? 'Sign in →' : 'Create account →'}
-            </button>
-          </form>
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#7A6E60', lineHeight: 1.6 }}>
-          By signing up you confirm you are 18+ and agree to our terms.
-          <br />Alcohol sales regulated under Spanish law.
-        </div>
+    <div style={{ padding:'0 0 8px' }}>
+      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:24, color:'white', marginBottom:6 }}>
+        {mode==='signin' ? 'Sign in' : mode==='signup' ? 'Create account' : 'Reset password'}
       </div>
+      <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:24 }}>
+        {mode==='signin' ? 'Welcome back to Isla Drop 🌴' : mode==='signup' ? 'Join Isla Drop — free to sign up' : 'We\'ll email you a reset link'}
+      </div>
+
+      {mode==='signup' && (
+        <input value={name} onChange={e=>setName(e.target.value)} placeholder="Full name" style={{ ...inp, marginBottom:10 }} />
+      )}
+      <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address" type="email" style={{ ...inp, marginBottom:10 }} />
+      {mode!=='reset' && (
+        <input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password" style={{ ...inp, marginBottom:20 }}
+          onKeyDown={e=>e.key==='Enter'&&handle()} />
+      )}
+      {mode==='reset' && <div style={{ height:10 }}/>}
+
+      <button onClick={handle} disabled={loading}
+        style={{ width:'100%', padding:'14px', background:'#C4683A', color:'white', border:'none', borderRadius:12, fontFamily:'DM Sans,sans-serif', fontSize:15, fontWeight:500, cursor:'pointer', marginBottom:14, opacity:loading?0.7:1 }}>
+        {loading ? 'Please wait…' : mode==='signin' ? 'Sign in' : mode==='signup' ? 'Create account' : 'Send reset link'}
+      </button>
+
+      {mode==='signin' && (
+        <>
+          <button onClick={()=>setMode('signup')} style={{ width:'100%', padding:'13px', background:'rgba(255,255,255,0.08)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:12, fontFamily:'DM Sans,sans-serif', fontSize:14, color:'white', cursor:'pointer', marginBottom:10 }}>
+            New to Isla Drop? Create account
+          </button>
+          <button onClick={()=>setMode('reset')} style={{ width:'100%', padding:'10px', background:'none', border:'none', fontFamily:'DM Sans,sans-serif', fontSize:13, color:'rgba(255,255,255,0.45)', cursor:'pointer' }}>
+            Forgot password?
+          </button>
+        </>
+      )}
+      {mode!=='signin' && (
+        <button onClick={()=>setMode('signin')} style={{ width:'100%', padding:'10px', background:'none', border:'none', fontFamily:'DM Sans,sans-serif', fontSize:13, color:'rgba(255,255,255,0.45)', cursor:'pointer' }}>
+          ← Back to sign in
+        </button>
+      )}
     </div>
   )
 }
-
-function Field({ label, type = 'text', value, onChange, placeholder }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={lbl}>{label}</label>
-      <input type={type} value={value} onChange={onChange} placeholder={placeholder} required style={inp} />
-    </div>
-  )
-}
-
-const lbl = { display: 'block', fontSize: 11, fontWeight: 500, color: '#7A6E60', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }
-const inp = { width: '100%', padding: '11px 13px', border: '0.5px solid rgba(42,35,24,0.18)', borderRadius: 10, fontFamily: 'DM Sans, sans-serif', fontSize: 14, background: '#F5F0E8', color: '#2A2318', outline: 'none', boxSizing: 'border-box' }
