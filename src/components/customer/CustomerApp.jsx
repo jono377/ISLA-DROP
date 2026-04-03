@@ -365,18 +365,24 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
             <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{NEW_IN.slice(0,10).map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
           </div>
-          <div style={{ marginBottom:20 }}>
-            <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',padding:'0 16px',marginBottom:12 }}>Browse categories</div>
-            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>
-              {CATEGORIES.map(cat=>(
-                <button key={cat.key} onClick={()=>onCategorySelect(cat.key)}
-                  style={{ background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.13)',borderRadius:14,padding:'14px 12px',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:6,minWidth:100,maxWidth:100,flexShrink:0 }}>
-                  <span style={{ fontSize:28 }}>{cat.emoji}</span>
-                  <span style={{ fontFamily:'DM Sans,sans-serif',fontSize:11,fontWeight:500,color:'rgba(255,255,255,0.85)',textAlign:'center',lineHeight:1.2 }}>{cat.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* One horizontal scroll row per category */}
+          {CATEGORIES.map(cat => {
+            const catProducts = PRODUCTS.filter(p => p.category === cat.key).slice(0, 10)
+            if (catProducts.length === 0) return null
+            return (
+              <div key={cat.key} style={{ marginBottom:24 }}>
+                <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
+                  <button onClick={()=>onCategorySelect(cat.key)} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>
+                    {cat.emoji} {cat.label}
+                  </button>
+                  <button onClick={()=>onCategorySelect(cat.key)} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
+                </div>
+                <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>
+                  {catProducts.map(p=><MiniCard key={p.id} product={p} t={t}/>)}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
