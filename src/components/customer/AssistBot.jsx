@@ -96,7 +96,7 @@ const RESPONSES = {
   'vape':         "Vape essentials! 💨 Here are the most popular disposable vapes we stock.",
   'ibiza':        "Classic Ibiza night! 🌴 Here's the ultimate combo for a proper Ibiza experience.",
   'ibiza night':  "Ibiza night sorted! 🌙 Champagne, spirits and ice — the holy trinity.",
-  'classic ibiza':'The classic Ibiza setup 🌴 Rosé, gin and something to keep it all cold.",
+  'classic ibiza':"The classic Ibiza setup 🌴 Rosé, gin and something to keep it all cold.",
   'ice':          "Ice is essential in Ibiza! 🧊 Here are the bag sizes we carry.",
   'water':        "Staying hydrated! 💧 Premium waters delivered cold to your door.",
   'default':      "Great taste! 🌴 Here are some of our most popular products in Ibiza right now.",
