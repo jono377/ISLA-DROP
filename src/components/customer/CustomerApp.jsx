@@ -529,6 +529,7 @@ export default function CustomerApp() {
       <TabBar view={view} setView={handleTabChange} cartCount={cart.itemCount} />
     </div>
   )
+  }
 
   // ── Main tabbed shell ─────────────────────────────────────
   return (
