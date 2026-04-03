@@ -96,7 +96,7 @@ export default function StripeCheckout({ onSuccess, onCancel }) {
 
   useEffect(() => {
     createPaymentIntent({
-      amount: cart.total,
+      amount: cart.getTotal(),
       currency: 'eur',
       customerId: user?.id,
     })
@@ -133,7 +133,7 @@ export default function StripeCheckout({ onSuccess, onCancel }) {
       options={{ clientSecret, appearance: STRIPE_APPEARANCE }}
     >
       <CheckoutForm
-        total={cart.total}
+        total={cart.getTotal()}
         paymentIntentId={paymentIntentId}
         onSuccess={() => onSuccess(paymentIntentId)}
         onCancel={onCancel}

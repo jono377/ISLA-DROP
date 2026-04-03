@@ -128,7 +128,7 @@ function MiniCard({ product, t }) {
 function BasketView({ t, onCheckout }) {
   const cart = useCartStore()
   const { updateQuantity } = useCartStore()
-  if (cart.itemCount===0) return (
+  if (cart.getItemCount()===0) return (
     <div style={{ display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:40,minHeight:'60vh' }}>
       <div style={{ fontSize:52,marginBottom:14 }}>🛒</div>
       <div style={{ fontFamily:'DM Serif Display,serif',fontSize:22,color:'rgba(255,255,255,0.85)',marginBottom:6 }}>Your basket is empty</div>
@@ -155,11 +155,11 @@ function BasketView({ t, onCheckout }) {
         </div>
       ))}
       <div style={{ marginTop:16,padding:'14px 0',borderTop:'0.5px solid rgba(255,255,255,0.1)' }}>
-        <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:5 }}><span>Subtotal</span><span>€{cart.subtotal.toFixed(2)}</span></div>
+        <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:5 }}><span>Subtotal</span><span>€{cart.getSubtotal().toFixed(2)}</span></div>
         <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:10 }}><span>{t.delivery}</span><span>€3.50</span></div>
-        <div style={{ display:'flex',justifyContent:'space-between',fontSize:16,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{cart.total.toFixed(2)}</span></div>
+        <div style={{ display:'flex',justifyContent:'space-between',fontSize:16,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{cart.getTotal().toFixed(2)}</span></div>
       </div>
-      {cart.hasAgeRestrictedItems && (
+      {cart.getHasAgeRestricted() && (
         <div style={{ background:'rgba(196,104,58,0.18)',border:'0.5px solid rgba(196,104,58,0.35)',borderRadius:10,padding:'9px 12px',display:'flex',gap:8,fontSize:11,color:'#E8C090',marginBottom:12 }}>
           <span>🆔</span><span>ID required at delivery for age-restricted items</span>
         </div>
@@ -411,7 +411,7 @@ export default function CustomerApp() {
 
   const handleCheckoutStart = () => {
     if (!user) { toast('Sign in to checkout',{icon:'👤'}); return }
-    if (cart.hasAgeRestrictedItems) { setView(VIEWS.AGE_VERIFY); return }
+    if (cart.getHasAgeRestricted()) { setView(VIEWS.AGE_VERIFY); return }
     setView(VIEWS.CHECKOUT)
   }
 
@@ -421,7 +421,7 @@ export default function CustomerApp() {
       const order = await createOrder({
         customerId:user.id, items:cart.items.map(i=>({productId:i.product.id,quantity:i.quantity,price:i.product.price})),
         deliveryLat:cart.deliveryLat, deliveryLng:cart.deliveryLng, deliveryAddress:cart.deliveryAddress,
-        deliveryNotes:cart.deliveryNotes, what3words:cart.what3words, subtotal:cart.subtotal, total:cart.total, paymentIntentId,
+        deliveryNotes:cart.deliveryNotes, what3words:cart.what3words, subtotal:cart.getSubtotal(), total:cart.getTotal(), paymentIntentId,
       })
       cart.clearCart(); setActiveOrder(order); setView(VIEWS.TRACKING)
       const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');sub.unsubscribe()} })
@@ -465,11 +465,11 @@ export default function CustomerApp() {
               </div>
             ))}
             <div style={{ borderTop:'0.5px solid rgba(255,255,255,0.1)',paddingTop:10,marginTop:6 }}>
-              <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:5 }}><span>Subtotal</span><span>€{cart.subtotal.toFixed(2)}</span></div>
+              <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:5 }}><span>Subtotal</span><span>€{cart.getSubtotal().toFixed(2)}</span></div>
               <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:10 }}><span>{t.delivery}</span><span>€3.50</span></div>
-              <div style={{ display:'flex',justifyContent:'space-between',fontSize:15,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{cart.total.toFixed(2)}</span></div>
+              <div style={{ display:'flex',justifyContent:'space-between',fontSize:15,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{cart.getTotal().toFixed(2)}</span></div>
             </div>
-            {cart.hasAgeRestrictedItems && (
+            {cart.getHasAgeRestricted() && (
               <div style={{ marginTop:10,padding:'8px 12px',background:'rgba(196,104,58,0.18)',borderRadius:8,fontSize:11,color:'#E8C090',display:'flex',gap:6 }}>
                 <span>🆔</span><span>ID required at delivery for age-restricted items</span>
               </div>
@@ -537,19 +537,19 @@ export default function CustomerApp() {
       {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>setView(VIEWS.HOME)} />}
 
       {/* Floating cart bar on home only */}
-      {view===VIEWS.HOME && cart.itemCount>0 && (
+      {view===VIEWS.HOME && cart.getItemCount()>0 && (
         <div onClick={()=>setView(VIEWS.BASKET)}
           style={{ position:'sticky',bottom:68,margin:'0 16px',background:'#C4683A',borderRadius:14,padding:'13px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer',boxShadow:'0 4px 24px rgba(196,104,58,0.5)' }}>
           <div style={{ color:'white' }}>
-            <div style={{ fontSize:11,opacity:0.8 }}>{cart.itemCount} {cart.itemCount===1?t.item:t.items}</div>
-            <div style={{ fontSize:15,fontWeight:500 }}>€{cart.subtotal.toFixed(2)} + €3.50 delivery</div>
+            <div style={{ fontSize:11,opacity:0.8 }}>{cart.getItemCount()} {cart.getItemCount()===1?t.item:t.items}</div>
+            <div style={{ fontSize:15,fontWeight:500 }}>€{cart.getSubtotal().toFixed(2)} + €3.50 delivery</div>
           </div>
           <div style={{ color:'white',fontSize:13,fontWeight:500 }}>{t.viewCart} →</div>
         </div>
       )}
 
       {/* Tab bar — ONLY in the main shell, never on splash/checkout/tracking */}
-      <TabBar view={view} setView={handleTabChange} cartCount={cart.itemCount} />
+      <TabBar view={view} setView={handleTabChange} cartCount={cart.getItemCount()} />
 
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
     </div>
