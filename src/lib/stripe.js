@@ -5,7 +5,7 @@ let stripePromise = null
 export function getStripe() {
   if (!stripePromise) {
     const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-    if (!key) throw new Error('Missing VITE_STRIPE_PUBLISHABLE_KEY')
+    if (!key) return null
     stripePromise = loadStripe(key)
   }
   return stripePromise

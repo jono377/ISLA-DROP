@@ -5,15 +5,12 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0",
     "@supabase/supabase-js": "^2.39.0",
     "@stripe/stripe-js": "^3.0.0",
     "@stripe/react-stripe-js": "^2.4.0",
     "date-fns": "^3.3.1",
     "zustand": "^4.5.0",
     "react-hot-toast": "^2.4.1",
-    "lucide-react": "^0.323.0",
-    "clsx": "^2.1.0",
     "leaflet": "^1.9.4"
   },
   "devDependencies": {
@@ -25,7 +22,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "vite build 2>&1",
+    "preview": "vite preview",
+    "vercel-build": "vite build 2>&1"
   }
 }
