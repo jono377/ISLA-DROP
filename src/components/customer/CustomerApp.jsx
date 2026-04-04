@@ -12,9 +12,10 @@ import AssistBot from './AssistBot'
 import CategoryPage, { AllProductsPage } from './CategoryPage'
 import ProductImage from '../shared/ProductImage'
 import AccountView from './AccountView'
+import Concierge from './Concierge'
 // supabase imported dynamically inside functions to prevent blank screen
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', CONCIERGE:'concierge', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -77,6 +78,7 @@ function TabBar({ view, setView, cartCount }) {
     { id:VIEWS.CATEGORY, label:'Categories', path:'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z' },
     { id:VIEWS.BASKET,   label:'Basket',     path:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', badge:cartCount },
     { id:VIEWS.SEARCH,   label:'Search',     search:true },
+    { id:VIEWS.CONCIERGE,label:'Concierge',  star:true },
     { id:VIEWS.ACCOUNT,  label:'Account',    path:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' },
   ]
   return (
@@ -88,7 +90,7 @@ function TabBar({ view, setView, cartCount }) {
             style={{ flex:1, padding:'11px 4px 9px', border:'none', background:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, fontFamily:'DM Sans,sans-serif', fontSize:10, color:on?'#7EE8C8':'rgba(150,220,200,0.35)', fontWeight:on?500:400, position:'relative', transition:'color 0.15s' }}>
             <div style={{ position:'relative' }}>
               <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={on?2:1.7}>
-                {t.search ? <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></> : <path d={t.path}/>}
+                {t.search ? <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></> : t.star ? <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="currentColor" stroke="none"/> : <path d={t.path}/>}
               </svg>
               {t.badge>0 && <span style={{ position:'absolute',top:-5,right:-7,background:'#C4683A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:9,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:600,border:'1.5px solid rgba(10,30,40,0.97)' }}>{t.badge>9?'9+':t.badge}</span>}
             </div>
@@ -327,6 +329,29 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
             <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{NEW_IN.slice(0,10).map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
           </div>
+
+          {/* Recommendations — AI picks */}
+          <div style={{ marginBottom:24 }}>
+            <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
+              <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white' }}>🌟 Recommended</div>
+            </div>
+            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>
+              {PRODUCTS.filter(p=>p.popular).sort(()=>Math.random()-0.5).slice(0,10).map(p=><MiniCard key={p.id} product={p} t={t}/>)}
+            </div>
+          </div>
+
+          {/* Order Again — only shown when user has previous orders */}
+          {prevItems.length > 0 && (
+            <div style={{ marginBottom:24 }}>
+              <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
+                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white' }}>🔄 Order Again</div>
+              </div>
+              <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>
+                {prevItems.slice(0,8).map((product,i)=><MiniCard key={product.id+i} product={product} t={t}/>)}
+              </div>
+            </div>
+          )}
+
           {/* One horizontal scroll row per category */}
           {CATEGORIES.map(cat => {
             const catProducts = PRODUCTS.filter(p => p.category === cat.key).slice(0, 10)
@@ -493,6 +518,7 @@ export default function CustomerApp() {
       {view===VIEWS.SEARCH   && <SearchView t={t} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
+      {view===VIEWS.CONCIERGE && <Concierge onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.ASSIST   && <AssistBot onClose={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>setView(VIEWS.HOME)} />}
