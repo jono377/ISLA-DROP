@@ -488,6 +488,14 @@ export default function CustomerApp() {
             </div>
           ))}
         </div>
+        {/* Delivery PIN — shown prominently when driver is en route */}
+        {activeOrder.delivery_pin && activeOrder.status !== 'delivered' && (
+          <div style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.25),rgba(196,104,58,0.1))', border:'1.5px solid rgba(196,104,58,0.5)', borderRadius:14, padding:'16px', marginBottom:16, textAlign:'center' }}>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,0.55)', marginBottom:6, textTransform:'uppercase', letterSpacing:'1px' }}>Your Delivery Code</div>
+            <div style={{ fontFamily:'DM Serif Display,serif', fontSize:42, color:'white', letterSpacing:8, fontWeight:400 }}>{activeOrder.delivery_pin}</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:6 }}>Give this code to your driver to confirm delivery</div>
+          </div>
+        )}
         {activeOrder.estimated_minutes&&activeOrder.status!=='delivered'&&(
           <div style={{ background:'rgba(43,122,139,0.2)',border:'0.5px solid rgba(43,122,139,0.35)',borderRadius:14,padding:'14px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:12 }}>
             <span style={{ fontSize:28 }}>🛵</span>
