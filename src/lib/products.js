@@ -239,7 +239,7 @@ export const PRODUCTS = [
   { id: 'tb-047', name: 'Lil Solid 2.0 Device',            category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 28.00,  age_restricted: true, popular: false },
 
   // ── SNACKS — NEW POPULAR LOCAL MARKET ADDITIONS (+20%) ──────
-  { id: 'sn-020', name: "Lay's Mediterránea Olives 150g",  category:'snacks', sub:'crisps',  emoji:'🫒', price: 3.64,  age_restricted:false, popular:true  },
+  { id: 'sn-020', name: "Lay's Mediterránea Olives 150g",   category:'snacks', sub:'crisps',  emoji:'🫒', price: 3.64,  age_restricted:false, popular:true  },
   { id: 'sn-021', name: 'Ruffles Queso Crisps 170g',         category:'snacks', sub:'crisps',  emoji:'🧀', price: 3.64,  age_restricted:false, popular:false },
   { id: 'sn-022', name: 'Funyuns Onion Rings 163g',          category:'snacks', sub:'crisps',  emoji:'🧅', price: 4.16,  age_restricted:false, popular:false },
   { id: 'sn-023', name: 'Cheetos Crunchy 226g',              category:'snacks', sub:'crisps',  emoji:'🧡', price: 4.16,  age_restricted:false, popular:true  },
@@ -247,7 +247,7 @@ export const PRODUCTS = [
   { id: 'sn-025', name: 'Patatas Gus Salted 130g',           category:'snacks', sub:'crisps',  emoji:'🥔', price: 2.34,  age_restricted:false, popular:false },
   { id: 'sn-026', name: 'Bocaditos de Jamón Ibérico 100g',   category:'snacks', sub:'crisps',  emoji:'🥩', price: 5.98,  age_restricted:false, popular:true  },
   { id: 'sn-027', name: 'Torres Black Truffle Crisps 150g',  category:'snacks', sub:'crisps',  emoji:'🍄', price: 7.15,  age_restricted:false, popular:true  },
-  { id: 'sn-028', name: "Lay's BBQ Pulled Pork 150g",      category:'snacks', sub:'crisps',  emoji:'🥔', price: 3.64,  age_restricted:false, popular:false },
+  { id: 'sn-028', name: "Lay's BBQ Pulled Pork 150g",       category:'snacks', sub:'crisps',  emoji:'🥔', price: 3.64,  age_restricted:false, popular:false },
   { id: 'sn-029', name: 'Nachos & Guacamole Dip Set',        category:'snacks', sub:'crisps',  emoji:'🥑', price: 8.45,  age_restricted:false, popular:true  },
   { id: 'sn-030', name: 'Mixed Nuts Deluxe 200g',            category:'snacks', sub:'crisps',  emoji:'🥜', price: 5.98,  age_restricted:false, popular:true  },
   { id: 'sn-031', name: 'Pistachios Roasted Salted 150g',    category:'snacks', sub:'crisps',  emoji:'🟢', price: 5.98,  age_restricted:false, popular:false },
@@ -300,7 +300,7 @@ export const PRODUCTS = [
   { id: 'bh-002', name: 'Beach Towel Oversized Premium',     category:'beach', sub:'towels',   emoji:'🏖️', price: 36.01, age_restricted:false, popular:false },
   { id: 'bh-003', name: 'Microfibre Quick-Dry Towel',        category:'beach', sub:'towels',   emoji:'🏖️', price: 17.94, age_restricted:false, popular:true  },
   { id: 'bh-004', name: 'Beach Mat / Blanket Waterproof',    category:'beach', sub:'towels',   emoji:'🏖️', price: 30.03, age_restricted:false, popular:true  },
-  { id: 'bh-005', name: "Men's Swim Shorts S-XXL",       category:'beach', sub:'swimwear', emoji:'🩲', price: 24.05, age_restricted:false, popular:true  },
+  { id: 'bh-005', name: "Men's Swim Shorts S-XXL",          category:'beach', sub:'swimwear', emoji:'🩲', price: 24.05, age_restricted:false, popular:true  },
   { id: 'bh-006', name: "Women's Bikini Set S-XL",          category:'beach', sub:'swimwear', emoji:'👙', price: 36.01, age_restricted:false, popular:true  },
   { id: 'bh-007', name: "Women's One-Piece Swimsuit S-XL",  category:'beach', sub:'swimwear', emoji:'🩱', price: 41.99, age_restricted:false, popular:false },
   { id: 'bh-008', name: 'Beach Sarong / Pareo',              category:'beach', sub:'swimwear', emoji:'👘', price: 17.94, age_restricted:false, popular:false },
