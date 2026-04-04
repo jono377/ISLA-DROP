@@ -19,6 +19,239 @@ const STATUS_COLORS = {
   en_route: '#5DCAA5', delivered: '#1D9E75', cancelled: '#F09595',
 }
 
+
+
+// ── AI Stock & Supply Assistant ───────────────────────────────
+function StockAI() {
+  const [messages, setMessages] = useState([{
+    role: 'assistant',
+    content: 'Hi! I am your stock management AI. Tell me what items are running low and I will find the nearest places for drivers to restock. I can also analyse order patterns and flag what needs restocking before it runs out.'
+  }])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const send = async (text) => {
+    const q = (text || input).trim()
+    if (!q || loading) return
+    const history = [...messages, { role: 'user', content: q }]
+    setMessages(history)
+    setInput('')
+    setLoading(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 500,
+          system: `You are the stock and supply AI for Isla Drop, a 24/7 delivery service in Ibiza, Spain.
+
+Your job:
+1. When told items are low in stock, find the nearest places in Ibiza where drivers can quickly purchase them
+2. Suggest specific supermarkets, wholesale suppliers and convenience stores in Ibiza that stock these items
+3. Give practical routing advice based on driver locations in Ibiza
+4. Flag items that are likely to run out based on order patterns (e.g. ice runs out fastest in summer, Red Bull popular after midnight)
+5. Suggest order quantities and timing
+
+KNOWN IBIZA SUPPLIERS:
+- Mercadona (several locations: Ibiza Town, San Antonio, Santa Eulalia) - general groceries, ice, soft drinks
+- Eroski (Ibiza Town, Santa Eulalia) - general groceries
+- Supeco (San Antonio area) - wholesale, bulk items
+- Cash & Carry Ibiza (Polígono Industrial, near airport) - wholesale tobacco, drinks, snacks
+- Lidl (San Antonio, Ibiza Town) - value restocking
+- El Corte Ingles (Ibiza Town) - premium items, wines, spirits
+- Several 24h petrol station shops for emergency small restocks
+
+Keep responses practical and concise — under 150 words. Include specific store names and rough drive times from common areas.`,
+          messages: history.map(m => ({ role: m.role, content: m.content })),
+        }),
+      })
+      const data = await res.json()
+      const reply = data.content?.[0]?.text || 'Unable to process right now.'
+      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Check your network and try again.' }])
+    }
+    setLoading(false)
+  }
+
+  const QUICK = ['Ice running low', 'Red Bull out of stock', 'Champagne low', 'Tobacco almost gone', 'Water stock check', 'Snacks reorder needed']
+
+  return (
+    <div>
+      <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 22, marginBottom: 6 }}>Stock AI</div>
+      <div style={{ fontSize: 13, color: '#7A6E60', marginBottom: 16 }}>Find restock locations for drivers · Analyse low stock</div>
+
+      <div style={{ background: '#F5F0E8', borderRadius: 12, padding: 14, marginBottom: 14, minHeight: 240, maxHeight: 360, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {messages.map((m, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            <div style={{ background: m.role === 'user' ? '#0D3B4A' : 'white', color: m.role === 'user' ? 'white' : '#2A2318', borderRadius: 10, padding: '9px 13px', maxWidth: '85%', fontSize: 13, lineHeight: 1.55, fontFamily: 'DM Sans,sans-serif', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display: 'flex', gap: 5, padding: '8px 12px', background: 'white', borderRadius: 10, alignItems: 'center', width: 'fit-content', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+            {[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: '#7A6E60', animation: `bounce 1.2s ${d*0.2}s infinite ease-in-out` }} />)}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 12 }}>
+        {QUICK.map(q => (
+          <button key={q} onClick={() => send(q)} style={{ padding: '6px 12px', background: 'white', border: '0.5px solid rgba(42,35,24,0.15)', borderRadius: 20, fontSize: 11, color: '#7A6E60', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>{q}</button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()}
+          placeholder="e.g. We are out of ice bags at the warehouse..."
+          style={{ flex: 1, padding: '11px 14px', background: 'white', border: '0.5px solid rgba(42,35,24,0.15)', borderRadius: 24, fontFamily: 'DM Sans,sans-serif', fontSize: 13, color: '#2A2318', outline: 'none' }} />
+        <button onClick={() => send()} style={{ width: 42, height: 42, background: '#0D3B4A', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+      <style>{`@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}`}</style>
+    </div>
+  )
+}
+
+function ConciergeBookings() {
+  const [bookings, setBookings] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState('all')
+  const [updating, setUpdating] = useState(null)
+
+  useEffect(() => {
+    loadBookings()
+    const interval = setInterval(loadBookings, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const loadBookings = async () => {
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      const { data } = await supabase
+        .from('concierge_bookings')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (data) setBookings(data)
+    } catch (err) {
+      console.error('Failed to load bookings:', err)
+    }
+    setLoading(false)
+  }
+
+  const updateStatus = async (id, status, notes = '') => {
+    setUpdating(id)
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      await fetch(`${supabaseUrl}/functions/v1/process-concierge-booking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+        body: JSON.stringify({ type: 'update_status', booking_id: id, status, ops_notes: notes })
+      })
+      await loadBookings()
+      toast.success(`Booking ${status}`)
+    } catch {
+      toast.error('Update failed')
+    }
+    setUpdating(null)
+  }
+
+  const STATUS_COLORS = {
+    pending: { bg: 'rgba(245,201,122,0.2)', color: '#8B7020', label: 'Pending' },
+    confirmed: { bg: 'rgba(90,107,58,0.2)', color: '#5A6B3A', label: 'Confirmed' },
+    cancelled: { bg: 'rgba(196,104,58,0.2)', color: '#C4683A', label: 'Cancelled' },
+    completed: { bg: 'rgba(43,122,139,0.2)', color: '#2B7A8B', label: 'Completed' },
+  }
+
+  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter)
+  const revenue = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed').reduce((s, b) => s + (b.commission_amount || 0), 0)
+
+  if (loading) return <div style={{ textAlign: 'center', padding: 40, color: '#7A6E60' }}>Loading bookings...</div>
+
+  return (
+    <div>
+      <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 22, marginBottom: 16 }}>Concierge Bookings</div>
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
+        {[
+          { label: 'Total', value: bookings.length, color: '#0D3B4A' },
+          { label: 'Pending', value: bookings.filter(b => b.status === 'pending').length, color: '#8B7020' },
+          { label: 'Commission', value: `€${revenue.toFixed(0)}`, color: '#5A6B3A' },
+        ].map(s => (
+          <div key={s.label} style={{ background: 'white', borderRadius: 12, padding: '12px 14px', border: '0.5px solid rgba(42,35,24,0.1)' }}>
+            <div style={{ fontSize: 22, fontWeight: 500, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: '#7A6E60', marginTop: 2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter */}
+      <div style={{ display: 'flex', gap: 7, marginBottom: 14, flexWrap: 'wrap' }}>
+        {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, background: filter === f ? '#0D3B4A' : 'white', color: filter === f ? 'white' : '#7A6E60', border: '0.5px solid rgba(42,35,24,0.15)', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', textTransform: 'capitalize' }}>
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {/* Bookings list */}
+      {filtered.length === 0 && <div style={{ textAlign: 'center', padding: '40px 0', color: '#7A6E60', fontSize: 14 }}>No {filter} bookings yet</div>}
+
+      {filtered.map(b => {
+        const sc = STATUS_COLORS[b.status] || STATUS_COLORS.pending
+        return (
+          <div key={b.id} style={{ background: 'white', borderRadius: 14, padding: 16, marginBottom: 12, border: '0.5px solid rgba(42,35,24,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#2A2318' }}>{b.service_name}</div>
+                <div style={{ fontSize: 11, color: '#7A6E60', marginTop: 2 }}>{b.booking_ref} · {b.partner}</div>
+              </div>
+              <div style={{ background: sc.bg, color: sc.color, borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 500 }}>{sc.label}</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 12, fontSize: 12, color: '#7A6E60' }}>
+              <span>📅 {new Date(b.booking_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              <span>👥 {b.guests} guests</span>
+              <span>💰 €{b.total_price?.toLocaleString()}</span>
+              <span>🏷 Commission: €{b.commission_amount?.toFixed(2) || '0'}</span>
+              <span style={{ gridColumn: 'span 2' }}>👤 {b.customer_name} · {b.customer_email}</span>
+            </div>
+            {b.special_notes && <div style={{ fontSize: 12, color: '#7A6E60', background: '#F5F0E8', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>Notes: {b.special_notes}</div>}
+            {b.ai_notes && <div style={{ fontSize: 11, color: '#2B7A8B', background: 'rgba(43,122,139,0.08)', borderRadius: 8, padding: '7px 10px', marginBottom: 10 }}>AI: {b.ai_notes}</div>}
+            {b.status === 'pending' && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => updateStatus(b.id, 'confirmed', 'Booking confirmed by Isla Drop concierge team.')} disabled={updating === b.id}
+                  style={{ flex: 1, padding: '9px', background: '#5A6B3A', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                  Confirm
+                </button>
+                <button onClick={() => updateStatus(b.id, 'cancelled', 'Unfortunately this booking cannot be accommodated.')} disabled={updating === b.id}
+                  style={{ flex: 1, padding: '9px', background: 'rgba(196,104,58,0.1)', color: '#C4683A', border: '0.5px solid rgba(196,104,58,0.3)', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                  Cancel
+                </button>
+              </div>
+            )}
+            {b.status === 'confirmed' && (
+              <button onClick={() => updateStatus(b.id, 'completed')} disabled={updating === b.id}
+                style={{ width: '100%', padding: '9px', background: 'rgba(43,122,139,0.1)', color: '#2B7A8B', border: '0.5px solid rgba(43,122,139,0.3)', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                Mark as Completed
+              </button>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function OpsApp() {
   const [tab, setTab] = useState('overview')
   const { stats, liveOrders, drivers, alerts, setStats, setLiveOrders, setDrivers, addAlert } = useOpsStore()
