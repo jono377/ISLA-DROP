@@ -182,16 +182,7 @@ const [showAuth, setShowAuth] = useState(false)
     { role:'assistant', text:"Hi! I'm Isla 🌴 I'm here to help. What can I assist you with today? You can ask about your order, delivery, products or anything else." }
   ])
   const [supportLoading, setSupportLoading] = useState(false)
-  const SUPPORT_MAP = [
-    { q:['order','where','tracking','delivery','late','arrived'], a:'Your order status updates in real time once a driver is assigned. If your order seems delayed please allow 30 minutes before contacting us — Ibiza traffic can be unpredictable! 🛵' },
-    { q:['refund','money back','charge','payment','wrong'], a:'We're sorry to hear that! For billing issues or refunds please contact our support team directly at support@isladrop.com and we'll resolve it within 24 hours. 💳' },
-    { q:['product','stock','available','item'], a:'Our catalogue updates regularly. If something is out of stock when you order, we'll contact you with alternatives. You can also check our categories for what's available right now. 🍾' },
-    { q:['driver','rude','behaviour','complaint'], a:'We're sorry to hear about your experience. Please email support@isladrop.com with your order number and we'll look into this immediately. Your feedback matters to us. 🙏' },
-    { q:['address','location','find','villa','hotel'], a:'Make sure to set your delivery pin on the map at checkout, or type your villa/hotel name. Our drivers know Ibiza well — adding any notes like gate codes really helps! 📍' },
-    { q:['cancel','cancellation'], a:'Orders can be cancelled within 2 minutes of placing them. After that our driver may already be en route. Contact support@isladrop.com as quickly as possible for assistance. ⏱️' },
-    { q:['hours','open','available','time'], a:'We're open 24/7 — every day, all night, all season! Whether it's 3am or midday we'll get your drinks to you. 🌙' },
-    { q:['minimum','min','order'], a:'There's no minimum order — you can order a single can if you like! Though delivery is €3.50 flat rate regardless of order size. 🛒' },
-  ]
+ 
 
   const handleSupport = async (text) => {
     const q = (text || supportInput).toLowerCase().trim()
