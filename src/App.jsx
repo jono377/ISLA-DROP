@@ -1,32 +1,27 @@
-import { useEffect, Component } from 'react'
+import { useEffect, useState, Component } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './lib/store'
 import CustomerApp from './components/customer/CustomerApp'
 import DriverApp from './components/driver/DriverApp'
 import OpsApp from './components/ops/OpsApp'
-import AuthScreen from './components/shared/AuthScreen'
+import StaffLogin from './components/shared/StaffLogin'
 
-// Error boundary catches JS crashes and shows something instead of blank screen
+// Error boundary
 class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props)
-    this.state = { error: null }
-  }
-  static getDerivedStateFromError(error) {
-    return { error }
-  }
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(error) { return { error } }
   render() {
     if (this.state.error) {
       return (
-        <div style={{ padding: 40, fontFamily: 'sans-serif', textAlign: 'center', background: '#0D3B4A', minHeight: '100vh', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ padding: 40, textAlign: 'center', background: '#0D3B4A', minHeight: '100vh', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🌴</div>
           <div style={{ fontFamily: 'serif', fontSize: 28, marginBottom: 8 }}>Isla Drop</div>
-          <div style={{ fontSize: 14, opacity: 0.7, marginBottom: 24 }}>Something went wrong loading the app</div>
-          <div style={{ fontSize: 11, opacity: 0.4, maxWidth: 400, wordBreak: 'break-all', background: 'rgba(0,0,0,0.3)', padding: 12, borderRadius: 8 }}>
-            {this.state.error?.message || 'Unknown error'}
+          <div style={{ fontSize: 14, opacity: 0.6, marginBottom: 24 }}>Something went wrong loading the app</div>
+          <div style={{ fontSize: 11, opacity: 0.35, maxWidth: 360, wordBreak: 'break-all', background: 'rgba(0,0,0,0.3)', padding: 12, borderRadius: 8, marginBottom: 20 }}>
+            {this.state.error?.message}
           </div>
-          <button onClick={() => window.location.reload()} style={{ marginTop: 24, padding: '12px 24px', background: '#C4683A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
-            Reload app
+          <button onClick={() => window.location.reload()} style={{ padding: '12px 24px', background: '#C4683A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
+            Reload
           </button>
         </div>
       )
@@ -35,27 +30,71 @@ class ErrorBoundary extends Component {
   }
 }
 
-const toastStyle = {
+const toastCfg = {
   position: 'top-center',
   toastOptions: {
     style: { fontFamily: 'DM Sans, sans-serif', fontSize: 14, borderRadius: 10, background: '#0D3B4A', color: 'white' }
   }
 }
 
+// Staff portal selector shown when no user is logged in and staff=true
+function StaffPortal() {
+  const [role, setRole] = useState(null)
+
+  if (role) return <StaffLogin role={role} onBack={() => setRole(null)} />
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(170deg,#0A2A38,#0D3545)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 360, textAlign: 'center' }}>
+        <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 32, color: 'white', marginBottom: 8 }}>Isla Drop</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 40, letterSpacing: '2px', textTransform: 'uppercase' }}>Staff Portal</div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <button onClick={() => setRole('driver')}
+            style={{ padding: '18px', background: 'rgba(90,107,58,0.2)', border: '0.5px solid rgba(90,107,58,0.4)', borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left' }}>
+            <span style={{ fontSize: 32 }}>🛵</span>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 500, color: 'white', fontFamily: 'DM Sans,sans-serif' }}>Driver App</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Accept and manage deliveries</div>
+            </div>
+          </button>
+
+          <button onClick={() => setRole('ops')}
+            style={{ padding: '18px', background: 'rgba(26,80,99,0.3)', border: '0.5px solid rgba(43,122,139,0.4)', borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left' }}>
+            <span style={{ fontSize: 32 }}>⚙️</span>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 500, color: 'white', fontFamily: 'DM Sans,sans-serif' }}>Management Dashboard</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Orders, fleet and operations</div>
+            </div>
+          </button>
+        </div>
+
+        <div style={{ marginTop: 32, fontSize: 12, color: 'rgba(255,255,255,0.25)', fontFamily: 'DM Sans,sans-serif' }}>
+          Authorised staff only
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AppInner() {
   const { user, profile, setUser, setProfile, clear } = useAuthStore()
 
+  // Check if this is a staff URL
+  const isStaffUrl = window.location.pathname.startsWith('/staff') ||
+                     window.location.search.includes('staff=true') ||
+                     window.location.hostname.includes('staff')
+
   useEffect(() => {
-    // Only connect to Supabase if env vars are present
     const url = import.meta.env.VITE_SUPABASE_URL
     const key = import.meta.env.VITE_SUPABASE_ANON_KEY
-    if (!url || !key || url === '' || key === '') return
+    if (!url || !key || !url.startsWith('https://')) return
 
     import('./lib/supabase').then(({ supabase, getProfile }) => {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
           setUser(session.user)
-          getProfile(session.user.id).then(setProfile).catch(() => {})
+          getProfile(session.user.id).then(p => { if (p) setProfile(p) }).catch(() => {})
         }
       }).catch(() => {})
 
@@ -67,20 +106,24 @@ function AppInner() {
         }
         if (event === 'SIGNED_OUT') clear()
       })
-
       return () => subscription.unsubscribe()
     }).catch(() => {})
   }, [])
 
+  // Logged-in staff routing
   if (user && profile?.role === 'driver') {
-    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><DriverApp /></div>
+    return <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh' }}><DriverApp /></div>
   }
   if (user && profile?.role === 'ops') {
-    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><OpsApp /></div>
+    return <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh' }}><OpsApp /></div>
   }
 
+  // Staff portal (not logged in)
+  if (isStaffUrl) return <StaffPortal />
+
+  // Customer app
   return (
-    <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh', position:'relative' }}>
+    <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', position: 'relative' }}>
       <CustomerApp />
     </div>
   )
@@ -89,7 +132,7 @@ function AppInner() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <Toaster {...toastStyle} />
+      <Toaster {...toastCfg} />
       <AppInner />
     </ErrorBoundary>
   )
