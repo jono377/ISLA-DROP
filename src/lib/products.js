@@ -239,7 +239,7 @@ export const PRODUCTS = [
   { id: 'tb-047', name: 'Lil Solid 2.0 Device',            category: 'tobacco', sub: 'heated',  emoji: '🔥', price: 28.00,  age_restricted: true, popular: false },
 
   // ── SNACKS — NEW POPULAR LOCAL MARKET ADDITIONS (+20%) ──────
-  { id: 'sn-020', name: 'Lay's Mediterránea Olives 150g',   category:'snacks', sub:'crisps',  emoji:'🫒', price: 3.64,  age_restricted:false, popular:true  },
+  { id: 'sn-020', name: "Lay's Mediterránea Olives 150g",  category:'snacks', sub:'crisps',  emoji:'🫒', price: 3.64,  age_restricted:false, popular:true  },
   { id: 'sn-021', name: 'Ruffles Queso Crisps 170g',         category:'snacks', sub:'crisps',  emoji:'🧀', price: 3.64,  age_restricted:false, popular:false },
   { id: 'sn-022', name: 'Funyuns Onion Rings 163g',          category:'snacks', sub:'crisps',  emoji:'🧅', price: 4.16,  age_restricted:false, popular:false },
   { id: 'sn-023', name: 'Cheetos Crunchy 226g',              category:'snacks', sub:'crisps',  emoji:'🧡', price: 4.16,  age_restricted:false, popular:true  },
