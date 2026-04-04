@@ -299,7 +299,7 @@ export default function OpsApp() {
 
       {/* Sub-tabs */}
       <div style={{ display: 'flex', background: '#F5F0E8', borderBottom: '0.5px solid rgba(42,35,24,0.12)' }}>
-        {['overview', 'orders', 'fleet', 'map', 'images'].map(t => (
+        {['overview', 'orders', 'fleet', 'map', 'stock', 'concierge', 'images'].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -322,6 +322,8 @@ export default function OpsApp() {
         {tab === 'fleet' && <FleetTab drivers={drivers} />}
         {tab === 'map' && <MapTab drivers={drivers} orders={activeOrders} />}
         {tab === 'images' && <div style={{ margin:'0 -16px' }}><ImageManager /></div>}
+        {tab === 'stock' && <StockManager />}
+        {tab === 'concierge' && <ConciergeBookings />}
       </div>
     </div>
   )
