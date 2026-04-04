@@ -195,10 +195,7 @@ const [showAuth, setShowAuth] = useState(false)
     for (const entry of SUPPORT_MAP) {
       if (entry.q.some(kw => q.includes(kw))) { answer = entry.a; break }
     }
-    if (!answer) answer = 'I'm not sure about that one! For anything I can't help with, please email us at support@isladrop.com or call +34 XXX XXX XXX and our team will be happy to help. 💙'
-    setSupportMessages(prev => [...prev, { role:'assistant', text: answer }])
-    setSupportLoading(false)
-  }
+    if (!answer) answer = "Not sure about that one! Email support@isladrop.net and our team will help."
 
   if (showSupport) return (
     <div style={{ padding:'16px 16px 20px' }}>
