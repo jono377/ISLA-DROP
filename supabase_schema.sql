@@ -181,3 +181,168 @@ insert into public.products (name, description, category, price, emoji, is_age_r
   ('Ice Bag Large',         '5kg - Crushed',             'ice_mixers',  6.00, '🧊', false),
   ('Fever-Tree Tonic 6pk',  '6 x 200ml',                'ice_mixers',  9.00, '💧', false),
   ('San Pellegrino 6pk',    '6 x 750ml - Sparkling',    'soft_drinks',  8.00, '🫧', false);
+
+-- ============================================================
+-- CONCIERGE BOOKINGS
+-- ============================================================
+
+create table public.concierge_bookings (
+  id              uuid primary key default gen_random_uuid(),
+  booking_ref     text unique not null default 'CB-' || upper(substring(gen_random_uuid()::text, 1, 8)),
+  customer_id     uuid references public.profiles(id) on delete set null,
+  customer_email  text not null,
+  customer_name   text not null,
+
+  -- Service details
+  service_id      text not null,
+  service_name    text not null,
+  service_category text not null,
+  partner         text not null,
+  location        text,
+  location_lat    numeric,
+  location_lng    numeric,
+
+  -- Booking details
+  booking_date    date not null,
+  guests          int default 1,
+  special_notes   text,
+  price_per_unit  numeric(10,2) not null,
+  total_price     numeric(10,2) not null,
+  commission_rate numeric(4,2) default 0.10,
+  commission_amount numeric(10,2),
+
+  -- Status
+  status          text not null default 'pending'
+                  check (status in ('pending','confirmed','cancelled','completed')),
+  ai_notes        text,           -- Claude AI processing notes
+  ops_notes       text,           -- Manual ops notes
+  confirmation_sent_at timestamptz,
+  confirmed_at    timestamptz,
+  cancelled_at    timestamptz,
+  cancellation_reason text,
+
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now()
+);
+
+alter table public.concierge_bookings enable row level security;
+
+-- Customers can see their own bookings
+create policy "Customers read own bookings"
+  on public.concierge_bookings for select
+  using (customer_id = auth.uid());
+
+-- Customers can create bookings
+create policy "Customers create bookings"
+  on public.concierge_bookings for insert
+  with check (true);
+
+-- Ops can see and update all bookings
+create policy "Ops full access to concierge bookings"
+  on public.concierge_bookings for all
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'ops'));
+
+-- Auto-update updated_at
+create or replace function update_concierge_booking_timestamp()
+returns trigger as $$
+begin new.updated_at = now(); return new; end;
+$$ language plpgsql;
+
+create trigger set_concierge_booking_updated_at
+  before update on public.concierge_bookings
+  for each row execute function update_concierge_booking_timestamp();
+
+-- Commission calculation trigger
+create or replace function calculate_commission()
+returns trigger as $$
+begin
+  new.commission_amount = round(new.total_price * new.commission_rate, 2);
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger auto_calculate_commission
+  before insert or update on public.concierge_bookings
+  for each row execute function calculate_commission();
+
+-- ============================================================
+-- STOCK MANAGEMENT
+-- ============================================================
+
+create table public.stock (
+  id              uuid primary key default gen_random_uuid(),
+  product_id      text unique not null,
+  product_name    text not null,
+  category        text not null,
+  current_qty     int not null default 0,
+  min_qty         int not null default 10,
+  max_qty         int not null default 100,
+  reorder_point   int not null default 25,   -- qty to trigger alert
+  alert_threshold numeric(4,2) default 0.25, -- % remaining to alert (AI adjusts)
+  unit_cost       numeric(10,2) default 0,
+  units_sold_today int default 0,
+  units_sold_week  int default 0,
+  units_sold_total int default 0,
+  velocity        text default 'normal'
+                  check (velocity in ('slow','normal','fast','critical')),
+  last_restocked  timestamptz,
+  last_sold       timestamptz,
+  alert_sent_at   timestamptz,
+  notes           text,
+  updated_at      timestamptz default now()
+);
+
+alter table public.stock enable row level security;
+
+create policy "Ops can manage stock"
+  on public.stock for all
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'ops'));
+
+create policy "Drivers can read stock"
+  on public.stock for select
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'driver'));
+
+-- Auto-update timestamp
+create trigger set_stock_updated_at
+  before update on public.stock
+  for each row execute function update_concierge_booking_timestamp();
+
+-- ── STOCK ALERTS LOG ──────────────────────────────────────────
+create table public.stock_alerts (
+  id          uuid primary key default gen_random_uuid(),
+  product_id  text not null,
+  product_name text not null,
+  alert_type  text not null check (alert_type in ('low','critical','out_of_stock','restocked')),
+  qty_at_alert int,
+  pct_at_alert numeric(5,2),
+  message     text,
+  resolved    boolean default false,
+  created_at  timestamptz default now()
+);
+
+alter table public.stock_alerts enable row level security;
+create policy "Ops can manage alerts" on public.stock_alerts for all
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'ops'));
+
+-- ── Add delivery PIN to orders ────────────────────────────────
+-- Run this if orders table already exists:
+alter table public.orders add column if not exists delivery_pin int;
+alter table public.orders add column if not exists warehouse_confirmed_at timestamptz;
+
+-- Auto-generate 4-digit PIN on order creation
+create or replace function generate_delivery_pin()
+returns trigger as $$
+begin
+  new.delivery_pin = floor(random() * 9000 + 1000)::int;
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger auto_delivery_pin
+  before insert on public.orders
+  for each row execute function generate_delivery_pin();
+
+-- Update status check to include new states
+alter table public.orders drop constraint if exists orders_status_check;
+alter table public.orders add constraint orders_status_check
+  check (status in ('pending','assigned','warehouse_confirmed','en_route','delivered','cancelled'));
