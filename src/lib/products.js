@@ -350,6 +350,72 @@ export const PRODUCTS = [
 ]
 
 // ── Category config ─────────────────────────────────────────
+  // ── PARTY SUPPLIES (+30%) ─────────────────────────────────────
+  { id: 'ps-001', name: 'Balloons Mixed Colours 50pk',        category:'party', sub:'decorations', emoji:'🎈', price:5.85,  age_restricted:false, popular:true  },
+  { id: 'ps-002', name: 'Balloon Pump Hand Pump',             category:'party', sub:'decorations', emoji:'🎈', price:3.90,  age_restricted:false, popular:false },
+  { id: 'ps-003', name: 'Happy Birthday Banner Foil',         category:'party', sub:'decorations', emoji:'🎂', price:5.20,  age_restricted:false, popular:true  },
+  { id: 'ps-004', name: 'Confetti Cannon x2',                 category:'party', sub:'decorations', emoji:'🎊', price:9.10,  age_restricted:false, popular:true  },
+  { id: 'ps-005', name: 'Party Poppers 20pk',                 category:'party', sub:'decorations', emoji:'🎉', price:6.50,  age_restricted:false, popular:false },
+  { id: 'ps-008', name: 'Birthday Candles Pack 24',           category:'party', sub:'decorations', emoji:'🕯️', price:2.60,  age_restricted:false, popular:false },
+  { id: 'ps-010', name: 'Shot Glasses Plastic 20pk',          category:'party', sub:'disposables', emoji:'🥃', price:5.20,  age_restricted:false, popular:true  },
+  { id: 'ps-023', name: 'Birthday Shot Sash + Crown Set',     category:'party', sub:'accessories', emoji:'👑', price:6.50,  age_restricted:false, popular:true  },
+
+  // ── POOL PARTY SPECIFIC (+30%) ────────────────────────────────
+
+  // ── SPECIAL OCCASION / CELEBRATION (+30%) ─────────────────────
+  { id: 'oc-001', name: 'Moet & Chandon Brut NV 75cl',        category:'champagne', sub:'champagne', emoji:'🍾', price:52.00, age_restricted:true,  popular:true  },
+  { id: 'oc-002', name: 'Veuve Clicquot Yellow Label 75cl',   category:'champagne', sub:'champagne', emoji:'🍾', price:65.00, age_restricted:true,  popular:true  },
+  { id: 'oc-003', name: 'Ruinart Blanc de Blancs 75cl',       category:'champagne', sub:'champagne', emoji:'🍾', price:91.00, age_restricted:true,  popular:false },
+  { id: 'oc-005', name: 'Sparkler Candles 10pk',              category:'party', sub:'decorations',  emoji:'✨', price:7.80,  age_restricted:false, popular:true  },
+  { id: 'oc-006', name: 'Number Balloon Set 0-9 Gold',        category:'party', sub:'decorations',  emoji:'🔢', price:9.75,  age_restricted:false, popular:false },
+
+  // ── DAYTIME PARTY FOOD (+30%) ─────────────────────────────────
+  { id: 'df-001', name: 'Pringles Original 185g',             category:'snacks', sub:'crisps',  emoji:'🥔', price:4.55,  age_restricted:false, popular:true  },
+  { id: 'df-002', name: 'Pringles Sour Cream 185g',           category:'snacks', sub:'crisps',  emoji:'🥔', price:4.55,  age_restricted:false, popular:false },
+  { id: 'df-003', name: 'Antipasto Selection Board 400g',     category:'snacks', sub:'crisps',  emoji:'🧀', price:14.30, age_restricted:false, popular:true  },
+  { id: 'df-004', name: 'Hummus & Pitta Bread Pack',          category:'snacks', sub:'crisps',  emoji:'🫓', price:7.80,  age_restricted:false, popular:true  },
+  { id: 'df-005', name: 'Spanish Tortilla Sliced 400g',       category:'snacks', sub:'crisps',  emoji:'🍳', price:9.10,  age_restricted:false, popular:true  },
+  { id: 'df-006', name: 'Cured Meats Selection 200g',         category:'snacks', sub:'crisps',  emoji:'🥩', price:11.70, age_restricted:false, popular:true  },
+  { id: 'df-007', name: 'Cheese Board Selection 300g',        category:'snacks', sub:'crisps',  emoji:'🧀', price:14.30, age_restricted:false, popular:false },
+  { id: 'df-008', name: 'Watermelon Pre-Cut 500g',            category:'snacks', sub:'sweet',   emoji:'🍉', price:5.20,  age_restricted:false, popular:true  },
+  { id: 'df-009', name: 'Fruit Skewers Box 12pk',             category:'snacks', sub:'sweet',   emoji:'🍡', price:9.10,  age_restricted:false, popular:false },
+  { id: 'df-010', name: 'Mini Pastries Box 12pk',             category:'snacks', sub:'sweet',   emoji:'🥐', price:9.75,  age_restricted:false, popular:false },
+
+
+  // ── POOL PARTY (+30%) ────────────────────────────────────────
+  { id: 'pp-001', name: 'Inflatable Flamingo XL',             category:'pool',  sub:'floats',      emoji:'🦩', price:22.75, age_restricted:false, popular:true  },
+  { id: 'pp-002', name: 'Inflatable Unicorn Giant',           category:'pool',  sub:'floats',      emoji:'🦄', price:29.25, age_restricted:false, popular:true  },
+  { id: 'pp-003', name: 'Inflatable Pizza Slice Float',       category:'pool',  sub:'floats',      emoji:'🍕', price:19.50, age_restricted:false, popular:true  },
+  { id: 'pp-004', name: 'Inflatable Donut Float',             category:'pool',  sub:'floats',      emoji:'🍩', price:16.25, age_restricted:false, popular:false },
+  { id: 'pp-005', name: 'Inflatable Swan Ride-On',            category:'pool',  sub:'floats',      emoji:'🦢', price:26.00, age_restricted:false, popular:false },
+  { id: 'pp-006', name: 'Floating Drinks Holder x4',          category:'pool',  sub:'accessories', emoji:'🥂', price:9.75,  age_restricted:false, popular:true  },
+  { id: 'pp-008', name: 'Pool Noodles 4pk',                   category:'pool',  sub:'accessories', emoji:'🟡', price:13.00, age_restricted:false, popular:false },
+  { id: 'pp-009', name: 'Water Guns 2pk Large',               category:'pool',  sub:'games',       emoji:'💦', price:13.00, age_restricted:false, popular:true  },
+  { id: 'pp-010', name: 'Floating Card Game Waterproof',      category:'pool',  sub:'games',       emoji:'🃏', price:9.75,  age_restricted:false, popular:false },
+  { id: 'pp-011', name: 'Pool Volleyball Net Set',            category:'pool',  sub:'games',       emoji:'🏐', price:26.00, age_restricted:false, popular:false },
+  { id: 'pp-012', name: 'Floating Beer Pong Set',             category:'pool',  sub:'games',       emoji:'🏓', price:19.50, age_restricted:false, popular:true  },
+
+  // ── PARTY EQUIPMENT & GAMES (+30%) ───────────────────────────
+  { id: 'ps-006', name: 'Fairy Lights LED 5m Battery',        category:'party', sub:'decorations', emoji:'✨', price:13.00, age_restricted:false, popular:true  },
+  { id: 'ps-007', name: 'Glow Sticks Pack 50',                category:'party', sub:'decorations', emoji:'🌟', price:7.80,  age_restricted:false, popular:true  },
+  { id: 'ps-009', name: 'Table Cloth Disposable 4pk',         category:'party', sub:'disposables', emoji:'🍽️', price:5.20,  age_restricted:false, popular:false },
+  { id: 'ps-011', name: 'Cocktail Umbrella Picks 50pk',       category:'party', sub:'disposables', emoji:'☂️', price:3.25,  age_restricted:false, popular:false },
+  { id: 'ps-012', name: 'Fruit Skewer Picks 50pk',            category:'party', sub:'disposables', emoji:'🍡', price:2.60,  age_restricted:false, popular:false },
+  { id: 'ps-013', name: 'Punch Bowl Set with Ladle',          category:'party', sub:'drinkware',   emoji:'🥣', price:16.25, age_restricted:false, popular:false },
+  { id: 'ps-014', name: 'Jello Shot Cups 50pk',               category:'party', sub:'drinkware',   emoji:'🍮', price:6.50,  age_restricted:false, popular:true  },
+  { id: 'ps-015', name: 'Cooler Box 35L',                     category:'party', sub:'equipment',   emoji:'🧊', price:32.50, age_restricted:false, popular:true  },
+  { id: 'ps-017', name: 'Disco Ball LED Rotating',            category:'party', sub:'equipment',   emoji:'🪩', price:22.75, age_restricted:false, popular:true  },
+  { id: 'ps-018', name: 'Poker Set 200 Chips',                category:'party', sub:'games',       emoji:'🃏', price:26.00, age_restricted:false, popular:false },
+  { id: 'ps-019', name: 'Beer Pong Set 22 Cups + Balls',      category:'party', sub:'games',       emoji:'🏓', price:13.00, age_restricted:false, popular:true  },
+  { id: 'ps-021', name: 'Ring Toss Garden Game',              category:'party', sub:'games',       emoji:'⭕', price:16.25, age_restricted:false, popular:false },
+  { id: 'ps-022', name: 'Playing Cards 2 Decks',              category:'party', sub:'games',       emoji:'♠️', price:5.85,  age_restricted:false, popular:false },
+  { id: 'ps-024', name: 'Photo Booth Props Kit 30pc',         category:'party', sub:'accessories', emoji:'📸', price:9.75,  age_restricted:false, popular:false },
+  { id: 'ps-025', name: 'Polaroid Instant Film 20 Shots',     category:'party', sub:'accessories', emoji:'📷', price:19.50, age_restricted:false, popular:false },
+  { id: 'oc-004', name: 'Personalised Birthday Ribbon',       category:'party', sub:'accessories', emoji:'🎀', price:3.25,  age_restricted:false, popular:false },
+  { id: 'oc-007', name: 'Luxury Gift Bag Large',              category:'party', sub:'accessories', emoji:'🎁', price:5.85,  age_restricted:false, popular:false },
+  { id: 'oc-008', name: 'Dried Flower Bouquet',               category:'party', sub:'decorations', emoji:'💐', price:19.50, age_restricted:false, popular:false },
+
+
 export const CATEGORIES = [
   { key: 'spirits',    label: 'Spirits',      emoji: '🥃', subs: [
     { key: 'tequila',  label: 'Tequila'  },
@@ -406,6 +472,19 @@ export const CATEGORIES = [
     { key: 'swimwear',    label: 'Swimwear' },
     { key: 'accessories', label: 'Accessories' },
   ]},
+  { key: 'party',      label: 'Party Supplies', emoji: '🎉', subs: [
+    { key: 'decorations', label: 'Decorations'    },
+    { key: 'disposables', label: 'Cups & Plates'  },
+    { key: 'games',       label: 'Party Games'    },
+    { key: 'equipment',   label: 'Equipment'      },
+    { key: 'accessories', label: 'Accessories'    },
+  ]},
+  { key: 'pool',       label: 'Pool Party',     emoji: '💦', subs: [
+    { key: 'floats',      label: 'Inflatables'   },
+    { key: 'accessories', label: 'Accessories'   },
+    { key: 'games',       label: 'Pool Games'    },
+  ]},
+
 ]
 
 export const BEST_SELLERS = PRODUCTS.filter(p => p.popular).slice(0, 12)
