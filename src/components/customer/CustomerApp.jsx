@@ -352,6 +352,35 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
           )}
 
+          {/* Concierge Highlights carousel */}
+          <div style={{ marginBottom:24 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0 16px', marginBottom:12 }}>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white' }}>✨ Ibiza Experiences</div>
+              <button onClick={()=>navigate(VIEWS.CONCIERGE)} style={{ fontSize:11, color:'rgba(255,255,255,0.5)', background:'none', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>See all →</button>
+            </div>
+            <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
+              {[
+                { emoji:'⛵', title:'RIB Speedboat', sub:'Half day from €605', id:'concierge', color:'linear-gradient(135deg,#0D3B4A,#2B7A8B)' },
+                { emoji:'🍒', title:'Pacha Ibiza', sub:'Entry from €110pp', id:'concierge', color:'linear-gradient(135deg,#3D1A3A,#8B2070)' },
+                { emoji:'⭐', title:'La Gaia Restaurant', sub:'Michelin star from €220', id:'concierge', color:'linear-gradient(135deg,#3A2A0A,#8B6020)' },
+                { emoji:'🏖️', title:'Blue Marlin VIP', sub:'Daybed from €440', id:'concierge', color:'linear-gradient(135deg,#0A2A3A,#1A6080)' },
+                { emoji:'☀️', title:'Ushuaia Day Club', sub:'Entry from €143pp', id:'concierge', color:'linear-gradient(135deg,#2A1A0A,#8B4A20)' },
+                { emoji:'🏡', title:'Luxury Finca', sub:'4-bed from €1,210/night', id:'concierge', color:'linear-gradient(135deg,#1A2A0A,#4A6B20)' },
+                { emoji:'🧘', title:'Sunrise Yoga', sub:'Ses Salines from €88', id:'concierge', color:'linear-gradient(135deg,#0A1A2A,#20408B)' },
+                { emoji:'🚁', title:'Helicopter Tour', sub:'Island panorama €770', id:'concierge', color:'linear-gradient(135deg,#2A0A1A,#8B2040)' },
+                { emoji:'🌙', title:'Amante Dinner', sub:'Clifftop from €95pp', id:'concierge', color:'linear-gradient(135deg,#1A0A2A,#502080)' },
+                { emoji:'🏍️', title:'Quad Bike Adventure', sub:'3hr tour from €132', id:'concierge', color:'linear-gradient(135deg,#2A1A0A,#6B4020)' },
+              ].map((item, i) => (
+                <div key={i} onClick={()=>navigate(VIEWS.CONCIERGE)}
+                  style={{ flexShrink:0, width:140, background:item.color, borderRadius:14, padding:'14px 12px', cursor:'pointer', border:'0.5px solid rgba(255,255,255,0.1)' }}>
+                  <div style={{ fontSize:28, marginBottom:8 }}>{item.emoji}</div>
+                  <div style={{ fontSize:13, fontWeight:500, color:'white', marginBottom:3, lineHeight:1.2 }}>{item.title}</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)' }}>{item.sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* One horizontal scroll row per category */}
           {CATEGORIES.map(cat => {
             const catProducts = PRODUCTS.filter(p => p.category === cat.key).slice(0, 10)
@@ -379,8 +408,10 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 // ── Root App ──────────────────────────────────────────────────
 export default function CustomerApp() {
   const [view, setView]               = useState(VIEWS.SPLASH)
+  const [viewHistory, setViewHistory] = useState([])
   const [lang, setLang]               = useState('en')
   const [categoryKey, setCategoryKey] = useState(null)
+  const [prevCategoryKey, setPrevCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
   const [activeOrder, setActiveOrder] = useState(null)
   const { user } = useAuthStore()
@@ -388,9 +419,29 @@ export default function CustomerApp() {
   const t    = useT(lang)
   const estimatedMins = cart.deliveryAddress ? 18 : null
 
-  const goToCategory = (key) => { setCategoryKey(key); setView(VIEWS.CATEGORY) }
+  const navigate = (newView, opts = {}) => {
+    // Track history for back navigation
+    setViewHistory(prev => [...prev.slice(-9), { view, categoryKey }])
+    if (newView !== VIEWS.CATEGORY) setCategoryKey(null)
+    setView(newView)
+  }
+
+  const goBack = () => {
+    const prev = viewHistory[viewHistory.length - 1]
+    if (!prev) { setView(VIEWS.HOME); setCategoryKey(null); return }
+    setViewHistory(h => h.slice(0, -1))
+    setCategoryKey(prev.categoryKey || null)
+    setView(prev.view)
+  }
+
+  const goToCategory = (key) => {
+    setViewHistory(prev => [...prev.slice(-9), { view, categoryKey }])
+    setCategoryKey(key)
+    setView(VIEWS.CATEGORY)
+  }
 
   const handleTabChange = (v) => {
+    setViewHistory([]) // Tab changes reset history
     if (v !== VIEWS.CATEGORY) setCategoryKey(null)
     setView(v)
   }
@@ -519,17 +570,17 @@ export default function CustomerApp() {
     <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
 
       {view===VIEWS.CATEGORY && categoryKey && (
-        <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} />
+        <CategoryPage categoryKey={categoryKey} onBack={goBack} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>setView(VIEWS.ASSIST)} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} />}
+      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>navigate(VIEWS.ASSIST)} onBest={()=>navigate(VIEWS.BEST)} onNewIn={()=>navigate(VIEWS.NEWIN)} />}
       {view===VIEWS.SEARCH   && <SearchView t={t} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.ASSIST   && <AssistBot onClose={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>setView(VIEWS.HOME)} />}
+      {view===VIEWS.ASSIST   && <AssistBot onClose={goBack} />}
+      {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={goBack} />}
+      {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={goBack} />}
 
       {/* Floating cart bar on home only */}
       {view===VIEWS.HOME && cart.getItemCount()>0 && (
