@@ -423,7 +423,7 @@ function SearchView({ t }) {
 }
 
 
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onParty }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -570,13 +570,13 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <div style={{ padding:'0 16px', marginBottom:20 }}>
             <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:12 }}>Design Your Experience</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-              <div onClick={()=>{ setPartyType('design_night'); navigate(VIEWS.PARTY) }}
+              <div onClick={()=>onParty('design_night')}
                 style={{ background:'linear-gradient(135deg,rgba(90,30,120,0.7),rgba(30,60,120,0.7))', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:16, padding:'18px 14px', cursor:'pointer' }}>
                 <div style={{ fontSize:36, marginBottom:8 }}>🌙</div>
                 <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:4 }}>Design Your Night</div>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', lineHeight:1.4 }}>Club nights, villa parties, pre-drinks & more</div>
               </div>
-              <div onClick={()=>{ setPartyType('design_day'); navigate(VIEWS.PARTY) }}
+              <div onClick={()=>onParty('design_day')}
                 style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.6),rgba(200,140,30,0.5))', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:16, padding:'18px 14px', cursor:'pointer' }}>
                 <div style={{ fontSize:36, marginBottom:8 }}>☀️</div>
                 <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:4 }}>Design Your Day</div>
@@ -818,7 +818,7 @@ export default function CustomerApp() {
         <CategoryPage categoryKey={categoryKey} onBack={goBack} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>navigate(VIEWS.ASSIST)} onBest={()=>navigate(VIEWS.BEST)} onNewIn={()=>navigate(VIEWS.NEWIN)} />}
+      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>navigate(VIEWS.ASSIST)} onBest={()=>navigate(VIEWS.BEST)} onNewIn={()=>navigate(VIEWS.NEWIN)} onParty={(type)=>{ setPartyType(type); navigate(VIEWS.PARTY) }} />}
       {view===VIEWS.SEARCH   && <SearchView t={t} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
