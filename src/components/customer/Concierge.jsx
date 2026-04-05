@@ -543,7 +543,7 @@ function BookingModal({ service, onClose, onBook }) {
           Request Booking
         </button>
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontFamily: 'DM Sans,sans-serif' }}>
-          Booking requests confirmed within 2 hours · concierge@isladrop.com
+          Booking requests confirmed within 2 hours · concierge@isladrop.net
         </div>
       </div>
     </div>
@@ -645,7 +645,7 @@ When designing an experience:
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 400,
@@ -772,7 +772,7 @@ export default function Concierge({ onBack }) {
     toast.loading('Processing your booking...', { id: 'booking' })
     try {
       // Get user details from Supabase if logged in
-      let customerEmail = 'guest@isladrop.com'
+      let customerEmail = 'guest@isladrop.net'
       let customerName = 'Guest'
       let customerId = null
       try {

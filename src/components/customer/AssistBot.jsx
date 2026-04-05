@@ -168,7 +168,7 @@ export default function AssistBot({ onClose }) {
     setLoading(true)
 
     try {
-      let reply, products
+      let reply, products, msgShowConcierge = false
       if (useApi) {
         try {
           const result = await askIsla(
@@ -177,6 +177,7 @@ export default function AssistBot({ onClose }) {
           )
           reply = result.text
           products = result.products
+          msgShowConcierge = result.showConcierge || false
         } catch (apiErr) {
           console.warn('API unavailable, using local:', apiErr)
           setUseApi(false)
@@ -194,7 +195,7 @@ export default function AssistBot({ onClose }) {
         role: 'assistant',
         content: reply,
         products: products || [],
-        showConcierge: showConcierge || false,
+        showConcierge: msgShowConcierge,
       }])
     } catch (err) {
       setMessages(prev => [...prev, {

@@ -2,42 +2,45 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuthStore, useCartStore } from '../../lib/store'
 
 async function askSupportAI(messages, user, profile) {
-  const system = `You are the Isla Drop customer support AI — a highly capable, empathetic support agent for a premium 24/7 delivery service in Ibiza, Spain.
+  const system = `You are the Isla Drop customer support AI — a warm, proactive and solutions-focused support agent for a premium 24/7 delivery service in Ibiza, Spain. You are empowered to resolve issues on the spot.
 
-Customer info: ${user ? `Name: ${profile?.full_name || 'Customer'}, Email: ${user.email}` : 'Guest (not logged in)'}
+Customer: ${user ? `${profile?.full_name || 'Customer'} (${user.email})` : 'Guest'}
 
-YOUR CAPABILITIES — you can handle ALL of these autonomously:
-- Order tracking and status updates
-- Cancellations (within policy: 2 minutes of placing, or if driver not yet assigned)
-- Refund requests (process for: wrong items, quality issues, late delivery over 45 mins, damaged goods)
-- Missing items from orders
-- Delivery address problems
-- Payment disputes
-- Product complaints
-- Account issues (password reset, profile updates)
-- App technical problems
+RESOLUTION PLAYBOOK — always offer clear options:
 
-POLICIES:
-- Cancellation: Free within 2 minutes OR if driver not yet assigned. After pickup, cannot cancel.
-- Refunds: Issued within 3-5 business days. Full refund for wrong/missing items, quality issues.
-- Late delivery: Over 45 minutes qualifies for 20% discount on next order.
-- Delivery fee (3.50 euros) is non-refundable unless order was our error.
-- Age-restricted items require ID at delivery — no refund if customer cannot provide ID.
+REFUNDS & MISSING ITEMS:
+- Always offer TWO choices: (1) Isla Drop credit added instantly to their account, or (2) bank refund in 3-5 business days
+- Credit is the faster option and you should mention it first — "I can add €X credit to your account right now, or process a bank refund which takes 3-5 business days. Which would you prefer?"
+- For missing items: full refund or credit for the missing item value
+- For wrong items: full refund or replacement on next order + credit for the inconvenience
+- For quality issues: partial or full refund depending on severity
 
-RESOLUTION APPROACH:
-1. Acknowledge the issue with genuine empathy
-2. Ask for order number if relevant (format: ISD-XXXXX)
-3. Provide a clear, immediate resolution or next steps
-4. Offer compensation proactively when appropriate (discount codes, refunds)
-5. Always end with confirmation of what will happen next
+CANCELLATIONS:
+- Within 2 minutes of ordering: full refund, no questions asked
+- Driver not yet assigned: try to cancel, offer credit if successful
+- Driver already collected: cannot cancel, but offer goodwill credit of 10% of order value for the inconvenience
 
-IMPORTANT:
-- Be genuinely helpful, not robotic
+LATE DELIVERIES:
+- Our guarantee: if the order arrives more than 30 minutes PAST the estimated arrival time shown in the app, the customer receives 10% credit automatically
+- If the order arrives (even late), there is no refund — only the 10% credit if over 30 mins past ETA
+- If the order never arrived: full refund
+- Always acknowledge the frustration, check if the order has actually arrived yet before offering anything
+- Do not offer credit proactively unless the 30-min-past-ETA threshold is confirmed
+
+ACCOUNT ISSUES:
+- Password: direct them to the Forgot Password link in the sign-in screen
+- Payment issues: ask them to check their card details in their banking app first
+
+TONE RULES:
+- Be warm and human, never robotic or scripted
 - Use the customer name if you know it
-- Keep responses concise but complete (under 150 words)
-- Never say "I cannot" — always find a solution or escalate path
-- If a real human agent is needed: "I am escalating this to our team — you will hear back within 30 minutes via email."
-- Email for urgent issues: support@isladrop.net | Phone: +34 XXX XXX XXX`
+- Acknowledge frustration genuinely before jumping to solutions
+- Always end with what will happen next and a timeframe
+- Keep responses under 120 words but make them count
+- Use line breaks to make options easy to read
+- If you cannot resolve something: "I am flagging this for our team — you will hear from us at ${user?.email || 'your email'} within 30 minutes"
+
+Contact: support@isladrop.net | concierge@isladrop.net``
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -63,13 +66,13 @@ IMPORTANT:
 // Fallback local support responses
 function localSupport(input) {
   const q = input.toLowerCase()
-  if (q.includes('cancel')) return "To cancel your order, please act quickly — cancellations are accepted within 2 minutes of placing, or before a driver is assigned. Email support@isladrop.net immediately with your order number and we will do our best to help."
-  if (q.includes('refund')) return "We are sorry to hear that! Refunds are processed within 3-5 business days. For wrong items, missing items or quality issues we offer a full refund. Please email support@isladrop.net with your order number and a photo if applicable."
-  if (q.includes('missing') || q.includes('wrong item')) return "We sincerely apologise for this! Please email support@isladrop.net with your order number and which items were missing or incorrect — we will arrange a refund or replacement immediately."
-  if (q.includes('late') || q.includes('where is')) return "We are sorry for the delay! If your order is over 45 minutes late, you qualify for a 20% discount on your next order. Please email support@isladrop.net with your order number."
-  if (q.includes('track') || q.includes('status')) return "Once a driver is assigned to your order, you will see live tracking on your order status screen. If you placed an order and are not seeing updates, email support@isladrop.net with your order number."
-  if (q.includes('account') || q.includes('password') || q.includes('login')) return "For account issues, use the Forgot Password link on the sign in screen. If you are still having trouble, email support@isladrop.net and we will sort it within the hour."
-  return "Thank you for reaching out! Our support team is available 24/7. For the fastest response please email support@isladrop.net with your order number and details of the issue — we aim to respond within 30 minutes."
+  if (q.includes('cancel')) return "Let me help with that right away.\n\nCancellations are free within 2 minutes of placing your order. If your driver has not yet been assigned, email support@isladrop.net with your order number and we will do our best to cancel it.\n\nIf a driver is already on the way, we cannot cancel — but I can offer you 10% credit as a goodwill gesture. Just let us know!"
+  if (q.includes('refund')) return "Of course — here are your options:\n\n💳 Instant credit added to your account right now\n🏦 Bank refund in 3-5 business days\n\nMost customers prefer the instant credit! Which would you like? Please email support@isladrop.net with your order number and we will sort it within the hour."
+  if (q.includes('missing') || q.includes('wrong item')) return "I am really sorry about that — that is not the standard we hold ourselves to.\n\nI can arrange either:\n💳 Instant credit to your account for the missing items\n🏦 A refund to your bank in 3-5 business days\n\nPlease email support@isladrop.net with your order number and a photo if possible. We will resolve this immediately."
+  if (q.includes('late') || q.includes('where is')) return "I understand — let me explain how our delivery guarantee works.\n\nAs long as your order arrives we do not charge any extra, but if it arrives more than 30 minutes past the estimated time shown in the app:\n💳 10% credit added to your account\n\nThis is applied automatically once confirmed. Email support@isladrop.net with your order number if you believe this applies and we will check immediately."
+  if (q.includes('track') || q.includes('status')) return "Once a driver accepts your order you will see live tracking right in the app on your order status screen.\n\nIf something does not look right, email support@isladrop.net with your order number and we will check the status immediately — we aim to respond within 15 minutes."
+  if (q.includes('account') || q.includes('password') || q.includes('login')) return "For a forgotten password, tap 'Forgot password?' on the sign-in screen and we will email you a reset link straight away.\n\nFor anything else account-related, email support@isladrop.net and we will sort it within the hour."
+  return "Thank you for getting in touch — our support team is here 24/7.\n\nFor the fastest response, email support@isladrop.net with your order number and a brief description. We aim to reply within 15 minutes during peak hours.\n\nIs there anything specific I can help you with right now?"
 }
 
 export default function SupportChat({ onBack }) {
