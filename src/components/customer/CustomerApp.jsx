@@ -19,6 +19,8 @@ import GroupOrder from './GroupOrder'
 import ScheduleOrder from './ScheduleOrder'
 import ClubCalendar from './ClubCalendar'
 import ArrivalPackage from './ArrivalPackage'
+import OrderChat from './OrderChat'
+import OrderRating from './OrderRating'
 // supabase imported dynamically inside functions to prevent blank screen
 
 const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', CONCIERGE:'concierge', PARTY:'party', GROUP:'group', CLUBS:'clubs', ARRIVAL:'arrival', GIFT:'gift', SPEND:'spend', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
