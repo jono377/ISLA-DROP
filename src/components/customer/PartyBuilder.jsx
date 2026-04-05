@@ -74,7 +74,7 @@ const PACKAGE_TYPES = [
       { value:'pre_drinks',      label:'🍹 Pre-drinks',       desc:'Getting the night started right' },
       { value:'girls_night',     label:'💅 Girls Night',      desc:'Champagne, glamour, good times' },
       { value:'lads_night',      label:'🍺 Lads Night',       desc:'Shots, banter, beers' },
-      { value:'gentlemans',      label:'🎩 Gentleman\'s Night', desc:'Premium spirits, cigars, class' },
+      { value:'gentlemans',      label:"🎩 Gentleman's Night", desc:'Premium spirits, cigars, class' },
       { value:'date_night',      label:'💕 Date Night',       desc:'Intimate, romantic, memorable' },
       { value:'birthday_night',  label:'🎂 Birthday Night',   desc:'Make it legendary' },
     ]
@@ -337,9 +337,9 @@ function PackageTypeSelector({ onSelect }) {
 }
 
 // ── Main PartyBuilder ─────────────────────────────────────────
-export default function PartyBuilder({ onBack }) {
-  const [step, setStep]       = useState('select') // select | form | result
-  const [packageType, setPkgType] = useState(null)
+export default function PartyBuilder({ onBack, initialType }) {
+  const [step, setStep]       = useState(initialType ? 'form' : 'select')
+  const [packageType, setPkgType] = useState(initialType || null)
   const [pkg, setPkg]         = useState(null)
   const [details, setDetails] = useState(null)
 
@@ -348,7 +348,7 @@ export default function PartyBuilder({ onBack }) {
 
   const handleBack = () => {
     if (step === 'result') { setStep('form'); return }
-    if (step === 'form')   { setStep('select'); return }
+    if (step === 'form')   { if (initialType) { onBack(); return } setStep('select'); return }
     onBack()
   }
 

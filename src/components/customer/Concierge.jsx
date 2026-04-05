@@ -737,10 +737,33 @@ function DesignExperience({ onBook }) {
 
       {result && (
         <>
-          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, fontFamily: 'DM Sans,sans-serif', whiteSpace: 'pre-wrap' }}>
-            {result.text}
+          {/* Handle both old {text} and new {title,intro,timeline} formats */}
+          {result.title && (
+            <div style={{ marginBottom:14 }}>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:4 }}>{result.title}</div>
+              {result.vibe_tags && <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>{result.vibe_tags.map((t,i) => <span key={i} style={{ fontSize:11, background:'rgba(255,255,255,0.1)', borderRadius:20, padding:'3px 9px', color:'rgba(255,255,255,0.6)' }}>{t}</span>)}</div>}
+            </div>
+          )}
+          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px 16px', marginBottom: 14, fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, fontFamily: 'DM Sans,sans-serif', whiteSpace: 'pre-wrap' }}>
+            {result.intro || result.text}
           </div>
-          {result.services.length > 0 && (
+          {result.timeline && result.timeline.map((item, i) => (
+            <div key={i} style={{ display:'flex', gap:12, marginBottom:12, background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'10px 12px' }}>
+              <div style={{ flexShrink:0, textAlign:'right', minWidth:52 }}>
+                <div style={{ fontSize:12, fontWeight:500, color:'#E8A070', fontFamily:'DM Sans,sans-serif' }}>{item.time}</div>
+              </div>
+              <div>
+                <div style={{ fontSize:13, fontWeight:500, color:'white', fontFamily:'DM Sans,sans-serif', marginBottom:3 }}>{item.activity}</div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,0.55)', lineHeight:1.5, fontFamily:'DM Sans,sans-serif' }}>{item.detail}</div>
+              </div>
+            </div>
+          ))}
+          {result.isla_insight && (
+            <div style={{ background:'rgba(196,104,58,0.15)', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:10, padding:'10px 12px', marginBottom:14, fontSize:12, color:'#E8A070', lineHeight:1.5, fontFamily:'DM Sans,sans-serif' }}>
+              <span style={{ fontWeight:500 }}>Isla insider: </span>{result.isla_insight}
+            </div>
+          )}
+          {result.services && result.services.length > 0 && (
             <>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10, fontFamily: 'DM Sans,sans-serif' }}>INCLUDED IN YOUR ITINERARY</div>
               {result.services.map(s => <ServiceCard key={s.id} service={s} onBook={onBook} onDirections={() => {}} />)}

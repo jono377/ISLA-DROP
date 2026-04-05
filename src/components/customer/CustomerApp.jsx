@@ -570,13 +570,13 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <div style={{ padding:'0 16px', marginBottom:20 }}>
             <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:12 }}>Design Your Experience</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-              <div onClick={()=>{ navigate(VIEWS.PARTY) }}
+              <div onClick={()=>{ setPartyType('design_night'); navigate(VIEWS.PARTY) }}
                 style={{ background:'linear-gradient(135deg,rgba(90,30,120,0.7),rgba(30,60,120,0.7))', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:16, padding:'18px 14px', cursor:'pointer' }}>
                 <div style={{ fontSize:36, marginBottom:8 }}>🌙</div>
                 <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:4 }}>Design Your Night</div>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', lineHeight:1.4 }}>Club nights, villa parties, pre-drinks & more</div>
               </div>
-              <div onClick={()=>{ navigate(VIEWS.PARTY) }}
+              <div onClick={()=>{ setPartyType('design_day'); navigate(VIEWS.PARTY) }}
                 style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.6),rgba(200,140,30,0.5))', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:16, padding:'18px 14px', cursor:'pointer' }}>
                 <div style={{ fontSize:36, marginBottom:8 }}>☀️</div>
                 <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:4 }}>Design Your Day</div>
@@ -618,6 +618,7 @@ export default function CustomerApp() {
   const [prevCategoryKey, setPrevCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
   const [activeOrder, setActiveOrder] = useState(null)
+  const [partyType, setPartyType]       = useState(null)
   const { user } = useAuthStore()
   const cart = useCartStore()
   const t    = useT(lang)
@@ -822,7 +823,7 @@ export default function CustomerApp() {
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.PARTY     && <PartyBuilder onBack={goBack} />}
+      {view===VIEWS.PARTY     && <PartyBuilder initialType={partyType} onBack={goBack} />}
       {view===VIEWS.ASSIST   && <AssistBot onClose={goBack} />}
       {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={goBack} />}
       {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={goBack} />}
