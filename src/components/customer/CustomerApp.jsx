@@ -325,22 +325,86 @@ function SearchView({ t }) {
   const aiLastCall = { ts: 0 }
   const runAiSearch = async (q) => {
     const now = Date.now()
-    if (now - aiLastCall.ts < 2000) return // 2s rate limit
+    if (now - aiLastCall.ts < 2000) return
     aiLastCall.ts = now
-    if (!q || q.length < 3) return
+    if (!q || q.length < 2) return
     setAiLoading(true)
     try {
-      const isCocktail = /cocktail|mojito|margarita|negroni|spritz|martini|cosmo|sangria|pina|bellini|daiquiri|espresso martini|gin.tonic|whisky sour/i.test(q)
-      const isDate = /date night|romantic|couple/i.test(q)
+      // First: try direct keyword matching for common queries
+      const ql = q.toLowerCase()
+      
+      // Keyword map — returns product categories/subcategories to filter by
+      const keywordMap = [
+        { keys:['pre drink','predrink','night out','pre-drink','shots','club'], cats:['spirits'], subs:['vodka','gin','tequila','rum'], extras:['sd-025','sd-003','ic-002','sd-028'] },
+        { keys:['mojito'], ids:['sp-012','fr-002','sd-023','ic-001','ck-003'] },
+        { keys:['gin tonic','g&t','gin and tonic'], ids:['ck-004','sp-001','sd-025','fr-001','ic-001'] },
+        { keys:['aperol','spritz'], ids:['ck-002','sp-019','ch-010','sd-024'] },
+        { keys:['espresso martini'], ids:['ck-005','sp-004','sp-022'] },
+        { keys:['margarita'], ids:['ck-006','sp-035','fr-002','ic-001'] },
+        { keys:['cocktail','mixer kit'], cats:['cocktail'] },
+        { keys:['hangover','recovery','morning after'], ids:['wl-014','wl-013','wt-001','wt-003','sd-019'] },
+        { keys:['pool party','pool'], cats:['party','beach'], extras:['wt-002','br-001','sd-003'] },
+        { keys:['ladies night','girls night','prosecco','champagne night'], cats:['champagne'], extras:['wn-021','ic-001','ck-013'] },
+        { keys:['boys night','lads night','beer'], cats:['beer_cider'], extras:['sp-035','sd-028','sn-001'] },
+        { keys:['date night','romantic','couple'], ids:['ch-001','wn-021','ic-001','ck-013','ck-005'] },
+        { keys:['whisky','whiskey','gentleman'], cats:['spirits'], subs:['whiskey'], extras:['wn-001','sn-029'] },
+        { keys:['beach','sun'], cats:['beach','essentials','water','soft_drinks'] },
+        { keys:['snack','nibble','food'], cats:['snacks'] },
+        { keys:['birthday'], ids:['ch-001','ch-010','ic-001','ck-013','party-001'] },
+        { keys:['sundowner','sunset'], ids:['wn-021','sp-001','sd-025','ch-010','ic-001'] },
+        { keys:['water','hydrat'], cats:['water'] },
+        { keys:['wine','red wine','white wine','rose','rosé'], cats:['wine'] },
+        { keys:['beer','lager','pint'], cats:['beer_cider'] },
+        { keys:['spirit','vodka','gin','rum','tequila'], cats:['spirits'] },
+        { keys:['ice'], cats:['ice'] },
+        { keys:['tobacco','cigarette','cigar','smoke'], cats:['tobacco'] },
+        { keys:['wellness','vitamin','health'], cats:['wellness'] },
+      ]
 
-      const catalogue = PRODUCTS.map(p => p.id + '|' + p.name + '|' + p.category + '|€' + p.price.toFixed(2)).join('\n')
+      let matched = []
+      for (const rule of keywordMap) {
+        if (rule.keys.some(k => ql.includes(k))) {
+          if (rule.ids) {
+            matched = [...matched, ...rule.ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)]
+          }
+          if (rule.cats) {
+            const catProds = PRODUCTS.filter(p => rule.cats.includes(p.category))
+            if (rule.subs) matched = [...matched, ...catProds.filter(p => rule.subs.includes(p.sub)).slice(0,4)]
+            else matched = [...matched, ...catProds.filter(p => p.popular).slice(0,4)]
+          }
+          if (rule.extras) {
+            matched = [...matched, ...rule.extras.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)]
+          }
+        }
+      }
 
-      const systemNote = isCocktail
-        ? 'This is a cocktail search. Think about which cocktail the customer wants and find ALL the individual ingredients plus a cocktail kit if available. Also suggest garnishes and ice.'
-        : isDate
-        ? 'This is a date night search. Suggest premium romantic products — quality wine or champagne, a cocktail kit, candles, nice snacks. Keep it intimate and elegant, not excessive.'
-        : ''
+      // Deduplicate
+      const seen = new Set()
+      matched = matched.filter(p => p && !seen.has(p.id) && seen.add(p.id)).slice(0,12)
 
+      if (matched.length > 0) {
+        setAiResults(matched)
+        setAiUsed(true)
+        setAiLoading(false)
+        return
+      }
+
+      // Fallback: text search across product names
+      const textMatch = PRODUCTS.filter(p =>
+        p.name.toLowerCase().includes(ql) ||
+        p.category.toLowerCase().includes(ql) ||
+        (p.sub && p.sub.toLowerCase().includes(ql))
+      ).slice(0,12)
+
+      if (textMatch.length > 0) {
+        setAiResults(textMatch)
+        setAiUsed(true)
+        setAiLoading(false)
+        return
+      }
+
+      // Last resort: Claude API for truly ambiguous queries
+      const catalogue = PRODUCTS.map(p => p.id + '|' + p.name + '|' + p.category).join('\n')
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -351,11 +415,8 @@ function SearchView({ t }) {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 300,
-          messages: [{
-            role: 'user',
-            content: 'You are a smart product search for Isla Drop, an Ibiza delivery service. Find the most relevant products for this search query. ' + systemNote + '\n\nSEARCH: ' + q + '\n\nBe creative and smart:\n- "cocktail night" -> gin, vodka, rum, tequila, cocktail kits, mixers, lemon/lime garnish kit, ice, shot glasses\n- "mojito" -> white rum, fresh mint, limes, sugar syrup/grenadine, soda water, ice, cocktail kit\n- "gin and tonic" -> gin & tonic kit or gin + Fever-Tree tonic, lime, ice\n- "margarita" -> margarita kit or tequila + triple sec + lime, salt, ice\n- "aperol spritz" -> Aperol spritz kit or Aperol + Prosecco + soda\n- "espresso martini" -> espresso martini kit or vodka + Kahlua + espresso\n- "hangover" -> Dioralyte, Alka-Seltzer, paracetamol, coconut water, water\n- "pool party" -> inflatables, cold beers, water, soft drinks, ice\n- "ladies night" -> champagne, prosecco, rose, Aperol, garnish kit\n- "boys night" -> beers, tequila, sambuca, mixers, crisps\n- "date night" -> premium wine or champagne, cocktail kit, candles, light snacks\n- "sundowner" -> rose wine, gin, tonic, Aperol, Prosecco, ice\n\nCATALOGUE (id|name|category|price):\n' + catalogue + '\n\nReturn ONLY a JSON array of up to 12 product IDs: ["id1","id2","id3"]'
-          }]
+          max_tokens: 200,
+          messages: [{ role:'user', content: 'Find up to 10 products for: "' + q + '". Return ONLY a JSON array of IDs: ["id1","id2"]. Catalogue:\n' + catalogue }]
         })
       })
       if (!resp.ok) throw new Error('API error')
@@ -364,9 +425,10 @@ function SearchView({ t }) {
       const ids = JSON.parse(raw.replace(/```json|```/g, '').trim())
       const found = ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
       if (found.length > 0) { setAiResults(found); setAiUsed(true) }
-    } catch { /* fall through to text results */ }
+    } catch { /* fall through */ }
     setAiLoading(false)
   }
+
 
 
   const handleChange = (val) => {
@@ -598,51 +660,16 @@ function OnSaleSection({ t }) {
 // ── Just Landed Banner ────────────────────────────────────────
 // Shows when: first visit, long absence (2+ days), or Ibiza location detected
 function JustLandedBanner({ onArrival }) {
-  const [show, setShow] = useState(false)
-  const { user } = useAuthStore()
-
-  useEffect(() => {
-    const check = async () => {
-      try {
-        // Check last seen timestamp
-        const lastSeen = localStorage.getItem('isla_last_seen')
-        const now = Date.now()
-        const twoDaysMs = 2 * 24 * 60 * 60 * 1000
-
-        const isFirstVisit = !lastSeen
-        const isLongAbsence = lastSeen && (now - parseInt(lastSeen)) > twoDaysMs
-        const dismissed = sessionStorage.getItem('isla_arrived_dismissed')
-
-        if (dismissed) return
-
-        if (isFirstVisit || isLongAbsence) {
-          // Check if in Ibiza via geolocation (optional, non-blocking)
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-              const { latitude, longitude } = pos.coords
-              // Ibiza bounding box: lat 38.85-39.05, lng 1.25-1.65
-              const inIbiza = latitude > 38.85 && latitude < 39.05 && longitude > 1.25 && longitude < 1.65
-              if (inIbiza || isFirstVisit) setShow(true)
-            }, () => {
-              // No location permission — show if long absence or first visit
-              if (isFirstVisit || isLongAbsence) setShow(true)
-            }, { timeout: 3000 })
-          } else {
-            if (isFirstVisit || isLongAbsence) setShow(true)
-          }
-        }
-        localStorage.setItem('isla_last_seen', now.toString())
-      } catch {}
-    }
-    setTimeout(check, 1500) // slight delay so home screen loads first
-  }, [])
+  const [dismissed, setDismissed] = useState(
+    () => sessionStorage.getItem('isla_arrived_dismissed') === '1'
+  )
 
   const dismiss = () => {
     sessionStorage.setItem('isla_arrived_dismissed', '1')
-    setShow(false)
+    setDismissed(true)
   }
 
-  if (!show) return null
+  if (dismissed) return null
 
   return (
     <div style={{ padding:'0 16px', marginBottom:14 }}>
