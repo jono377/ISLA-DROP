@@ -5,7 +5,9 @@ import { useAuthStore } from '../../lib/store'
 const isSupabaseConfigured = () => {
   const url = import.meta.env.VITE_SUPABASE_URL
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY
-  return !!(url && url.startsWith('https://') && key && key.length > 10)
+  // Must have real values - not placeholders
+  return !!(url && url.startsWith('https://') && url.includes('supabase') && 
+            !url.includes('placeholder') && key && key.length > 20)
 }
 
 export default function AuthScreen({ onClose }) {
@@ -74,7 +76,7 @@ export default function AuthScreen({ onClose }) {
         setMode('signin')
       }
     } catch (err) {
-      console.error('Auth error:', err)
+      console.error('Auth error full:', err, 'URL:', import.meta.env.VITE_SUPABASE_URL?.slice(0,30))
       // Translate common Supabase error messages
       const msg = err.message || 'Something went wrong'
       if (msg.includes('Invalid login credentials')) {
@@ -87,6 +89,8 @@ export default function AuthScreen({ onClose }) {
         toast.error('Password must be at least 6 characters')
       } else if (msg.includes('latch') || msg.includes('placeholder') || msg.includes('fetch')) {
         toast.error('Connection error — please check your internet and try again')
+      } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('fetch')) {
+        toast.error('Cannot connect to server. Check your internet connection.')
       } else {
         toast.error(msg)
       }
