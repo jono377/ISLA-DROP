@@ -7,9 +7,12 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
 // ── AI Package Builder ────────────────────────────────────────
 async function buildPackage(details) {
-  const catalogue = PRODUCTS.map(p =>
-    p.id + '|' + p.name + '|' + p.category + '|€' + p.price.toFixed(2) + (p.popular ? '|popular' : '')
-  ).join('\n')
+  // Send focused catalogue — drinks, food, party essentials (skip wellness/beach/essentials for smaller prompt)
+  const relevantCats = ['spirits','champagne','wine','beer_cider','soft_drinks','water','ice','snacks','party','fresh','tobacco']
+  const catalogue = PRODUCTS
+    .filter(p => relevantCats.includes(p.category))
+    .map(p => p.id + '|' + p.name + '|' + p.category + '|€' + p.price.toFixed(2) + (p.popular ? '|*' : ''))
+    .join('\n')
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -21,18 +24,44 @@ async function buildPackage(details) {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 1500,
+      max_tokens: 4000,
       messages: [{
         role: 'user',
-        content: 'You are Isla — the most knowledgeable, creative and indulgent party planner in Ibiza. You know every bar trick, every crowd-pleaser, every hidden gem. Build a SPECTACULAR package.\n\nPACKAGE TYPE: ' + details.packageType + '\nGUESTS: ' + details.guests + '\nVIBE: ' + details.vibe + '\nDURATION: ' + details.duration + '\nBUDGET: ' + (details.budget === 'no_limit' ? 'No limit — make it legendary' : 'up to €' + details.budget) + '\nALCOHOL: ' + details.alcohol + '\nTIME: ' + details.time + '\nNOTES: ' + (details.notes || 'None') + '\n\nPRODUCTS (id|name|category|price|popular?):\n' + catalogue + '\n\nBe CREATIVE and SPECIFIC:\n- Calculate exact quantities (e.g. "3 bottles of Whispering Angel = 1.5 glasses each for 12 guests over 2 hours")\n- Think like a professional — pre-party ice, garnishes for cocktails, snacks that pair with drinks\n- For pool parties: floating holders, water guns, inflatables\n- For birthdays: sparkler candles, confetti, celebratory champagne\n- For date nights: fewer but premium choices, romantic touches\n- For lads nights: shots, mixers, beer pong, snacks\n- For gentlemans evenings: premium spirits, cigars, quality over quantity\n- Always include ice, citrus garnishes for cocktail-style events\n- Think: what would a Michelin-star hospitality team stock?\n\nReturn ONLY this JSON (no markdown):\n{\n  "package_name": "Creative evocative name",\n  "tagline": "One punchy line",\n  "hero_emoji": "🎉",\n  "sections": [\n    {\n      "title": "Section name",\n      "emoji": "🍾",\n      "items": [\n        { "product_id": "ch-001", "quantity": 3, "reason": "Specific why — mention quantities and maths" }\n      ]\n    }\n  ],\n  "hosting_tips": ["Creative specific tip 1", "Tip 2", "Tip 3"],\n  "isla_note": "Personal message from Isla — warm, specific, excited about THIS party"\n}'
+        content: 'You are Isla, the greatest party planner in Ibiza. No budget is too big, no party too ambitious. You have planned 1000-person raves, intimate villa soirees, legendary boat parties. Build the PERFECT package right now.\n\nEVENT DETAILS:\nType: ' + details.packageType + '\nVibe: ' + details.vibe + '\nGuests: ' + details.guests + '\nDuration: ' + details.duration + ' hours\nBudget: ' + (details.budget === 'no_limit' ? 'UNLIMITED - go all out' : 'up to EUR' + details.budget) + '\nAlcohol: ' + details.alcohol + '\nTime of day: ' + details.time + '\nSpecial requests: ' + (details.notes || 'none') + '\n\nAVAILABLE PRODUCTS (id|name|category|price|*=popular):\n' + catalogue + '\n\nRULES:\n- ONLY use product IDs from the catalogue above - never invent IDs\n- Max 6 sections, max 8 items per section\n- Quantities must be realistic integers\n- Always include ice and mixers for spirit events\n- Always include soft drink alternatives\n- Reason field: be specific about why and how many\n\nRespond with ONLY valid JSON, no markdown, no text before or after:\n{"package_name":"name","tagline":"one line","hero_emoji":"emoji","sections":[{"title":"title","emoji":"emoji","items":[{"product_id":"id","quantity":1,"reason":"why"}]}],"hosting_tips":["tip1","tip2","tip3"],"isla_note":"personal note"}'
       }]
     })
   })
 
-  if (!resp.ok) throw new Error('API error: ' + resp.status)
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '')
+    throw new Error('API ' + resp.status + ': ' + errText.slice(0, 100))
+  }
   const data = await resp.json()
   const raw = data.content?.[0]?.text || '{}'
-  return JSON.parse(raw.replace(/```json|```/g, '').trim())
+  const cleaned = raw.replace(/```json|```/g, '').trim()
+  
+  // Try to parse — if truncated JSON, attempt to recover
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    // Try to extract partial JSON up to last complete section
+    const lastBrace = cleaned.lastIndexOf('}')
+    const lastBracket = cleaned.lastIndexOf(']')
+    const cutPoint = Math.max(lastBrace, lastBracket)
+    if (cutPoint > 100) {
+      try {
+        // Close any open arrays/objects to make valid JSON
+        let partial = cleaned.slice(0, cutPoint + 1)
+        // Count unclosed brackets
+        let opens = (partial.match(/\[/g)||[]).length - (partial.match(/\]/g)||[]).length
+        let braces = (partial.match(/\{/g)||[]).length - (partial.match(/\}/g)||[]).length
+        for (let i = 0; i < opens; i++) partial += ']'
+        for (let i = 0; i < braces; i++) partial += '}'
+        return JSON.parse(partial)
+      } catch {}
+    }
+    throw new Error('JSON parse failed — response may have been truncated')
+  }
 }
 
 // ── Package Item Card ─────────────────────────────────────────
@@ -113,8 +142,16 @@ function PackageForm({ packageType, onBuild, onBack }) {
       const pkg = await buildPackage(form)
       onBuild(pkg, form)
     } catch (err) {
-      console.error(err)
-      toast.error('Could not build package right now — please try again')
+      console.error('Package build error:', err)
+      // Retry once automatically
+      try {
+        const pkg = await buildPackage({ ...form, retry: true })
+        onBuild(pkg, form)
+        return
+      } catch (err2) {
+        console.error('Retry failed:', err2)
+        toast.error('Isla is very busy right now — tap Build again and she will get it done!')
+      }
     }
     setBuilding(false)
   }
