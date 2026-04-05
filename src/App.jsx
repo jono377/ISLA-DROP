@@ -115,7 +115,7 @@ function AppInner() {
     return <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh' }}><DriverApp /></div>
   }
   if (user && profile?.role === 'ops') {
-    return <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh' }}><OpsApp /></div>
+    return <OpsApp />
   }
 
   // Staff portal (not logged in)
@@ -123,8 +123,10 @@ function AppInner() {
 
   // Customer app
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', position: 'relative' }}>
-      <CustomerApp />
+    <div style={{ minHeight: '100vh', background:'#0A2A38', display:'flex', justifyContent:'center' }}>
+      <div style={{ width:'100%', maxWidth:480, position:'relative', background:'linear-gradient(170deg,#0A2A38,#0D3545)', minHeight:'100vh' }}>
+        <CustomerApp />
+      </div>
     </div>
   )
 }
