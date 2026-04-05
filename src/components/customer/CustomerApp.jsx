@@ -884,10 +884,10 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
           )}
 
-          {/* Concierge Highlights carousel */}
-          <div style={{ marginBottom:24 }}>
-                  <OnSaleSection t={t} />
+          <JustLandedBanner onArrival={() => navigate(VIEWS.ARRIVAL)} />
+          <OnSaleSection t={t} />
           <RecentlyViewedSection />
+          <SmartReorderSection />
           {/* Design Your Experience cards */}
           <div style={{ padding:'0 16px', marginBottom:20 }}>
             <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:12 }}>Design Your Experience</div>
