@@ -35,7 +35,7 @@ function CheckoutForm({ total, onSuccess, onCancel }) {
     const { error: payError } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/order-confirmed`,
+        return_url: window.location.origin + '/order-confirmed',
       },
       redirect: 'if_required',
     })
@@ -77,7 +77,7 @@ function CheckoutForm({ total, onSuccess, onCancel }) {
               Processing...
             </>
           ) : (
-            `Pay €${total.toFixed(2)}`
+            'Pay €' + total.toFixed(2)
           )}
         </button>
       </div>
@@ -91,12 +91,53 @@ export default function StripeCheckout({ onSuccess, onCancel }) {
   const [clientSecret, setClientSecret] = useState(null)
   const [paymentIntentId, setPaymentIntentId] = useState(null)
   const [loadError, setLoadError] = useState(null)
+  const [discountCode, setDiscountCode] = useState('')
+  const [appliedDiscount, setAppliedDiscount] = useState(null)
+  const [codeChecking, setCodeChecking] = useState(false)
+  const [codeError, setCodeError] = useState('')
   const { user } = useAuthStore()
   const cart = useCartStore()
 
+  const subtotal = cart.getTotal()
+  const discountAmount = appliedDiscount
+    ? appliedDiscount.discount_type === 'percentage'
+      ? Math.round(subtotal * (appliedDiscount.discount_value / 100) * 100) / 100
+      : appliedDiscount.discount_type === 'fixed'
+        ? Math.min(appliedDiscount.discount_value, subtotal)
+        : 0
+    : 0
+  const finalTotal = Math.max(0, subtotal - discountAmount)
+
+  const applyCode = async () => {
+    const code = discountCode.trim().toUpperCase()
+    if (!code) return
+    setCodeChecking(true)
+    setCodeError('')
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      const { data, error } = await supabase
+        .from('discount_codes')
+        .select('*')
+        .eq('code', code)
+        .eq('active', true)
+        .single()
+
+      if (error || !data) { setCodeError('Invalid or expired code'); setCodeChecking(false); return }
+      if (data.valid_until && new Date(data.valid_until) < new Date()) { setCodeError('This code has expired'); setCodeChecking(false); return }
+      if (data.max_uses && data.uses_count >= data.max_uses) { setCodeError('This code has reached its usage limit'); setCodeChecking(false); return }
+      if (data.min_order_value && subtotal < data.min_order_value) { setCodeError('Minimum order €' + data.min_order_value + ' required for this code'); setCodeChecking(false); return }
+
+      setAppliedDiscount(data)
+      setCodeError('')
+    } catch { setCodeError('Could not verify code — try again') }
+    setCodeChecking(false)
+  }
+
+  const removeCode = () => { setAppliedDiscount(null); setDiscountCode(''); setCodeError('') }
+
   useEffect(() => {
     createPaymentIntent({
-      amount: cart.getTotal(),
+      amount: finalTotal,
       currency: 'eur',
       customerId: user?.id,
     })
