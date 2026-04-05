@@ -87,6 +87,8 @@ export async function createOrder({ customerId, items, deliveryLat, deliveryLng,
       total,
       stripe_payment_intent_id: paymentIntentId,
       status: 'pending',
+      estimated_minutes: 25,
+      original_eta: new Date(Date.now() + 25 * 60000).toISOString(),
     })
     .select()
     .single()
