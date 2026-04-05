@@ -346,3 +346,43 @@ create trigger auto_delivery_pin
 alter table public.orders drop constraint if exists orders_status_check;
 alter table public.orders add constraint orders_status_check
   check (status in ('pending','assigned','warehouse_confirmed','en_route','delivered','cancelled'));
+
+-- ── CUSTOMER CREDIT ───────────────────────────────────────────
+create table public.customer_credit (
+  id          uuid primary key default gen_random_uuid(),
+  customer_id uuid references public.profiles(id) on delete cascade,
+  amount      numeric(10,2) not null,
+  type        text not null check (type in ('credit','used','refund','bonus')),
+  description text,
+  order_id    uuid,
+  created_at  timestamptz default now()
+);
+alter table public.customer_credit enable row level security;
+create policy "Customers read own credit" on public.customer_credit
+  for select using (customer_id = auth.uid());
+create policy "Ops manage credit" on public.customer_credit
+  for all using (exists (select 1 from public.profiles where id = auth.uid() and role = 'ops'));
+
+-- ── SUPPORT TICKETS (for cashback requests etc) ───────────────
+create table public.support_tickets (
+  id          uuid primary key default gen_random_uuid(),
+  customer_id uuid references public.profiles(id) on delete set null,
+  type        text not null,
+  message     text,
+  status      text default 'open' check (status in ('open','in_progress','resolved','closed')),
+  created_at  timestamptz default now()
+);
+alter table public.support_tickets enable row level security;
+create policy "Customers create tickets" on public.support_tickets
+  for insert with check (customer_id = auth.uid());
+create policy "Ops manage tickets" on public.support_tickets
+  for all using (exists (select 1 from public.profiles where id = auth.uid() and role = 'ops'));
+
+-- ── Driver approval status ────────────────────────────────────
+alter table public.profiles add column if not exists status text default 'active'
+  check (status in ('active','pending','suspended'));
+
+alter table public.drivers add column if not exists status text default 'active'
+  check (status in ('active','pending','suspended'));
+
+alter table public.drivers add column if not exists licence_number text;
