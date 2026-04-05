@@ -421,7 +421,7 @@ export default function OpsApp() {
 
       {/* Sub-tabs */}
       <div style={{ display: 'flex', background: '#F5F0E8', borderBottom: '0.5px solid rgba(42,35,24,0.12)' }}>
-        {['overview', 'orders', 'fleet', 'map', 'stock', 'sale', 'discounts', 'concierge', 'drivers', 'images'].map(t => (
+        {['analytics', 'forecast', 'overview', 'orders', 'customers', 'fleet', 'map', 'stock', 'suppliers', 'sale', 'discounts', 'banners', 'winback', 'pipeline', 'partners', 'concierge', 'drivers', 'earnings', 'activity', 'images'].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -446,6 +446,16 @@ export default function OpsApp() {
         {tab === 'images' && <div style={{ margin:'0 -16px' }}><ImageManager /></div>}
         {tab === 'stock' && <StockManager />}
         {tab === 'sale' && <SaleManager />}
+        {tab === 'analytics' && <Analytics />}
+        {tab === 'customers' && <CustomerProfiles />}
+        {tab === 'forecast' && <DemandForecast />}
+        {tab === 'pipeline' && <ConciergePipeline />}
+        {tab === 'partners' && <PartnerManager />}
+        {tab === 'activity' && <ActivityLog />}
+        {tab === 'suppliers' && <SupplierManager />}
+        {tab === 'winback' && <WinBackManager />}
+        {tab === 'banners' && <PromoBannerManager />}
+        {tab === 'earnings' && <DriverEarnings />}
         {tab === 'discounts' && <DiscountManager />}
         {tab === 'concierge' && <ConciergeBookings />}
         {tab === 'drivers' && <DriverApprovals />}
@@ -467,8 +477,44 @@ function KPI({ val, label, delta }) {
 function OverviewTab({ activeOrders, drivers, alerts }) {
   const onlineDrivers = drivers.filter(d => d.is_online)
 
+  const [satisfaction, setSatisfaction] = useState(null)
+  const [revenue, setRevenue] = useState(0)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { supabase } = await import('../../lib/supabase')
+        const today = new Date().toISOString().slice(0, 10)
+        const [ratingsRes, revenueRes] = await Promise.all([
+          supabase.from('order_ratings').select('order_rating').gte('created_at', today + 'T00:00:00'),
+          supabase.from('orders').select('total').eq('status', 'delivered').gte('created_at', today + 'T00:00:00'),
+        ])
+        const ratings = ratingsRes.data || []
+        if (ratings.length > 0) {
+          const avg = ratings.reduce((s,r) => s + (r.order_rating || 0), 0) / ratings.length
+          setSatisfaction(avg.toFixed(1))
+        }
+        const rev = (revenueRes.data || []).reduce((s, o) => s + (o.total || 0), 0)
+        setRevenue(rev)
+      } catch {}
+    }
+    load()
+  }, [])
+
   return (
     <>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:14 }}>
+        {[
+          { v:'€' + revenue.toFixed(0), l:"Today's revenue", color:'#C4683A' },
+          { v: satisfaction ? '⭐ ' + satisfaction : '—', l:'Avg satisfaction', color:'#F5C97A' },
+          { v: onlineDrivers.length + '/' + drivers.length, l:'Drivers online', color:'#7EE8A2' },
+        ].map(s => (
+          <div key={s.l} style={{ background:'white', borderRadius:12, padding:'12px 10px', border:'0.5px solid rgba(42,35,24,0.1)', textAlign:'center' }}>
+            <div style={{ fontSize:20, fontWeight:600, color:s.color }}>{s.v}</div>
+            <div style={{ fontSize:10, color:'#7A6E60', marginTop:2 }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
       <Section title="Live orders" count={activeOrders.length}>
         {activeOrders.slice(0, 6).map(order => (
           <LiveOrderRow key={order.id} order={order} />
