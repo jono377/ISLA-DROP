@@ -668,13 +668,17 @@ function DesignExperience({ onBook }) {
   const [result, setResult] = useState(null)
   const [prompt, setPrompt] = useState('')
 
-  const QUICK_DAY = ['Romantic couple day', 'Group of 8 friends', 'Family with children', 'Solo luxury escape', 'Birthday celebration', 'Corporate group']
-  const QUICK_NIGHT = ['VIP club night', 'Intimate dinner party', 'Birthday party group', 'Sunset to sunrise', 'Luxury couple evening', 'Group celebration']
+  const QUICK_DAY = ['Romantic couple day', 'Group of 8 friends', 'Family with children', 'Solo luxury escape', 'Birthday celebration day', 'Pool party day', 'Beach club day']
+  const QUICK_NIGHT = ['VIP club night', 'Ladies night out', 'Boys night out', "Gentleman's evening", 'Birthday night out', 'Intimate dinner evening', 'Sunset to sunrise', 'Luxury couple evening']
 
   const generate = async (p) => {
     const fullPrompt = mode === 'day'
-      ? 'Design the perfect Ibiza day experience for: ' + (p || prompt) + '. Include activities from morning to evening.'
-      : 'Design the perfect Ibiza night experience for: ' + (p || prompt) + '. Start from sunset and go through the night.'
+      ? 'Design the perfect Ibiza day experience for: ' + (p || prompt) + '. Be specific about times, venues and Ibiza knowledge. Include beach clubs, restaurants, boat trips where relevant. Give insider timing tips.'
+      : 'Design the perfect Ibiza night experience for: ' + (p || prompt) + '. ' +
+      (((p || prompt).toLowerCase().includes('ladies') || (p || prompt).toLowerCase().includes('girls')) ? 'This is a ladies night — think champagne, classy cocktail bars, chic beach clubs, VIP table experiences. Sophisticated and glamorous.' : '') +
+      (((p || prompt).toLowerCase().includes('boys') || (p || prompt).toLowerCase().includes('lads')) ? 'This is a boys night out — think cold beers, buzzing bars, shots, fun atmosphere, good music, late night energy.' : '') +
+      (((p || prompt).toLowerCase().includes('gentleman')) ? "This is a gentleman's evening — premium whisky and cognac bars, fine dining, cigar-friendly venues, quality over quantity, sophisticated crowd." : '') +
+      ' Start from sunset. Give specific arrival times, insider tips on when clubs peak. Never suggest empty venues.'
     setLoading(true)
     setResult(null)
     try {
@@ -763,12 +767,19 @@ function DesignExperience({ onBook }) {
               <span style={{ fontWeight:500 }}>Isla insider: </span>{result.isla_insight}
             </div>
           )}
-          {result.services && result.services.length > 0 && (
-            <>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10, fontFamily: 'DM Sans,sans-serif' }}>INCLUDED IN YOUR ITINERARY</div>
-              {result.services.map(s => <ServiceCard key={s.id} service={s} onBook={onBook} onDirections={() => {}} />)}
-            </>
-          )}
+          {result.services && result.services.length > 0 && (() => {
+            // AI returns array of IDs (strings) — look up full service objects
+            const resolvedServices = result.services
+              .map(s => typeof s === 'string' ? SERVICES.find(sv => sv.id === s) : s)
+              .filter(Boolean)
+            if (resolvedServices.length === 0) return null
+            return (
+              <>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10, fontFamily: 'DM Sans,sans-serif' }}>RECOMMENDED FOR YOUR EXPERIENCE</div>
+                {resolvedServices.map(s => <ServiceCard key={s.id} service={s} onBook={onBook} onDirections={() => {}} />)}
+              </>
+            )
+          })()}
           <button onClick={() => { setResult(null); setPrompt('') }} style={{ width: '100%', padding: '11px', background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', marginTop: 8 }}>
             Generate another experience
           </button>

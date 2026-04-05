@@ -98,14 +98,14 @@ const PACKAGE_TYPES = [
     desc:'AI plans your perfect Ibiza night — drinks, timing, everything',
     color:'linear-gradient(135deg,rgba(90,30,120,0.6),rgba(30,60,120,0.6))',
     vibes: [
-      { value:'club_night',      label:'🎉 Club Night',       desc:'Pacha, Ushuaia, Hi Ibiza' },
-      { value:'villa_party',     label:'🏡 Villa Party',      desc:'House party, your space' },
-      { value:'pre_drinks',      label:'🍹 Pre-drinks',       desc:'Getting the night started right' },
-      { value:'girls_night',     label:'💅 Girls Night',      desc:'Champagne, glamour, good times' },
-      { value:'lads_night',      label:'🍺 Lads Night',       desc:'Shots, banter, beers' },
-      { value:'gentlemans',      label:"🎩 Gentleman's Night", desc:'Premium spirits, cigars, class' },
-      { value:'date_night',      label:'💕 Date Night',       desc:'Intimate, romantic, memorable' },
-      { value:'birthday_night',  label:'🎂 Birthday Night',   desc:'Make it legendary' },
+      { value:'club_night',      label:'🎉 Club Night',          desc:'Pacha, Ushuaia, Hi Ibiza' },
+      { value:'villa_party',     label:'🏡 Villa Party',          desc:'House party, your space' },
+      { value:'ladies_night',    label:'👑 Ladies Night',         desc:'Champagne, classy cocktails, VIP vibes' },
+      { value:'boys_night',      label:'🍺 Boys Night',           desc:'Beers, shots, good energy' },
+      { value:'gentlemans',      label:"🎩 Gentleman's Evening",  desc:'Premium spirits, cigars, sophistication' },
+      { value:'pre_drinks',      label:'🍹 Pre-drinks',           desc:'Getting the night started right' },
+      { value:'date_night',      label:'💕 Date Night',           desc:'Intimate, romantic, memorable' },
+      { value:'birthday_night',  label:'🎂 Birthday Night',       desc:'Make it legendary' },
     ]
   },
   {
