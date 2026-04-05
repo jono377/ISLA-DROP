@@ -348,6 +348,15 @@ export const PRODUCTS = [
   { id: 'sw-002', name: 'Durex Condoms 24 Pack',      category: 'wellness', sub: 'wellness', emoji: '❤️', price: 22.80, age_restricted: false, popular: false },
   { id: 'sw-003', name: 'Durex Pleasure Pack 10',     category: 'wellness', sub: 'wellness', emoji: '❤️', price: 15.60, age_restricted: false, popular: false },
 
+
+  // ── FRESH CITRUS & GARNISHES (+30%) ──────────────────────────
+  { id: 'fr-001', name: 'Lemons Bag 6pk',                     category:'fresh', sub:'citrus', emoji:'🍋', price:3.25, age_restricted:false, popular:true  },
+  { id: 'fr-002', name: 'Limes Bag 6pk',                      category:'fresh', sub:'citrus', emoji:'🍋', price:3.25, age_restricted:false, popular:true  },
+  { id: 'fr-003', name: 'Lemons & Limes Mixed 12pk',          category:'fresh', sub:'citrus', emoji:'🍋', price:5.85, age_restricted:false, popular:true  },
+  { id: 'fr-004', name: 'Oranges Bag 4pk',                    category:'fresh', sub:'citrus', emoji:'🍊', price:3.90, age_restricted:false, popular:false },
+  { id: 'fr-005', name: 'Fresh Mint Bunch',                   category:'fresh', sub:'garnish', emoji:'🌿', price:2.60, age_restricted:false, popular:true  },
+  { id: 'fr-006', name: 'Cocktail Garnish Kit (Lemon, Lime, Mint, Cucumber)', category:'fresh', sub:'garnish', emoji:'🍹', price:9.10, age_restricted:false, popular:true  },
+
 // ── PARTY SUPPLIES (+30%) ─────────────────────────────────────
   { id: 'ps-001', name: 'Balloons Mixed Colours 50pk',        category:'party', sub:'decorations', emoji:'🎈', price:5.85,  age_restricted:false, popular:true  },
   { id: 'ps-002', name: 'Balloon Pump Hand Pump',             category:'party', sub:'decorations', emoji:'🎈', price:3.90,  age_restricted:false, popular:false },
@@ -470,6 +479,10 @@ export const CATEGORIES = [
     { key: 'towels',      label: 'Towels & Mats' },
     { key: 'swimwear',    label: 'Swimwear' },
     { key: 'accessories', label: 'Accessories' },
+  ]},
+  { key: 'fresh',      label: 'Fresh & Citrus',  emoji: '🍋', subs: [
+    { key: 'citrus',  label: 'Citrus' },
+    { key: 'garnish', label: 'Garnishes' },
   ]},
   { key: 'party',      label: 'Party Supplies', emoji: '🎉', subs: [
     { key: 'decorations', label: 'Decorations'    },
