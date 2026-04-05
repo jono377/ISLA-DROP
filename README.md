@@ -4,7 +4,7 @@ A full-stack, production-ready delivery app built for 24/7 alcohol and beverage 
 
 ---
 
-## 📱 What's Included
+ ## 📱 What's Included
 
 | App | Who Uses It | Key Features |
 |-----|-------------|--------------|
