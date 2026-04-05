@@ -109,7 +109,7 @@ function MiniCard({ product, t }) {
   const qty = useCartStore(s=>s.items.find(i=>i.product.id===product.id)?.quantity??0)
   const { addItem, updateQuantity } = useCartStore()
   return (
-    <div style={{ background:C.card, border:`0.5px solid ${C.cardBorder}`, borderRadius:14, overflow:'hidden', minWidth:134, maxWidth:134, flexShrink:0, position:'relative' }}>
+    <div style={{ background:C.card, border:'0.5px solid ' + C.cardBorder, borderRadius:14, overflow:'hidden', minWidth:134, maxWidth:134, flexShrink:0, position:'relative' }}>
       <div style={{ position:'relative' }}>
         <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="mini" style={{ height:100 }} />
         {qty===0
@@ -130,6 +130,79 @@ function MiniCard({ product, t }) {
 }
 
 // ── Basket ────────────────────────────────────────────────────
+
+// ── AI Checkout Suggestions ───────────────────────────────────
+function CheckoutSuggestions({ cartItems }) {
+  const [suggestions, setSuggestions] = useState([])
+  const [loading, setLoading] = useState(false)
+  const { addItem } = useCartStore()
+  const ran = useRef(false)
+
+  useEffect(() => {
+    if (ran.current || cartItems.length === 0) return
+    ran.current = true
+    const getSuggestions = async () => {
+      setLoading(true)
+      try {
+        const cartSummary = cartItems.map(i => i.product.name + ' x' + i.quantity).join(', ')
+        const catalogue = PRODUCTS.map(p => p.id + '|' + p.name + '|€' + p.price.toFixed(2)).join('\n')
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+            'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 200,
+            messages: [{
+              role: 'user',
+              content: 'Customer has in basket: ' + cartSummary + '\n\nSuggest 3 products they forgot that perfectly complement this order. Think: if they have gin suggest tonic and lemon, if they have champagne suggest ice, if they have spirits suggest mixers and cups, if they have beer suggest snacks.\n\nPRODUCTS:\n' + catalogue + '\n\nReturn ONLY JSON array of 3 product IDs: ["id1","id2","id3"]'
+            }]
+          })
+        })
+        if (!resp.ok) return
+        const data = await resp.json()
+        const raw = data.content?.[0]?.text || '[]'
+        const ids = JSON.parse(raw.replace(/```json|```/g, '').trim())
+        const found = ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean).slice(0, 3)
+        setSuggestions(found)
+      } catch {}
+      setLoading(false)
+    }
+    getSuggestions()
+  }, [])
+
+  if (!loading && suggestions.length === 0) return null
+
+  return (
+    <div style={{ marginBottom:16 }}>
+      <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', fontFamily:'DM Sans,sans-serif', marginBottom:10, display:'flex', alignItems:'center', gap:6 }}>
+        <span>✨</span> Isla suggests you might need
+      </div>
+      {loading ? (
+        <div style={{ fontSize:12, color:'rgba(255,255,255,0.3)', fontFamily:'DM Sans,sans-serif' }}>Finding the perfect additions...</div>
+      ) : (
+        <div style={{ display:'flex', gap:8, overflowX:'auto', scrollbarWidth:'none' }}>
+          {suggestions.map(p => (
+            <div key={p.id} style={{ flexShrink:0, background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:12, padding:'10px 12px', minWidth:120, maxWidth:140 }}>
+              <div style={{ fontSize:24, marginBottom:4 }}>{p.emoji}</div>
+              <div style={{ fontSize:12, color:'white', fontFamily:'DM Sans,sans-serif', marginBottom:6, lineHeight:1.3 }}>{p.name}</div>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:12, color:'#E8A070' }}>€{p.price.toFixed(2)}</span>
+                <button onClick={() => { addItem(p); toast.success(p.emoji + ' Added!', { duration:900 }) }}
+                  style={{ padding:'4px 8px', background:'#C4683A', border:'none', borderRadius:6, fontSize:11, color:'white', cursor:'pointer' }}>Add</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function BasketView({ t, onCheckout }) {
   const cart = useCartStore()
   const { updateQuantity } = useCartStore()
@@ -169,6 +242,7 @@ function BasketView({ t, onCheckout }) {
           <span>🆔</span><span>ID required at delivery for age-restricted items</span>
         </div>
       )}
+      <CheckoutSuggestions cartItems={cart.items} />
       <button onClick={onCheckout} style={{ width:'100%',padding:'16px',background:'#C4683A',color:'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:'pointer',boxShadow:'0 4px 20px rgba(196,104,58,0.4)' }}>
         {t.checkout} →
       </button>
@@ -213,7 +287,7 @@ function SearchView({ t }) {
     if (!q || q.length < 4) return
     setAiLoading(true)
     try {
-      const catalogue = PRODUCTS.map(p => `${p.id}|${p.name}|${p.category}|€${p.price.toFixed(2)}`).join('\n')
+      const catalogue = PRODUCTS.map(p => p.id + '|' + p.name + '|' + p.category + '|€' + p.price.toFixed(2)).join('\n')
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -227,15 +301,7 @@ function SearchView({ t }) {
           max_tokens: 300,
           messages: [{
             role: 'user',
-            content: `Customer searched: "${q}"
-
-Find the most relevant products from this catalogue for their search. Think creatively — if they search "pool party" find floats, speakers, drinks, sunscreen. If they search "hangover" find remedies. If they search "something sweet" find chocolates and sweets.
-
-CATALOGUE (id|name|category|price):
-${catalogue}
-
-Return ONLY a JSON array of up to 12 product IDs: ["id1","id2","id3"]
-No other text.`
+            content: 'Customer searched: ' + q + '. Find up to 12 relevant products from this catalogue. Pool party: floats and drinks. Hangover: remedies. Cocktail: spirits mixers citrus. Gentleman: premium spirits cigars. Birthday: champagne sparklers. CATALOGUE:\n' + catalogue + '\nReturn ONLY JSON array: ["id1","id2"] No other text.'
           }]
         })
       })
@@ -263,18 +329,18 @@ No other text.`
   const hasResults = displayResults.length > 0
 
   const SUGGESTIONS = [
-    { label:'🎉 Party tonight',     q:'party supplies for tonight' },
-    { label:'💦 Pool party',        q:'pool party floats drinks' },
-    { label:'🌅 Sundowner drinks',  q:'sundowner sunset drinks' },
-    { label:'💊 Hangover cure',     q:'hangover recovery morning after' },
-    { label:'🎂 Birthday party',    q:'birthday party celebration' },
-    { label:'🏖️ Beach day',         q:'beach day essentials' },
-    { label:'🌙 Night party',       q:'night party spirits mixers' },
-    { label:'☀️ Daytime party',     q:'daytime party snacks drinks' },
-    { label:'🥂 Special occasion',  q:'special occasion champagne luxury' },
-    { label:'🍕 Snacks platter',    q:'snacks crisps nibbles' },
-    { label:'🥃 Cocktail night',    q:'cocktail spirits mixers ice' },
-    { label:'💅 Girls night',       q:'girls night champagne prosecco' },
+    { label:'🎩 Gentleman's Evening', q:'premium spirits cigars whisky cognac gentleman luxury evening' },
+    { label:'💦 Pool party',           q:'pool party floats inflatables cold drinks ice' },
+    { label:'🌅 Sundowner drinks',     q:'sundowner sunset rosé wine Aperol spritz' },
+    { label:'💊 Hangover cure',        q:'hangover recovery morning after Dioralyte paracetamol coconut water' },
+    { label:'🎂 Birthday party',       q:'birthday party champagne sparklers balloons celebration' },
+    { label:'🏖️ Beach day',            q:'beach day water sunscreen snacks essentials' },
+    { label:'🌙 Club night pre-drinks',q:'pre drinks spirits mixers shots night out' },
+    { label:'🎉 House party',          q:'house party drinks snacks ice cups party supplies' },
+    { label:'🥂 Special occasion',     q:'special occasion Moet Veuve Clicquot luxury champagne' },
+    { label:'🥃 Cocktail night',       q:'cocktail spirits gin vodka rum mixers lemon lime ice' },
+    { label:'💅 Girls night',          q:'girls night prosecco champagne rosé snacks' },
+    { label:'🍕 Snacks & nibbles',     q:'snacks antipasto crisps hummus cheese board nibbles' },
   ]
 
   return (
@@ -351,7 +417,7 @@ No other text.`
           ))}
         </div>
       )}
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
     </div>
   )
 }
@@ -500,15 +566,21 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
           </div>
 
-          {/* Party Package Builder card */}
-          <div onClick={()=>navigate(VIEWS.PARTY)}
-            style={{ margin:'0 16px 20px', background:'linear-gradient(135deg,rgba(196,104,58,0.3),rgba(139,58,104,0.3))', border:'0.5px solid rgba(196,104,58,0.35)', borderRadius:16, padding:'18px 20px', cursor:'pointer', display:'flex', alignItems:'center', gap:14 }}>
-            <div style={{ fontSize:44, flexShrink:0 }}>🎉</div>
-            <div style={{ flex:1 }}>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:3 }}>Party Package Builder</div>
-              <div style={{ fontSize:13, color:'rgba(255,255,255,0.55)', fontFamily:'DM Sans,sans-serif', lineHeight:1.4 }}>Tell Isla your party details — she builds the perfect drinks and snacks package, delivered to your door</div>
-              <div style={{ marginTop:10, display:'inline-flex', alignItems:'center', gap:5, background:'#C4683A', borderRadius:20, padding:'6px 14px' }}>
-                <span style={{ fontSize:12, fontWeight:500, color:'white', fontFamily:'DM Sans,sans-serif' }}>✨ Build my package</span>
+          {/* Design Your Experience cards */}
+          <div style={{ padding:'0 16px', marginBottom:20 }}>
+            <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:12 }}>Design Your Experience</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <div onClick={()=>{ navigate(VIEWS.PARTY) }}
+                style={{ background:'linear-gradient(135deg,rgba(90,30,120,0.7),rgba(30,60,120,0.7))', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:16, padding:'18px 14px', cursor:'pointer' }}>
+                <div style={{ fontSize:36, marginBottom:8 }}>🌙</div>
+                <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:4 }}>Design Your Night</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', lineHeight:1.4 }}>Club nights, villa parties, pre-drinks & more</div>
+              </div>
+              <div onClick={()=>{ navigate(VIEWS.PARTY) }}
+                style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.6),rgba(200,140,30,0.5))', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:16, padding:'18px 14px', cursor:'pointer' }}>
+                <div style={{ fontSize:36, marginBottom:8 }}>☀️</div>
+                <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:4 }}>Design Your Day</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', lineHeight:1.4 }}>Pool parties, beach days, boat trips & more</div>
               </div>
             </div>
           </div>
@@ -770,7 +842,7 @@ export default function CustomerApp() {
       {/* Tab bar — ONLY in the main shell, never on splash/checkout/tracking */}
       <TabBar view={view} setView={handleTabChange} cartCount={cart.getItemCount()} />
 
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
+      <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}'}</style>
     </div>
   )
 }

@@ -526,7 +526,7 @@ function BookingModal({ service, onClose, onBook }) {
         <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: 12, padding: '12px 14px', marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>
             <span>{service.name}</span>
-            <span>€{service.price.toLocaleString()} {service.unit.includes('person') ? `x ${guests}` : ''}</span>
+            <span>€{service.price.toLocaleString()} {service.unit.includes('person') ? 'x ' + guests : ''}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8, fontFamily: 'DM Sans,sans-serif' }}>
             <span>Isla Drop concierge (10%)</span>
@@ -553,10 +553,10 @@ function BookingModal({ service, onClose, onBook }) {
 // ── Directions Modal ─────────────────────────────────────────
 function DirectionsModal({ service, onClose }) {
   const openMaps = (type) => {
-    const dest = `${service.lat},${service.lng}`
+    const dest = service.lat + ',' + service.lng
     const name = encodeURIComponent(service.location)
-    if (type === 'google') window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}&destination_place_id=${name}`, '_blank')
-    else window.open(`https://maps.apple.com/?daddr=${dest}&dirflg=d`, '_blank')
+    if (type === 'google') window.open('https://www.google.com/maps/dir/?api=1&destination=' + dest + '&destination_place_id=' + name, '_blank')
+    else window.open('https://maps.apple.com/?daddr=' + dest + '&dirflg=d', '_blank')
     onClose()
   }
   return (
@@ -629,39 +629,52 @@ function ServiceCard({ service, onBook, onDirections }) {
 }
 
 // ── AI Design My Day/Night ────────────────────────────────────
-async function designExperience(prompt, type) {
-  const serviceList = SERVICES.map(s => `${s.id}|${s.name}|${s.category}|€${s.price} ${s.unit}`).join('\n')
-  const system = `You are Isla, the luxury concierge AI for Isla Drop in Ibiza. You design bespoke day and night experiences for high-end clients.
+async function designExperience(prompt, type, userBookings) {
+  const serviceList = SERVICES.map(s => s.id + '|' + s.name + '|' + s.category + '|€' + s.price + ' ' + s.unit).join('\n')
+  const today = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' })
+  const bookingsContext = userBookings && userBookings.length > 0
+    ? 'Client has booked with us: ' + userBookings.map(b => b.service_name + ' on ' + b.booking_date).join(', ')
+    : 'No prior bookings with us — do NOT assume accommodation type or other bookings'
 
-AVAILABLE SERVICES:
-${serviceList}
-
-When designing an experience:
-1. Create a beautifully written, evocative itinerary (3-5 items max)
-2. Be specific about timing (e.g. "10am — Board your catamaran...")
-3. End your response with: SERVICES:["id1","id2","id3"]
-4. Only use IDs from the list above
-5. Keep it under 200 words, poetic and aspirational`
+  const system = 'You are Isla — the most plugged-in, creative and indispensable Ibiza concierge. You live and breathe this island. You know which DJ is on at which club tonight, when restaurants hit their stride, when the beach clubs peak. You are warm, specific, and genuinely excited about making this experience unforgettable.\n\nCRITICAL RULES:\n- NEVER suggest a villa or private accommodation option unless the client has booked one with us\n- DO suggest restaurants, beach clubs, boats, experiences based on their vibe\n- For club nights: suggest arrival 45-90 mins after the headliner starts (clubs are dead when they open — peak atmosphere is usually 1-3am for Pacha/Hi, 11pm-2am for Ushuaia)\n- For restaurants: suggest prime booking times (8:30-9:30pm for most Ibiza restaurants, not 7pm which is tourist hour)\n- For beach clubs: arrive by 1pm to get beds, peak vibe is 3-5pm\n- For sunsets: San Antonio lighthouse area or Café del Mar — arrive 30 mins before sunset\n- Be CREATIVE — suggest unexpected combinations, things they would not think of\n- Give SPECIFIC timing advice based on Ibiza patterns, not generic hours\n- Today is: ' + today + '\n\nCLIENT CONTEXT:\n' + bookingsContext + '\n\nOUR SERVICES (id|name|category|price):\n' + serviceList + '\n\nFormat as JSON:\n{
+  "title": "Evocative experience title",
+  "intro": "2-3 sentences — vivid, specific, genuinely exciting. Reference real Ibiza knowledge.",
+  "timeline": [
+    {
+      "time": "Specific time e.g. 9:00 PM",
+      "activity": "What to do",
+      "detail": "Rich specific detail — why this time, what to expect, insider tip",
+      "service_id": "optional — our service ID if relevant"
+    }
+  ],
+  "isla_insight": "One genuinely surprising insider tip most tourists never know",
+  "services": ["service_id_1", "service_id_2"],
+  "vibe_tags": ["tag1", "tag2", "tag3"]
+}'
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '' },
+    headers: {
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+      'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
+    },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 400,
+      max_tokens: 1200,
       system,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: 'Design a ' + type + ' experience for: ' + prompt }],
     }),
   })
-  if (!resp.ok) throw new Error('API error')
+
+  if (!resp.ok) throw new Error('API error: ' + resp.status)
   const data = await resp.json()
-  const raw = data.content?.[0]?.text ?? ''
-  const match = raw.match(/SERVICES:\[([^\]]*)\]/)
-  const ids = match ? match[1].replace(/"/g, '').split(',').map(s => s.trim()) : []
-  const text = raw.replace(/SERVICES:\[.*?\]/, '').trim()
-  const services = ids.map(id => SERVICES.find(s => s.id === id)).filter(Boolean)
-  return { text, services }
+  const raw = data.content?.[0]?.text || '{}'
+  try { return JSON.parse(raw.replace(/```json|```/g, '').trim()) }
+  catch { return null }
 }
+
 
 function DesignExperience({ onBook }) {
   const [mode, setMode] = useState(null)
@@ -674,8 +687,8 @@ function DesignExperience({ onBook }) {
 
   const generate = async (p) => {
     const fullPrompt = mode === 'day'
-      ? `Design the perfect Ibiza day experience for: ${p || prompt}. Include activities from morning to evening.`
-      : `Design the perfect Ibiza night experience for: ${p || prompt}. Start from sunset and go through the night.`
+      ? 'Design the perfect Ibiza day experience for: ' + (p || prompt) + '. Include activities from morning to evening.'
+      : 'Design the perfect Ibiza night experience for: ' + (p || prompt) + '. Start from sunset and go through the night.'
     setLoading(true)
     setResult(null)
     try {
@@ -789,9 +802,9 @@ export default function Concierge({ onBack }) {
       // Call the edge function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      const res = await fetch(`${supabaseUrl}/functions/v1/process-concierge-booking`, {
+      const res = await fetch(supabaseUrl + '/functions/v1/process-concierge-booking', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + supabaseKey },
         body: JSON.stringify({
           type: 'new_booking',
           booking: {
