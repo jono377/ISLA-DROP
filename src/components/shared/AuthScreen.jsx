@@ -4,7 +4,8 @@ import { useAuthStore } from '../../lib/store'
 
 const isSupabaseConfigured = () => {
   const url = import.meta.env.VITE_SUPABASE_URL
-  return url && url.startsWith('https://') && url.includes('.supabase.co')
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+  return !!(url && url.startsWith('https://') && key && key.length > 10)
 }
 
 export default function AuthScreen({ onClose }) {
@@ -17,7 +18,7 @@ export default function AuthScreen({ onClose }) {
 
   const handle = async () => {
     if (!isSupabaseConfigured()) {
-      toast.error('Service not configured. Please contact support.')
+      toast.error('Connection error — please check your internet and try again')
       return
     }
     if (mode !== 'reset' && (!email || !password)) {
