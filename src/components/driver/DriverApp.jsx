@@ -18,18 +18,18 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 function orderItems(order) {
   if (!order.order_items?.length) return 'Order items'
-  const items = order.order_items.slice(0, 3).map(i => `${i.quantity}x ${i.product?.name || ''}`)
-  const extra = order.order_items.length > 3 ? ` +${order.order_items.length - 3} more` : ''
+  const items = order.order_items.slice(0, 3).map(i => i.quantity + 'x ' + (i.product?.name || ''))
+  const extra = order.order_items.length > 3 ? ' +' + (order.order_items.length - 3) + ' more' : ''
   return items.join(', ') + extra
 }
 
 function openNavigation(order) {
   const dest = order.delivery_lat && order.delivery_lng
-    ? `${order.delivery_lat},${order.delivery_lng}`
+    ? order.delivery_lat + ',' + order.delivery_lng
     : encodeURIComponent(order.delivery_address || '')
   const ua = navigator.userAgent
-  if (/iPhone|iPad/i.test(ua)) window.open(`maps://maps.apple.com/?daddr=${dest}`)
-  else window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}`)
+  if (/iPhone|iPad/i.test(ua)) window.open('maps://maps.apple.com/?daddr=' + dest)
+  else window.open('https://www.google.com/maps/dir/?api=1&destination=' + dest)
 }
 
 // ── Warehouse Stock Panel ─────────────────────────────────────
@@ -88,7 +88,7 @@ function WarehouseStock() {
           <div style={{ fontSize:12, fontWeight:500, color:'#E8A070', marginBottom:10 }}>⚠️ Stock Alerts — Ops team notified</div>
           {alerts.slice(0,5).map(a => (
             <div key={a.id} style={{ fontSize:12, color:'rgba(255,255,255,0.7)', marginBottom:6, paddingBottom:6, borderBottom:'0.5px solid rgba(255,255,255,0.06)' }}>
-              <span style={{ fontWeight:500 }}>{a.product_name}</span> — {a.alert_type === 'out_of_stock' ? '🚨 OUT OF STOCK' : `${Math.round(a.pct_at_alert || 0)}% remaining`}
+              <span style={{ fontWeight:500 }}>{a.product_name}</span> — {a.alert_type === 'out_of_stock' ? '🚨 OUT OF STOCK' : Math.round(a.pct_at_alert || 0) + '% remaining'}
               {a.message && <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:2 }}>{a.message}</div>}
             </div>
           ))}
@@ -111,7 +111,7 @@ function WarehouseStock() {
                 </div>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>
                   Can restock: {relevantItems.slice(0,3).map(i => i.product_name).join(', ')}
-                  {relevantItems.length > 3 ? ` +${relevantItems.length-3} more` : ''}
+                  {relevantItems.length > 3 ? ' +' + (relevantItems.length-3) + ' more' : ''}
                 </div>
               </div>
             )
@@ -124,7 +124,7 @@ function WarehouseStock() {
         {['low','all'].map(f => (
           <button key={f} onClick={() => setFilter(f)}
             style={{ padding:'6px 14px', borderRadius:20, fontSize:12, background: filter===f?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.1)', color: filter===f?'#0D3B4A':'rgba(255,255,255,0.7)', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
-            {f === 'low' ? `⚠️ Low stock (${lowStock.length})` : `All (${stock.length})`}
+            {f === 'low' ? '⚠️ Low stock (' + lowStock.length + ')' : 'All (' + stock.length + ')'}
           </button>
         ))}
       </div>
@@ -146,7 +146,7 @@ function WarehouseStock() {
             </div>
             <div style={{ width:60, textAlign:'center' }}>
               <div style={{ height:5, background:'rgba(255,255,255,0.1)', borderRadius:3, overflow:'hidden', marginBottom:2 }}>
-                <div style={{ height:'100%', width:`${Math.min(100,p)}%`, background:color, borderRadius:3 }} />
+                <div style={{ height:'100%', width:Math.min(100,p) + '%', background:color, borderRadius:3 }} />
               </div>
               <div style={{ fontSize:11, fontWeight:600, color }}>{p}%</div>
             </div>
@@ -259,6 +259,364 @@ function PickupConfirmation({ order, onConfirm, onCancel }) {
           Cancel
         </button>
       </div>
+    </div>
+  )
+}
+
+
+
+// ── Driver Onboarding Checklist ──────────────────────────────
+function DriverOnboarding({ onComplete }) {
+  const STEPS = [
+    { id:'profile', label:'Complete your profile', desc:'Add photo, full name and contact details', icon:'👤' },
+    { id:'licence', label:'Upload driving licence', desc:'Front and back of your licence', icon:'🪪' },
+    { id:'insurance', label:'Upload vehicle insurance', desc:'Current insurance certificate', icon:'📄' },
+    { id:'vehicle', label:'Confirm vehicle details', desc:'Plate number, make and model', icon:'🛵' },
+    { id:'warehouse', label:'Visit the warehouse', desc:'Collect your Isla Drop bag and briefing', icon:'📦' },
+    { id:'test', label:'Complete test delivery', desc:'Your first run with ops supervision', icon:'✅' },
+  ]
+  const [done, setDone] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('driver_onboarding') || '[]') } catch { return [] }
+  })
+
+  const toggle = (id) => {
+    const next = done.includes(id) ? done.filter(d => d !== id) : [...done, id]
+    setDone(next)
+    localStorage.setItem('driver_onboarding', JSON.stringify(next))
+  }
+  const pct = Math.round((done.length / STEPS.length) * 100)
+  const allDone = done.length === STEPS.length
+
+  return (
+    <div style={{ padding:'0 16px 24px' }}>
+      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:4 }}>Getting Started</div>
+      <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:16 }}>Complete these steps before your first delivery</div>
+      <div style={{ background:'rgba(255,255,255,0.08)', borderRadius:20, height:8, marginBottom:16 }}>
+        <div style={{ height:'100%', width:pct+'%', background: allDone?'#7EE8A2':'#C4683A', borderRadius:20, transition:'width 0.4s' }} />
+      </div>
+      {STEPS.map(step => (
+        <div key={step.id} onClick={() => toggle(step.id)}
+          style={{ display:'flex', gap:12, padding:'12px 0', borderBottom:'0.5px solid rgba(255,255,255,0.07)', cursor:'pointer', alignItems:'flex-start' }}>
+          <div style={{ width:28, height:28, borderRadius:'50%', background: done.includes(step.id)?'rgba(90,107,58,0.4)':'rgba(255,255,255,0.1)', border:'0.5px solid ' + (done.includes(step.id)?'rgba(90,107,58,0.6)':'rgba(255,255,255,0.2)'), display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0, marginTop:2 }}>
+            {done.includes(step.id) ? '✓' : step.icon}
+          </div>
+          <div>
+            <div style={{ fontSize:14, color: done.includes(step.id)?'rgba(255,255,255,0.4)':'white', textDecoration: done.includes(step.id)?'line-through':'none' }}>{step.label}</div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,0.35)', marginTop:2 }}>{step.desc}</div>
+          </div>
+        </div>
+      ))}
+      {allDone && (
+        <div style={{ marginTop:16, background:'rgba(90,107,58,0.2)', border:'0.5px solid rgba(90,107,58,0.4)', borderRadius:12, padding:'12px 14px', textAlign:'center' }}>
+          <div style={{ fontSize:24, marginBottom:6 }}>🎉</div>
+          <div style={{ fontSize:14, color:'#7EE8A2', fontWeight:500 }}>All done! You're ready to deliver.</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── SOS Emergency Button ──────────────────────────────────────
+function SOSButton() {
+  const [pressed, setPressed] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  const sendSOS = async () => {
+    setSent(true)
+    try {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async pos => {
+          const { supabase } = await import('../../lib/supabase')
+          const { data: { user } } = await supabase.auth.getUser()
+          await supabase.from('ops_activity_log').insert({
+            actor_id: user?.id,
+            action: 'driver_sos',
+            entity_type: 'driver',
+            details: { lat: pos.coords.latitude, lng: pos.coords.longitude, message: 'EMERGENCY - Driver needs immediate assistance' }
+          })
+        })
+      }
+    } catch {}
+    setTimeout(() => { setPressed(false); setSent(false) }, 5000)
+  }
+
+  return (
+    <div style={{ padding:'0 16px 16px' }}>
+      {!pressed ? (
+        <button onClick={() => setPressed(true)}
+          style={{ width:'100%', padding:'14px', background:'rgba(196,58,58,0.15)', border:'1.5px solid rgba(196,58,58,0.4)', borderRadius:12, color:'#E87070', fontSize:14, fontWeight:500, cursor:'pointer', fontFamily:'DM Sans,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+          🆘 Emergency — Send SOS to Ops
+        </button>
+      ) : sent ? (
+        <div style={{ background:'rgba(196,58,58,0.2)', border:'1px solid rgba(196,58,58,0.5)', borderRadius:12, padding:'14px', textAlign:'center' }}>
+          <div style={{ fontSize:20, marginBottom:4 }}>🆘</div>
+          <div style={{ color:'#E87070', fontSize:14, fontWeight:500 }}>SOS sent with your location!</div>
+          <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginTop:4 }}>Ops team has been alerted</div>
+        </div>
+      ) : (
+        <div style={{ background:'rgba(196,58,58,0.2)', border:'1px solid rgba(196,58,58,0.5)', borderRadius:12, padding:14 }}>
+          <div style={{ fontSize:14, color:'#E87070', fontWeight:500, marginBottom:10 }}>Confirm emergency?</div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={sendSOS} style={{ flex:1, padding:'11px', background:'rgba(196,58,58,0.4)', border:'none', borderRadius:8, color:'white', fontSize:13, cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:500 }}>Yes — Send SOS</button>
+            <button onClick={() => setPressed(false)} style={{ flex:1, padding:'11px', background:'rgba(255,255,255,0.1)', border:'none', borderRadius:8, color:'rgba(255,255,255,0.6)', fontSize:13, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+// ── Delivery History Tab ──────────────────────────────────────
+function DeliveryHistoryTab() {
+  const { user } = useAuthStore()
+  const [deliveries, setDeliveries] = useState([])
+  const [loading, setLoading]       = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { supabase } = await import('../../lib/supabase')
+        const { data } = await supabase
+          .from('orders')
+          .select('id, order_number, total, status, created_at, delivery_address, order_ratings(driver_rating, tip)')
+          .eq('driver_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50)
+        if (data) setDeliveries(data)
+      } catch {}
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const totalTips = deliveries.reduce((s, d) => s + ((d.order_ratings?.[0]?.tip) || 0), 0)
+  const avgRating = (() => {
+    const rated = deliveries.filter(d => d.order_ratings?.[0]?.driver_rating)
+    if (!rated.length) return null
+    return (rated.reduce((s,d) => s + d.order_ratings[0].driver_rating, 0) / rated.length).toFixed(1)
+  })()
+
+  return (
+    <div style={{ padding:'0 16px 24px' }}>
+      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:4 }}>Delivery History</div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:16, marginTop:8 }}>
+        {[
+          { v: deliveries.length, l:'Total deliveries' },
+          { v: avgRating ? '⭐ ' + avgRating : '—', l:'Avg rating' },
+          { v: '€' + totalTips.toFixed(2), l:'Total tips' },
+        ].map(s => (
+          <div key={s.l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:12, padding:'12px 10px', textAlign:'center' }}>
+            <div style={{ fontSize:18, fontWeight:500, color:'white' }}>{s.v}</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', marginTop:2 }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {loading ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)' }}>Loading...</div> :
+        deliveries.map(d => (
+          <div key={d.id} style={{ display:'flex', gap:10, padding:'10px 0', borderBottom:'0.5px solid rgba(255,255,255,0.07)', alignItems:'flex-start' }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, color:'white' }}>
+                {d.delivery_address?.split(',')[0] || 'Delivery'}
+              </div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:2 }}>
+                {new Date(d.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}
+              </div>
+            </div>
+            <div style={{ textAlign:'right' }}>
+              <div style={{ fontSize:13, fontWeight:500, color:'#E8A070' }}>€{(d.total||0).toFixed(2)}</div>
+              {d.order_ratings?.[0]?.driver_rating && (
+                <div style={{ fontSize:11, color:'#F5C97A' }}>{'⭐'.repeat(d.order_ratings[0].driver_rating)}</div>
+              )}
+              {d.order_ratings?.[0]?.tip > 0 && (
+                <div style={{ fontSize:11, color:'#7EE8A2' }}>+€{d.order_ratings[0].tip} tip</div>
+              )}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  )
+}
+
+// ── Availability / Shift Tab ──────────────────────────────────
+function AvailabilityTab() {
+  const { user } = useAuthStore()
+  const [shifts, setShifts]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [adding, setAdding]   = useState(false)
+  const [form, setForm]       = useState({ shift_date:'', start_time:'', end_time:'', notes:'' })
+
+  const today = new Date().toISOString().slice(0,10)
+
+  const load = async () => {
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      const { data } = await supabase
+        .from('driver_shifts')
+        .select('*')
+        .eq('driver_id', user.id)
+        .gte('shift_date', today)
+        .order('shift_date').order('start_time')
+      if (data) setShifts(data)
+    } catch {}
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const saveShift = async () => {
+    if (!form.shift_date || !form.start_time || !form.end_time) {
+      toast.error('Please fill in date and times'); return
+    }
+    setAdding(true)
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      await supabase.from('driver_shifts').insert({ ...form, driver_id: user.id, status:'scheduled' })
+      toast.success('Shift added!')
+      setForm({ shift_date:'', start_time:'', end_time:'', notes:'' })
+      load()
+    } catch { toast.error('Failed to save') }
+    setAdding(false)
+  }
+
+  const removeShift = async (id) => {
+    const { supabase } = await import('../../lib/supabase')
+    await supabase.from('driver_shifts').delete().eq('id', id)
+    load()
+  }
+
+  const inp = { width:'100%', padding:'10px 12px', background:'rgba(255,255,255,0.08)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, color:'white', outline:'none', boxSizing:'border-box' }
+
+  return (
+    <div style={{ padding:'0 16px 24px' }}>
+      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:4 }}>My Shifts</div>
+      <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', marginBottom:16 }}>Set your availability so ops can plan coverage</div>
+
+      <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:14, padding:14, marginBottom:16 }}>
+        <div style={{ fontSize:13, color:'rgba(255,255,255,0.7)', marginBottom:10 }}>Add availability</div>
+        <input type="date" value={form.shift_date} min={today}
+          onChange={e => setForm(prev => ({ ...prev, shift_date:e.target.value }))}
+          style={{ ...inp, marginBottom:8 }} />
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
+          <input type="time" value={form.start_time}
+            onChange={e => setForm(prev => ({ ...prev, start_time:e.target.value }))}
+            style={inp} placeholder="Start time" />
+          <input type="time" value={form.end_time}
+            onChange={e => setForm(prev => ({ ...prev, end_time:e.target.value }))}
+            style={inp} placeholder="End time" />
+        </div>
+        <button onClick={saveShift} disabled={adding}
+          style={{ width:'100%', padding:'11px', background:'#C4683A', border:'none', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, color:'white', cursor:'pointer', fontWeight:500 }}>
+          {adding ? 'Saving...' : 'Add shift'}
+        </button>
+      </div>
+
+      {loading ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)' }}>Loading...</div> :
+        shifts.length === 0
+          ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)', fontSize:13 }}>No upcoming shifts added</div>
+          : shifts.map(s => (
+            <div key={s.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 0', borderBottom:'0.5px solid rgba(255,255,255,0.07)' }}>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13, color:'white' }}>
+                  {new Date(s.shift_date).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
+                </div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2 }}>
+                  {s.start_time?.slice(0,5)} – {s.end_time?.slice(0,5)}
+                </div>
+              </div>
+              <span style={{ fontSize:10, padding:'2px 8px', borderRadius:20, background:'rgba(90,107,58,0.2)', color:'#7EE8A2' }}>{s.status}</span>
+              <button onClick={() => removeShift(s.id)}
+                style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', cursor:'pointer', fontSize:16 }}>✕</button>
+            </div>
+          ))
+      }
+    </div>
+  )
+}
+
+// ── Driver Earnings Tab ───────────────────────────────────────
+function DriverEarningsTab() {
+  const { user } = useAuthStore()
+  const [earnings, setEarnings] = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [period, setPeriod]     = useState('week')
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { supabase } = await import('../../lib/supabase')
+        const since = period === 'today'
+          ? new Date().toISOString().slice(0, 10)
+          : period === 'week'
+            ? new Date(Date.now() - 7 * 86400000).toISOString()
+            : new Date(Date.now() - 30 * 86400000).toISOString()
+        const { data } = await supabase
+          .from('driver_earnings')
+          .select('*')
+          .eq('driver_id', user.id)
+          .gte('created_at', since)
+          .order('created_at', { ascending: false })
+        if (data) setEarnings(data)
+      } catch {}
+      setLoading(false)
+    }
+    load()
+  }, [period, user])
+
+  const totalEarned  = earnings.reduce((s, e) => s + (e.total || 0), 0)
+  const totalTips    = earnings.reduce((s, e) => s + (e.tip || 0), 0)
+  const totalRuns    = earnings.length
+  const pending      = earnings.filter(e => e.status === 'pending').reduce((s, e) => s + (e.total || 0), 0)
+
+  return (
+    <div style={{ padding:'0 16px 24px' }}>
+      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:4 }}>My Earnings</div>
+
+      <div style={{ display:'flex', gap:8, marginBottom:16, marginTop:8 }}>
+        {[['today','Today'],['week','This week'],['month','This month']].map(([v,l]) => (
+          <button key={v} onClick={() => { setPeriod(v); setLoading(true) }}
+            style={{ flex:1, padding:'7px', borderRadius:20, fontSize:11, background: period===v?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.1)', color: period===v?'#0D3B4A':'rgba(255,255,255,0.7)', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+        {[
+          { v:'€' + totalEarned.toFixed(2), l:'Total earned', color:'#7EE8A2' },
+          { v:'€' + pending.toFixed(2),     l:'Pending payout', color:'#F5C97A' },
+          { v:'€' + totalTips.toFixed(2),   l:'Tips received', color:'#E8A070' },
+          { v: totalRuns,                   l:'Runs completed', color:'white' },
+        ].map(({v,l,color}) => (
+          <div key={l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:12, padding:'12px 14px' }}>
+            <div style={{ fontSize:22, fontWeight:500, color }}>{v}</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2 }}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {loading ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)' }}>Loading...</div> : (
+        earnings.length === 0
+          ? <div style={{ textAlign:'center', padding:30, color:'rgba(255,255,255,0.4)', fontSize:13 }}>No earnings in this period</div>
+          : earnings.map(e => (
+            <div key={e.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 0', borderBottom:'0.5px solid rgba(255,255,255,0.07)' }}>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13, color:'white' }}>Delivery run</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:1 }}>
+                  {new Date(e.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}
+                </div>
+              </div>
+              {e.tip > 0 && <div style={{ fontSize:11, color:'#E8A070' }}>+€{e.tip.toFixed(2)} tip</div>}
+              <div style={{ fontSize:14, fontWeight:500, color: e.status === 'paid' ? '#7EE8A2' : '#F5C97A' }}>€{(e.total||0).toFixed(2)}</div>
+              <span style={{ fontSize:10, padding:'2px 7px', borderRadius:20, background: e.status==='paid'?'rgba(90,107,58,0.2)':'rgba(245,201,122,0.15)', color: e.status==='paid'?'#7EE8A2':'#F5C97A' }}>
+                {e.status}
+              </span>
+            </div>
+          ))
+      )}
     </div>
   )
 }
@@ -377,9 +735,9 @@ export default function DriverApp() {
 
       // Deduct stock NOW (only on confirmed delivery)
       if (currentOrder.order_items?.length) {
-        await fetch(`${SUPABASE_URL}/functions/v1/stock-manager`, {
+        await fetch(SUPABASE_URL + '/functions/v1/stock-manager', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
           body: JSON.stringify({
             type: 'order_placed',
             order_items: currentOrder.order_items.map(i => ({
@@ -415,7 +773,14 @@ export default function DriverApp() {
             <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', lineHeight:1 }}>Isla Drop Driver</div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2 }}>{profile?.full_name || user?.email}</div>
           </div>
-          <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            {isOnline && (
+              <button onClick={togglePause}
+                style={{ padding:'5px 12px', background: isPaused?'rgba(245,201,122,0.2)':'rgba(255,255,255,0.1)', border:'0.5px solid ' + (isPaused?'rgba(245,201,122,0.5)':'rgba(255,255,255,0.2)'), borderRadius:20, fontSize:11, color: isPaused?'#F5C97A':'rgba(255,255,255,0.6)', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+                {isPaused ? '▶️ Resume' : '⏸ Pause'}
+              </button>
+            )}
+            <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer' }}>
             <div style={{ fontSize:12, color: isOnline?'#7EE8A2':'rgba(255,255,255,0.4)' }}>{isOnline ? 'Online' : 'Offline'}</div>
             <div style={{ position:'relative', width:44, height:24 }}>
               <input type="checkbox" checked={isOnline} onChange={toggleOnline} style={{ opacity:0, width:0, height:0, position:'absolute' }} />
@@ -424,14 +789,15 @@ export default function DriverApp() {
               </div>
             </div>
           </label>
+          </div>
         </div>
 
         {/* Stats */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
           {[
             { val: stats.runs,                label:"Today's runs"  },
-            { val: `€${stats.earnings.toFixed(0)}`, label:'Earnings'  },
-            { val: `${stats.avgTime||'—'}m`,  label:'Avg time'     },
+            { val: '€' + stats.earnings.toFixed(0), label:'Earnings'  },
+            { val: (stats.avgTime||'—') + 'm',  label:'Avg time'     },
           ].map(({ val, label }) => (
             <div key={label} style={{ background:'rgba(255,255,255,0.1)', borderRadius:10, padding:'10px 12px' }}>
               <div style={{ fontSize:20, fontWeight:500 }}>{val}</div>
@@ -443,7 +809,7 @@ export default function DriverApp() {
 
       {/* Tabs */}
       <div style={{ display:'flex', borderBottom:'0.5px solid rgba(255,255,255,0.1)', background:'rgba(0,0,0,0.2)' }}>
-        {[{id:'orders',label:'📦 Orders'},{id:'stock',label:'🏪 Warehouse Stock'}].map(t => (
+        {[{id:'orders',label:'📦 Orders'},{id:'stock',label:'🏪 Warehouse Stock'},{id:'earnings',label:'💰 Earnings'},{id:'start',label:'🚀 Getting Started'}].map(t => (
           <button key={t.id} onClick={()=>setActiveTab(t.id)}
             style={{ flex:1, padding:'12px 8px', border:'none', background:'none', color: activeTab===t.id?'white':'rgba(255,255,255,0.45)', fontSize:13, fontWeight: activeTab===t.id?500:400, cursor:'pointer', borderBottom: activeTab===t.id?'2px solid #C4683A':'2px solid transparent', fontFamily:'DM Sans,sans-serif', transition:'all 0.15s' }}>
             {t.label}
@@ -453,6 +819,10 @@ export default function DriverApp() {
 
       {/* Stock tab */}
       {activeTab === 'stock' && <WarehouseStock />}
+      {activeTab === 'earnings' && <DriverEarningsTab />}
+      {activeTab === 'start' && <DriverOnboarding />}
+      {/* SOS always visible */}
+      <SOSButton />
 
       {/* Orders tab */}
       {activeTab === 'orders' && (
@@ -460,7 +830,7 @@ export default function DriverApp() {
 
           {/* Active order */}
           {currentOrder && STATUS_STEPS[currentOrder.status] && (
-            <div style={{ background:'rgba(255,255,255,0.07)', border:`1.5px solid ${STATUS_STEPS[currentOrder.status].color}`, borderRadius:14, padding:16, marginBottom:20 }}>
+            <div style={{ background:'rgba(255,255,255,0.07)', border:'1.5px solid ' + STATUS_STEPS[currentOrder.status].color, borderRadius:14, padding:16, marginBottom:20 }}>
 
               {/* Progress bar */}
               <div style={{ display:'flex', gap:6, marginBottom:14 }}>
@@ -532,7 +902,7 @@ export default function DriverApp() {
             <>
               {!currentOrder && (
                 <div style={{ fontSize:11, fontWeight:500, color:'rgba(255,255,255,0.5)', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12 }}>
-                  {availableOrders.length > 0 ? `${availableOrders.length} new request${availableOrders.length !== 1 ? 's' : ''}` : 'Waiting for orders…'}
+                  {availableOrders.length > 0 ? availableOrders.length + ' new request' + (availableOrders.length !== 1 ? 's' : '') : 'Waiting for orders…'}
                 </div>
               )}
 
