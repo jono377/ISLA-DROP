@@ -58,7 +58,7 @@ Contact: support@isladrop.net | concierge@isladrop.net``
     }),
   })
 
-  if (!resp.ok) throw new Error(`API ${resp.status}`)
+  if (!resp.ok) throw new Error('API error: ' + resp.status)
   const data = await resp.json()
   return data.content?.[0]?.text ?? 'I am here to help — please try again.'
 }
