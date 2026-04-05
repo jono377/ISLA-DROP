@@ -252,6 +252,128 @@ function ConciergeBookings() {
   )
 }
 
+
+// ── Driver Approval Queue ─────────────────────────────────────
+function DriverApprovals() {
+  const [pending, setPending] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [acting, setActing]   = useState(null)
+
+  const load = async () => {
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      const { data } = await supabase
+        .from('profiles')
+        .select(`*, drivers(vehicle_type, vehicle_plate, licence_number, status)`)
+        .eq('role', 'driver')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+      if (data) setPending(data)
+    } catch (err) { console.error(err) }
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const approve = async (driver) => {
+    setActing(driver.id)
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      await supabase.from('profiles').update({ status: 'active' }).eq('id', driver.id)
+      await supabase.from('drivers').update({ status: 'active' }).eq('id', driver.id)
+      toast.success(`${driver.full_name} approved!`)
+      setPending(prev => prev.filter(d => d.id !== driver.id))
+    } catch { toast.error('Approval failed') }
+    setActing(null)
+  }
+
+  const reject = async (driver) => {
+    if (!confirm(`Reject ${driver.full_name}? This will delete their account.`)) return
+    setActing(driver.id)
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      await supabase.from('profiles').delete().eq('id', driver.id)
+      toast.success('Application rejected')
+      setPending(prev => prev.filter(d => d.id !== driver.id))
+    } catch { toast.error('Rejection failed') }
+    setActing(null)
+  }
+
+  if (loading) return <div style={{ textAlign:'center', padding:40, color:'#7A6E60' }}>Loading applications...</div>
+
+  return (
+    <div>
+      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, marginBottom:6 }}>Driver Applications</div>
+      <div style={{ fontSize:13, color:'#7A6E60', marginBottom:20 }}>Review and approve new driver registrations</div>
+
+      {pending.length === 0 ? (
+        <div style={{ textAlign:'center', padding:'50px 0' }}>
+          <div style={{ fontSize:48, marginBottom:12 }}>✅</div>
+          <div style={{ fontSize:16, fontWeight:500, color:'#0D3B4A', marginBottom:6 }}>All clear</div>
+          <div style={{ fontSize:13, color:'#7A6E60' }}>No pending driver applications right now</div>
+        </div>
+      ) : (
+        <>
+          <div style={{ background:'rgba(245,201,122,0.15)', border:'0.5px solid rgba(245,201,122,0.4)', borderRadius:10, padding:'10px 14px', marginBottom:16, fontSize:13, color:'#8B7020' }}>
+            {pending.length} application{pending.length !== 1 ? 's' : ''} awaiting review
+          </div>
+
+          {pending.map(driver => (
+            <div key={driver.id} style={{ background:'white', borderRadius:14, padding:18, marginBottom:12, border:'0.5px solid rgba(42,35,24,0.1)' }}>
+              {/* Header */}
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
+                <div style={{ width:44, height:44, borderRadius:'50%', background:'linear-gradient(135deg,#C4683A,#E8854A)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, color:'white', fontWeight:500, flexShrink:0 }}>
+                  {(driver.full_name||'?').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontSize:15, fontWeight:500, color:'#2A2318' }}>{driver.full_name || 'Unknown'}</div>
+                  <div style={{ fontSize:12, color:'#7A6E60', marginTop:1 }}>{driver.email || '—'}</div>
+                </div>
+                <div style={{ marginLeft:'auto', background:'rgba(245,201,122,0.2)', color:'#8B7020', borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:500 }}>
+                  Pending
+                </div>
+              </div>
+
+              {/* Details grid */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
+                {[
+                  { label:'Phone', value: driver.phone || 'Not provided' },
+                  { label:'Vehicle', value: driver.drivers?.vehicle_type || 'Not provided' },
+                  { label:'Plate', value: driver.drivers?.vehicle_plate || 'Not provided' },
+                  { label:'Licence', value: driver.drivers?.licence_number || 'Not provided' },
+                  { label:'Applied', value: new Date(driver.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) },
+                  { label:'Status', value: 'Awaiting approval' },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ background:'#F5F0E8', borderRadius:8, padding:'8px 10px' }}>
+                    <div style={{ fontSize:10, color:'#7A6E60', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>{label}</div>
+                    <div style={{ fontSize:13, color:'#2A2318', fontWeight:500 }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display:'flex', gap:8 }}>
+                <button
+                  onClick={() => approve(driver)}
+                  disabled={acting === driver.id}
+                  style={{ flex:1, padding:'11px', background:'#5A6B3A', color:'white', border:'none', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, fontWeight:500, cursor:'pointer', opacity: acting===driver.id?0.6:1 }}>
+                  {acting === driver.id ? '...' : '✓ Approve Driver'}
+                </button>
+                <button
+                  onClick={() => reject(driver)}
+                  disabled={acting === driver.id}
+                  style={{ flex:1, padding:'11px', background:'rgba(196,104,58,0.08)', color:'#C4683A', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, cursor:'pointer', opacity: acting===driver.id?0.6:1 }}>
+                  ✕ Reject
+                </button>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function OpsApp() {
   const [tab, setTab] = useState('overview')
   const { stats, liveOrders, drivers, alerts, setStats, setLiveOrders, setDrivers, addAlert } = useOpsStore()
@@ -299,7 +421,7 @@ export default function OpsApp() {
 
       {/* Sub-tabs */}
       <div style={{ display: 'flex', background: '#F5F0E8', borderBottom: '0.5px solid rgba(42,35,24,0.12)' }}>
-        {['overview', 'orders', 'fleet', 'map', 'stock', 'concierge', 'images'].map(t => (
+        {['overview', 'orders', 'fleet', 'map', 'stock', 'concierge', 'drivers', 'images'].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -324,6 +446,7 @@ export default function OpsApp() {
         {tab === 'images' && <div style={{ margin:'0 -16px' }}><ImageManager /></div>}
         {tab === 'stock' && <StockManager />}
         {tab === 'concierge' && <ConciergeBookings />}
+        {tab === 'drivers' && <DriverApprovals />}
       </div>
     </div>
   )
