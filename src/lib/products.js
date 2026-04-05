@@ -421,9 +421,6 @@ export const PRODUCTS = [
   { id: 'oc-004', name: 'Personalised Birthday Ribbon',       category:'party', sub:'accessories', emoji:'🎀', price:3.25,  age_restricted:false, popular:false },
   { id: 'oc-007', name: 'Luxury Gift Bag Large',              category:'party', sub:'accessories', emoji:'🎁', price:5.85,  age_restricted:false, popular:false },
   { id: 'oc-008', name: 'Dried Flower Bouquet',               category:'party', sub:'decorations', emoji:'💐', price:19.50, age_restricted:false, popular:false },
-]
-
-// ── Category config ─────────────────────────────────────────
   // ── COCKTAIL KITS & MIXERS (+30%) ─────────────────────────────
   { id: 'ck-001', name: 'Classic Cocktail Kit (shaker, strainer, jigger, muddler, bar spoon)', category:'cocktail', sub:'kit', emoji:'🍹', price:22.75, age_restricted:false, popular:true  },
   { id: 'ck-002', name: 'Aperol Spritz Kit (Aperol 70cl + Prosecco + Soda)', category:'cocktail', sub:'kit', emoji:'🥂', price:28.60, age_restricted:true,  popular:true  },
@@ -440,8 +437,9 @@ export const PRODUCTS = [
   { id: 'ck-013', name: 'Cocktail Garnish Kit (Lemons, Limes, Mint, Cucumber, Olives, Cherries)', category:'cocktail', sub:'garnish', emoji:'🍋', price:12.35, age_restricted:false, popular:true  },
   { id: 'ck-014', name: 'Simple Syrup & Grenadine Set', category:'cocktail', sub:'mixer', emoji:'🍯', price:9.75, age_restricted:false, popular:false },
   { id: 'ck-015', name: 'Cocktail Napkins & Picks Set 50pk', category:'cocktail', sub:'accessories', emoji:'🍡', price:5.20, age_restricted:false, popular:false },
+]
 
-
+// ── Category config ─────────────────────────────────────────
 export const CATEGORIES = [
   { key: 'spirits',    label: 'Spirits',      emoji: '🥃', subs: [
     { key: 'tequila',  label: 'Tequila'  },
