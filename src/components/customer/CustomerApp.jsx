@@ -15,9 +15,13 @@ import ProductImage from '../shared/ProductImage'
 import AccountView from './AccountView'
 import Concierge from './Concierge'
 import PartyBuilder from './PartyBuilder'
+import GroupOrder from './GroupOrder'
+import ScheduleOrder from './ScheduleOrder'
+import ClubCalendar from './ClubCalendar'
+import ArrivalPackage from './ArrivalPackage'
 // supabase imported dynamically inside functions to prevent blank screen
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', CONCIERGE:'concierge', PARTY:'party', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', CONCIERGE:'concierge', PARTY:'party', GROUP:'group', CLUBS:'clubs', ARRIVAL:'arrival', GIFT:'gift', SPEND:'spend', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -203,7 +207,7 @@ function CheckoutSuggestions({ cartItems }) {
   )
 }
 
-function BasketView({ t, onCheckout }) {
+function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
   const cart = useCartStore()
   const { updateQuantity } = useCartStore()
   if (cart.getItemCount()===0) return (
@@ -243,8 +247,41 @@ function BasketView({ t, onCheckout }) {
         </div>
       )}
       <CheckoutSuggestions cartItems={cart.items} />
+      {/* Free delivery nudge — only when within €50 of threshold */}
+      {(() => {
+        const total = cart.getTotal()
+        const remaining = FREE_DELIVERY_THRESHOLD - total
+        if (remaining <= 0 || total < FREE_DELIVERY_NUDGE_FROM) return null
+        const pct = Math.round((total / FREE_DELIVERY_THRESHOLD) * 100)
+        return (
+          <div style={{ background:'rgba(90,107,58,0.15)', border:'0.5px solid rgba(90,107,58,0.35)', borderRadius:12, padding:'12px 14px', marginBottom:12 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+              <div style={{ fontSize:13, fontWeight:500, color:'#7EE8A2', fontFamily:'DM Sans,sans-serif' }}>
+                🚚 Add €{remaining.toFixed(2)} more for free delivery
+              </div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>{pct}%</div>
+            </div>
+            <div style={{ background:'rgba(255,255,255,0.1)', borderRadius:20, height:5 }}>
+              <div style={{ height:'100%', width:pct + '%', background:'#7EE8A2', borderRadius:20, transition:'width 0.4s' }} />
+            </div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:5, fontFamily:'DM Sans,sans-serif' }}>
+              Orders over €{FREE_DELIVERY_THRESHOLD} receive free delivery
+            </div>
+          </div>
+        )
+      })()}
+      <div style={{ display:'flex', gap:8, marginBottom:10 }}>
+        <button onClick={() => onGroupOrder()}
+          style={{ flex:1, padding:'11px', background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:12, color:'rgba(255,255,255,0.7)', cursor:'pointer' }}>
+          👥 Group order
+        </button>
+        <button onClick={() => onSchedule()}
+          style={{ flex:1, padding:'11px', background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:12, color:'rgba(255,255,255,0.7)', cursor:'pointer' }}>
+          🕐 Schedule for later
+        </button>
+      </div>
       <button onClick={onCheckout} style={{ width:'100%',padding:'16px',background:'#C4683A',color:'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:'pointer',boxShadow:'0 4px 20px rgba(196,104,58,0.4)' }}>
-        {t.checkout} →
+        Order now — deliver ASAP →
       </button>
     </div>
   )
@@ -283,7 +320,11 @@ function SearchView({ t }) {
     : []
 
   // AI search for natural language queries
+  const aiLastCall = { ts: 0 }
   const runAiSearch = async (q) => {
+    const now = Date.now()
+    if (now - aiLastCall.ts < 2000) return // 2s rate limit
+    aiLastCall.ts = now
     if (!q || q.length < 3) return
     setAiLoading(true)
     try {
@@ -435,7 +476,131 @@ function SearchView({ t }) {
 
 
 
+
+// ── Cancel Countdown ──────────────────────────────────────────
+function CancelCountdown({ deadline, orderId, onCancelled }) {
+  const [remaining, setRemaining] = useState(Math.max(0, deadline - Date.now()))
+  const [cancelling, setCancelling] = useState(false)
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      const r = Math.max(0, deadline - Date.now())
+      setRemaining(r)
+      if (r === 0) clearInterval(t)
+    }, 500)
+    return () => clearInterval(t)
+  }, [deadline])
+
+  if (remaining === 0) return null
+
+  const secs = Math.ceil(remaining / 1000)
+  const pct = (remaining / 120000) * 100
+
+  const cancel = async () => {
+    setCancelling(true)
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId)
+      toast.success('Order cancelled')
+      onCancelled()
+    } catch { toast.error('Could not cancel — contact support'); setCancelling(false) }
+  }
+
+  return (
+    <div style={{ background:'rgba(245,201,122,0.12)', border:'0.5px solid rgba(245,201,122,0.35)', borderRadius:12, padding:'12px 14px', marginBottom:12 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+        <div style={{ fontSize:13, color:'#F5C97A', fontFamily:'DM Sans,sans-serif' }}>
+          ⏱ Cancel within {secs}s
+        </div>
+        <button onClick={cancel} disabled={cancelling}
+          style={{ padding:'6px 14px', background:'rgba(245,201,122,0.2)', border:'0.5px solid rgba(245,201,122,0.5)', borderRadius:20, fontSize:12, color:'#F5C97A', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+          {cancelling ? '...' : 'Cancel order'}
+        </button>
+      </div>
+      <div style={{ background:'rgba(255,255,255,0.1)', borderRadius:20, height:4 }}>
+        <div style={{ height:'100%', width:pct + '%', background:'#F5C97A', borderRadius:20, transition:'width 0.5s linear' }} />
+      </div>
+    </div>
+  )
+}
+
 // ── On Sale Section ───────────────────────────────────────────
+
+// ── Just Landed Detection ─────────────────────────────────────
+function JustLandedBanner({ onShop }) {
+  const [show, setShow] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
+  const { user } = useAuthStore()
+
+  useEffect(() => {
+    // Show if: user hasn't ordered in 7+ days OR new account OR Ibiza location detected
+    const checkShow = async () => {
+      try {
+        // Check localStorage for last dismiss
+        const lastDismiss = localStorage.getItem('isla_arrival_dismissed')
+        if (lastDismiss && Date.now() - parseInt(lastDismiss) < 86400000) return // dismissed today
+
+        // Check if user is near Ibiza using geolocation
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(pos => {
+            const { latitude, longitude } = pos.coords
+            // Ibiza bounding box: lat 38.85-39.15, lng 1.25-1.65
+            const inIbiza = latitude > 38.85 && latitude < 39.15 && longitude > 1.25 && longitude < 1.65
+            if (inIbiza) { setShow(true); return }
+          }, () => {})
+        }
+
+        // Check last order date if logged in
+        if (user) {
+          const { supabase } = await import('../../lib/supabase')
+          const { data } = await supabase
+            .from('orders')
+            .select('created_at')
+            .eq('customer_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          const lastOrder = data?.created_at ? new Date(data.created_at) : null
+          const daysSinceOrder = lastOrder ? (Date.now() - lastOrder.getTime()) / 86400000 : 999
+          if (daysSinceOrder > 7 || !lastOrder) setShow(true)
+        } else {
+          // Not logged in — check if first visit
+          const firstVisit = !localStorage.getItem('isla_visited')
+          if (firstVisit) { localStorage.setItem('isla_visited', '1'); setShow(true) }
+        }
+      } catch {}
+    }
+    checkShow()
+  }, [user])
+
+  const dismiss = () => {
+    localStorage.setItem('isla_arrival_dismissed', Date.now().toString())
+    setDismissed(true)
+  }
+
+  if (!show || dismissed) return null
+
+  return (
+    <div style={{ margin:'0 16px 16px', background:'linear-gradient(135deg,rgba(13,59,74,0.9),rgba(43,122,139,0.7))', border:'0.5px solid rgba(43,122,139,0.4)', borderRadius:16, padding:'16px 16px 14px', position:'relative' }}>
+      <button onClick={dismiss} style={{ position:'absolute', top:10, right:10, background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:16 }}>✕</button>
+      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        <span style={{ fontSize:36 }}>✈️</span>
+        <div style={{ flex:1 }}>
+          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:3 }}>Just landed in Ibiza?</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.55)', lineHeight:1.4, marginBottom:10 }}>
+            Get everything you need delivered in 30 minutes — water, drinks, snacks and more
+          </div>
+          <button onClick={() => { onShop(); dismiss() }}
+            style={{ padding:'8px 18px', background:'#C4683A', border:'none', borderRadius:20, fontSize:12, color:'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:500 }}>
+            See arrival packages →
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function OnSaleSection({ t }) {
   const [saleItems, setSaleItems] = useState([])
   const { addItem } = useCartStore()
@@ -498,6 +663,254 @@ function OnSaleSection({ t }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+
+
+
+
+// ── Just Landed Banner ────────────────────────────────────────
+// Shows when: first visit, long absence (2+ days), or Ibiza location detected
+function JustLandedBanner({ onArrival }) {
+  const [show, setShow] = useState(false)
+  const { user } = useAuthStore()
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        // Check last seen timestamp
+        const lastSeen = localStorage.getItem('isla_last_seen')
+        const now = Date.now()
+        const twoDaysMs = 2 * 24 * 60 * 60 * 1000
+
+        const isFirstVisit = !lastSeen
+        const isLongAbsence = lastSeen && (now - parseInt(lastSeen)) > twoDaysMs
+        const dismissed = sessionStorage.getItem('isla_arrived_dismissed')
+
+        if (dismissed) return
+
+        if (isFirstVisit || isLongAbsence) {
+          // Check if in Ibiza via geolocation (optional, non-blocking)
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+              const { latitude, longitude } = pos.coords
+              // Ibiza bounding box: lat 38.85-39.05, lng 1.25-1.65
+              const inIbiza = latitude > 38.85 && latitude < 39.05 && longitude > 1.25 && longitude < 1.65
+              if (inIbiza || isFirstVisit) setShow(true)
+            }, () => {
+              // No location permission — show if long absence or first visit
+              if (isFirstVisit || isLongAbsence) setShow(true)
+            }, { timeout: 3000 })
+          } else {
+            if (isFirstVisit || isLongAbsence) setShow(true)
+          }
+        }
+        localStorage.setItem('isla_last_seen', now.toString())
+      } catch {}
+    }
+    setTimeout(check, 1500) // slight delay so home screen loads first
+  }, [])
+
+  const dismiss = () => {
+    sessionStorage.setItem('isla_arrived_dismissed', '1')
+    setShow(false)
+  }
+
+  if (!show) return null
+
+  return (
+    <div style={{ padding:'0 16px', marginBottom:14 }}>
+      <div style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.25),rgba(43,122,139,0.25))', border:'0.5px solid rgba(196,104,58,0.35)', borderRadius:16, padding:'16px 16px 14px', position:'relative' }}>
+        <button onClick={dismiss}
+          style={{ position:'absolute', top:10, right:12, background:'none', border:'none', color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', padding:0 }}>✕</button>
+        <div style={{ fontSize:28, marginBottom:6 }}>✈️</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:19, color:'white', marginBottom:4 }}>Just landed in Ibiza?</div>
+        <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)', marginBottom:12, lineHeight:1.5 }}>
+          Get everything you need delivered in under 30 minutes — drinks, food, sun cream, the works.
+        </div>
+        <button onClick={() => { onArrival(); dismiss() }}
+          style={{ padding:'10px 20px', background:'#C4683A', border:'none', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, fontWeight:500, color:'white', cursor:'pointer', boxShadow:'0 3px 12px rgba(196,104,58,0.4)' }}>
+          See arrival packages →
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Drink Pairing Suggestions ─────────────────────────────────
+const PAIRINGS = {
+  // Spirits -> suggest mixers
+  'sp-001': ['sd-025','sd-003','fr-001','ic-001'], // Gin -> Tonic, Red Bull, Lemon, Ice
+  'sp-004': ['sd-025','sd-003','ic-002'],           // Vodka -> Tonic, Red Bull, Ice
+  'sp-035': ['sd-029','ic-001','fr-001'],           // Tequila -> Lime, Ice, Garnish
+  'sp-012': ['sd-027','ic-001','fr-001'],           // Rum -> Coke, Ice, Lime
+  'ch-001': ['ic-001'],                             // Champagne -> Ice
+  'ch-010': ['ic-001','sd-027'],                    // Prosecco -> Ice
+  'wn-021': ['ic-001'],                             // Rose -> Ice
+}
+
+function DrinkPairingToast({ productId, onAdd, onDismiss }) {
+  const pairIds = PAIRINGS[productId] || []
+  const pairs = pairIds.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
+  if (pairs.length === 0) return null
+  return (
+    <div style={{ background:'rgba(13,53,69,0.95)', border:'0.5px solid rgba(43,122,139,0.4)', borderRadius:14, padding:'12px 14px', marginTop:8, maxWidth:320 }}>
+      <div style={{ fontSize:12, color:'#7ECFE0', marginBottom:8, fontFamily:'DM Sans,sans-serif' }}>🍹 Pairs well with:</div>
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        {pairs.slice(0,3).map(p => (
+          <button key={p.id} onClick={() => onAdd(p)}
+            style={{ padding:'5px 10px', background:'rgba(43,122,139,0.3)', border:'0.5px solid rgba(43,122,139,0.4)', borderRadius:20, fontSize:11, color:'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+            {p.emoji} {p.name.split(' ').slice(0,2).join(' ')} €{p.price.toFixed(2)}
+          </button>
+        ))}
+      </div>
+      <button onClick={onDismiss} style={{ fontSize:10, color:'rgba(255,255,255,0.3)', background:'none', border:'none', cursor:'pointer', marginTop:6, fontFamily:'DM Sans,sans-serif' }}>No thanks</button>
+    </div>
+  )
+}
+
+// ── Smart Reorder ─────────────────────────────────────────────
+function SmartReorderSection() {
+  const [lastOrders, setLastOrders] = useState([])
+  const { addItem } = useCartStore()
+  const { user } = useAuthStore()
+
+  useEffect(() => {
+    if (!user) return
+    const load = async () => {
+      try {
+        const { supabase } = await import('../../lib/supabase')
+        const { data } = await supabase
+          .from('orders')
+          .select('id, order_number, order_items(product_id, quantity, product:products(id,name,emoji,price,category,age_restricted))')
+          .eq('customer_id', user.id)
+          .eq('status', 'delivered')
+          .order('created_at', { ascending: false })
+          .limit(3)
+        if (data && data.length > 0) setLastOrders(data)
+      } catch {}
+    }
+    load()
+  }, [user])
+
+  if (lastOrders.length === 0) return null
+
+  const reorderAll = (order) => {
+    const items = (order.order_items || []).filter(i => i.product)
+    items.forEach(i => { for (let n = 0; n < i.quantity; n++) addItem(i.product) })
+    toast.success('Added ' + items.length + ' items to basket!')
+  }
+
+  return (
+    <div style={{ marginBottom:20 }}>
+      <div style={{ padding:'0 16px', marginBottom:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>Order again</div>
+      </div>
+      <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
+        {lastOrders.map(o => {
+          const items = (o.order_items || []).filter(i => i.product)
+          const preview = items.slice(0, 4)
+          return (
+            <div key={o.id} style={{ flexShrink:0, width:180, background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'12px 14px' }}>
+              <div style={{ display:'flex', gap:4, marginBottom:8 }}>
+                {preview.map((i, idx) => <span key={idx} style={{ fontSize:20 }}>{i.product?.emoji}</span>)}
+                {items.length > 4 && <span style={{ fontSize:11, color:'rgba(255,255,255,0.4)', alignSelf:'flex-end' }}>+{items.length - 4}</span>}
+              </div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.6)', marginBottom:8, lineHeight:1.4, height:32, overflow:'hidden' }}>
+                {preview.map(i => i.product?.name).join(', ')}
+              </div>
+              <button onClick={() => reorderAll(o)}
+                style={{ width:'100%', padding:'7px', background:'#C4683A', border:'none', borderRadius:8, fontSize:12, color:'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:500 }}>
+                Reorder
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Recently Viewed ───────────────────────────────────────────
+function RecentlyViewedSection() {
+  const [items, setItems] = useState([])
+  const { addItem } = useCartStore()
+  const { user } = useAuthStore()
+
+  useEffect(() => {
+    // Load from localStorage (fast) + Supabase (if logged in)
+    try {
+      const local = JSON.parse(localStorage.getItem('isla_recently_viewed') || '[]')
+      const products = local.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean).slice(0, 8)
+      setItems(products)
+    } catch {}
+  }, [])
+
+  if (items.length === 0) return null
+
+  return (
+    <div style={{ marginBottom:20 }}>
+      <div style={{ padding:'0 16px', marginBottom:10 }}>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>Recently viewed</div>
+      </div>
+      <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
+        {items.map(p => (
+          <div key={p.id} style={{ flexShrink:0, width:110, background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:12, overflow:'hidden' }}>
+            <div style={{ height:64, background:'linear-gradient(135deg,#0D3B4A,#1A5263)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26 }}>{p.emoji}</div>
+            <div style={{ padding:'7px 8px' }}>
+              <div style={{ fontSize:10, color:'white', lineHeight:1.3, marginBottom:4, height:26, overflow:'hidden' }}>{p.name}</div>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:11, fontWeight:500, color:'#E8A070' }}>€{p.price.toFixed(2)}</span>
+                <button onClick={() => { addItem(p); toast.success(p.emoji + ' Added!', { duration:900 }) }}
+                  style={{ padding:'3px 7px', background:'#C4683A', border:'none', borderRadius:6, fontSize:10, color:'white', cursor:'pointer' }}>
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Promo Banners Section ─────────────────────────────────────
+function PromoBannersSection({ onNavigate }) {
+  const [banners, setBanners] = useState([])
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { supabase } = await import('../../lib/supabase')
+        const { data } = await supabase
+          .from('promo_banners')
+          .select('*')
+          .eq('active', true)
+          .order('sort_order')
+          .limit(5)
+        if (data && data.length > 0) setBanners(data)
+      } catch {}
+    }
+    load()
+  }, [])
+
+  if (banners.length === 0) return null
+
+  return (
+    <div style={{ padding:'0 16px', marginBottom:20 }}>
+      {banners.map(b => (
+        <div key={b.id} onClick={() => onNavigate && onNavigate(b.cta_action)}
+          style={{ background:b.bg_color, borderRadius:14, padding:'14px 16px', marginBottom:10, cursor:'pointer', display:'flex', alignItems:'center', gap:12, border:'0.5px solid rgba(255,255,255,0.1)' }}>
+          <span style={{ fontSize:32, flexShrink:0 }}>{b.emoji}</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:'DM Serif Display,serif', fontSize:16, color:'white' }}>{b.title}</div>
+            {b.subtitle && <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', marginTop:2 }}>{b.subtitle}</div>}
+          </div>
+          <div style={{ background:'rgba(255,255,255,0.2)', borderRadius:20, padding:'5px 12px', fontSize:11, color:'white', flexShrink:0, whiteSpace:'nowrap' }}>{b.cta_label}</div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -618,34 +1031,8 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 
           {/* Concierge Highlights carousel */}
           <div style={{ marginBottom:24 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0 16px', marginBottom:12 }}>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white' }}>✨ Ibiza Experiences</div>
-              <button onClick={()=>navigate(VIEWS.CONCIERGE)} style={{ fontSize:11, color:'rgba(255,255,255,0.5)', background:'none', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>See all →</button>
-            </div>
-            <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
-              {[
-                { emoji:'⛵', title:'RIB Speedboat', sub:'Half day from €605', id:'concierge', color:'linear-gradient(135deg,#0D3B4A,#2B7A8B)' },
-                { emoji:'🍒', title:'Pacha Ibiza', sub:'Entry from €110pp', id:'concierge', color:'linear-gradient(135deg,#3D1A3A,#8B2070)' },
-                { emoji:'⭐', title:'La Gaia Restaurant', sub:'Michelin star from €220', id:'concierge', color:'linear-gradient(135deg,#3A2A0A,#8B6020)' },
-                { emoji:'🏖️', title:'Blue Marlin VIP', sub:'Daybed from €440', id:'concierge', color:'linear-gradient(135deg,#0A2A3A,#1A6080)' },
-                { emoji:'☀️', title:'Ushuaia Day Club', sub:'Entry from €143pp', id:'concierge', color:'linear-gradient(135deg,#2A1A0A,#8B4A20)' },
-                { emoji:'🏡', title:'Luxury Finca', sub:'4-bed from €1,210/night', id:'concierge', color:'linear-gradient(135deg,#1A2A0A,#4A6B20)' },
-                { emoji:'🧘', title:'Sunrise Yoga', sub:'Ses Salines from €88', id:'concierge', color:'linear-gradient(135deg,#0A1A2A,#20408B)' },
-                { emoji:'🚁', title:'Helicopter Tour', sub:'Island panorama €770', id:'concierge', color:'linear-gradient(135deg,#2A0A1A,#8B2040)' },
-                { emoji:'🌙', title:'Amante Dinner', sub:'Clifftop from €95pp', id:'concierge', color:'linear-gradient(135deg,#1A0A2A,#502080)' },
-                { emoji:'🏍️', title:'Quad Bike Adventure', sub:'3hr tour from €132', id:'concierge', color:'linear-gradient(135deg,#2A1A0A,#6B4020)' },
-              ].map((item, i) => (
-                <div key={i} onClick={()=>navigate(VIEWS.CONCIERGE)}
-                  style={{ flexShrink:0, width:140, background:item.color, borderRadius:14, padding:'14px 12px', cursor:'pointer', border:'0.5px solid rgba(255,255,255,0.1)' }}>
-                  <div style={{ fontSize:28, marginBottom:8 }}>{item.emoji}</div>
-                  <div style={{ fontSize:13, fontWeight:500, color:'white', marginBottom:3, lineHeight:1.2 }}>{item.title}</div>
-                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)' }}>{item.sub}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <OnSaleSection t={t} />
+                  <OnSaleSection t={t} />
+          <RecentlyViewedSection />
           {/* Design Your Experience cards */}
           <div style={{ padding:'0 16px', marginBottom:20 }}>
             <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:12 }}>Design Your Experience</div>
@@ -699,6 +1086,7 @@ export default function CustomerApp() {
   const [locationSet, setLocationSet] = useState(false)
   const [activeOrder, setActiveOrder] = useState(null)
   const [partyType, setPartyType]       = useState(null)
+  const [showSchedule, setShowSchedule] = useState(false)
   const { user } = useAuthStore()
   const cart = useCartStore()
   const t    = useT(lang)
@@ -731,7 +1119,7 @@ export default function CustomerApp() {
     setView(v)
   }
 
-  const handleCheckoutStart = () => {
+  const handleCheckoutStart = (scheduledFor) => {
     if (!user) { toast('Sign in to checkout',{icon:'👤'}); return }
     if (cart.getHasAgeRestricted()) { setView(VIEWS.AGE_VERIFY); return }
     setView(VIEWS.CHECKOUT)
@@ -746,7 +1134,7 @@ export default function CustomerApp() {
         deliveryNotes:cart.deliveryNotes, what3words:cart.what3words, subtotal:cart.getSubtotal(), total:cart.getTotal(), paymentIntentId,
       })
       cart.clearCart(); setActiveOrder(order); setView(VIEWS.TRACKING)
-      const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');sub.unsubscribe()} })
+      const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');sub.unsubscribe();setTimeout(()=>setShowRating(true),1500)} })
     } catch(err){ toast.error('Order failed: '+err.message) }
   }
 
@@ -824,6 +1212,38 @@ export default function CustomerApp() {
             </div>
           ))}
         </div>
+        {/* Live chat with driver */}
+        {activeOrder.driver_id && activeOrder.status !== 'delivered' && activeOrder.status !== 'pending' && (
+          <button onClick={() => setShowChat(true)}
+            style={{ width:'100%', padding:'11px', background:'rgba(43,122,139,0.2)', border:'0.5px solid rgba(43,122,139,0.35)', borderRadius:12, fontFamily:'DM Sans,sans-serif', fontSize:13, color:'#7ECFE0', cursor:'pointer', marginBottom:10, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+            💬 Message your driver
+          </button>
+        )}
+        {/* Order cancellation — 2 min window while pending */}
+        {activeOrder.status === 'pending' && (() => {
+          const placedAt = new Date(activeOrder.created_at)
+          const elapsed = (Date.now() - placedAt) / 1000
+          const remaining = Math.max(0, 120 - elapsed)
+          if (remaining <= 0) return null
+          return (
+            <div style={{ background:'rgba(196,104,58,0.1)', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:12, padding:'12px 14px', marginBottom:10 }}>
+              <div style={{ fontSize:13, color:'#E8A070', marginBottom:6, fontFamily:'DM Sans,sans-serif', fontWeight:500 }}>
+                Cancel available for {Math.ceil(remaining)}s
+              </div>
+              <button onClick={async () => {
+                try {
+                  const { supabase } = await import('../../lib/supabase')
+                  await supabase.from('orders').update({ status:'cancelled' }).eq('id', activeOrder.id).eq('status','pending')
+                  toast.success('Order cancelled')
+                  setActiveOrder(null)
+                } catch { toast.error('Could not cancel — driver may already be assigned') }
+              }}
+                style={{ padding:'8px 16px', background:'rgba(196,104,58,0.2)', border:'0.5px solid rgba(196,104,58,0.4)', borderRadius:8, fontSize:12, color:'#E8A070', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+                Cancel order
+              </button>
+            </div>
+          )
+        })()}
         {/* Delivery PIN — shown prominently when driver is en route */}
         {activeOrder.delivery_pin && activeOrder.status !== 'delivered' && (
           <div style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.25),rgba(196,104,58,0.1))', border:'1.5px solid rgba(196,104,58,0.5)', borderRadius:14, padding:'16px', marginBottom:16, textAlign:'center' }}>
@@ -900,14 +1320,55 @@ export default function CustomerApp() {
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
       {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>navigate(VIEWS.ASSIST)} onBest={()=>navigate(VIEWS.BEST)} onNewIn={()=>navigate(VIEWS.NEWIN)} onParty={(type)=>{ setPartyType(type); navigate(VIEWS.PARTY) }} />}
       {view===VIEWS.SEARCH   && <SearchView t={t} />}
-      {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
+      {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onGroupOrder={()=>navigate(VIEWS.GROUP)} onSchedule={()=>setShowSchedule(true)} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.PARTY     && <PartyBuilder initialType={partyType} onBack={goBack} />}
+      {view===VIEWS.GROUP     && <GroupOrder onBack={goBack} />}
+      {view===VIEWS.CLUBS    && <ClubCalendar onBack={goBack} />}
+      {view===VIEWS.ARRIVAL  && <ArrivalPackage onBack={goBack} />}
       {view===VIEWS.ASSIST   && <AssistBot onClose={goBack} />}
       {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={goBack} />}
       {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={goBack} />}
 
+      {showChat && activeOrder && (
+        <OrderChat
+          orderId={activeOrder.id}
+          driverName={activeOrder.driver_name}
+          onClose={() => setShowChat(false)}
+        />
+      )}
+      {showRating && activeOrder && (
+        <OrderRating
+          order={activeOrder}
+          onDone={() => { setShowRating(false); setActiveOrder(null) }}
+        />
+      )}
+      {showSchedule && (
+        <ScheduleOrder
+          currentTotal={cart.getTotal()}
+          onSchedule={(scheduledFor) => { setShowSchedule(false); handleCheckoutStart(scheduledFor) }}
+          onCancel={() => setShowSchedule(false)}
+        />
+      )}
+      {/* Active order ETA banner */}
+      {activeOrder && view === VIEWS.HOME && activeOrder.status !== 'delivered' && activeOrder.status !== 'cancelled' && (
+        <div onClick={() => navigate(VIEWS.TRACKING)}
+          style={{ position:'fixed', top:0, left:0, right:0, zIndex:150, background:'linear-gradient(90deg,#0D3545,#2B7A8B)', padding:'10px 16px', display:'flex', alignItems:'center', gap:10, cursor:'pointer', boxShadow:'0 2px 12px rgba(0,0,0,0.3)' }}>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:'#7EE8A2', animation:'pulse 1.5s infinite' }} />
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:13, fontWeight:500, color:'white', fontFamily:'DM Sans,sans-serif' }}>
+              {activeOrder.status === 'pending' ? 'Order placed — finding driver...' :
+               activeOrder.status === 'accepted' ? 'Driver heading to warehouse' :
+               activeOrder.status === 'collecting' ? 'Driver collecting your order' :
+               activeOrder.eta_minutes ? 'Arriving in ~' + activeOrder.eta_minutes + ' min' : 'Driver on the way'}
+            </div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:'DM Sans,sans-serif' }}>Tap to track</div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      )}
+      <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}'}</style>
       {/* Floating cart bar on home only */}
       {view===VIEWS.HOME && cart.getItemCount()>0 && (
         <div onClick={()=>setView(VIEWS.BASKET)}

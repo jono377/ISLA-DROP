@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuthStore, useCartStore } from '../../lib/store'
 import AuthScreen from '../shared/AuthScreen'
 import SupportChat from './SupportChat'
+import LoyaltyPoints from './LoyaltyPoints'
 
 const C = {
   teal: '#0D3B4A', accent: '#C4683A', card: 'rgba(255,255,255,0.06)',
@@ -10,7 +11,7 @@ const C = {
 
 function Row({ icon, label, sub, onClick, accent: useAccent, danger, right }) {
   return (
-    <div onClick={onClick} style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', background: useAccent?'rgba(43,122,139,0.18)':danger?'rgba(196,104,58,0.08)':C.card, border:`0.5px solid ${useAccent?'rgba(43,122,139,0.3)':danger?'rgba(196,104,58,0.25)':C.border}`, borderRadius:12, marginBottom:8, cursor:'pointer' }}>
+    <div onClick={onClick} style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', background: useAccent?'rgba(43,122,139,0.18)':danger?'rgba(196,104,58,0.08)':C.card, border:('0.5px solid ' + (useAccent?'rgba(43,122,139,0.3)':danger?'rgba(196,104,58,0.25)':C.border)), borderRadius:12, marginBottom:8, cursor:'pointer' }}>
       <span style={{ fontSize:18, flexShrink:0 }}>{icon}</span>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:14, color: danger?'#E8A070':C.text, fontFamily:'DM Sans,sans-serif' }}>{label}</div>
@@ -61,7 +62,7 @@ function MyOrders({ onBack }) {
         </div>
       )}
       {orders.map(order => (
-        <div key={order.id} style={{ background:C.card, border:`0.5px solid ${C.border}`, borderRadius:14, padding:14, marginBottom:12 }}>
+        <div key={order.id} style={{ background:C.card, border:'0.5px solid ' + C.border, borderRadius:14, padding:14, marginBottom:12 }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
             <div>
               <div style={{ fontSize:13, fontWeight:500, color:C.text }}>#{order.order_number || order.id?.slice(0,8).toUpperCase()}</div>
@@ -72,8 +73,8 @@ function MyOrders({ onBack }) {
             </span>
           </div>
           <div style={{ fontSize:12, color:C.muted, marginBottom:10 }}>
-            {order.order_items?.slice(0,3).map(i => `${i.quantity}x ${i.product?.name||'Item'}`).join(', ')}
-            {order.order_items?.length > 3 ? ` +${order.order_items.length-3} more` : ''}
+            {order.order_items?.slice(0,3).map(i => i.quantity + 'x ' + (i.product?.name||'Item')).join(', ')}
+            {order.order_items?.length > 3 ? ' +' + (order.order_items.length-3) + ' more' : ''}
           </div>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
             <div style={{ fontSize:15, fontWeight:500, color:'#E8A070' }}>€{order.total?.toFixed(2)}</div>
@@ -121,14 +122,14 @@ function MyFavourites({ onBack }) {
           <div style={{ fontSize:14, color:C.muted }}>Tap the heart on any product to save it here</div>
         </div>
       ) : favourites.map(p => (
-        <div key={p.id} style={{ display:'flex', alignItems:'center', gap:12, background:C.card, border:`0.5px solid ${C.border}`, borderRadius:12, padding:'12px 14px', marginBottom:8 }}>
+        <div key={p.id} style={{ display:'flex', alignItems:'center', gap:12, background:C.card, border:'0.5px solid ' + C.border, borderRadius:12, padding:'12px 14px', marginBottom:8 }}>
           <span style={{ fontSize:24 }}>{p.emoji}</span>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:14, color:C.text, fontFamily:'DM Sans,sans-serif' }}>{p.name}</div>
             <div style={{ fontSize:12, color:'#E8A070', marginTop:1 }}>€{p.price?.toFixed(2)}</div>
           </div>
           <button onClick={() => addItem(p)} style={{ padding:'7px 12px', background:'rgba(196,104,58,0.15)', border:`0.5px solid rgba(196,104,58,0.3)`, borderRadius:8, fontSize:12, color:'#E8A070', cursor:'pointer', fontFamily:'DM Sans,sans-serif', marginRight:6 }}>Add</button>
-          <button onClick={() => remove(p.id)} style={{ padding:'7px 10px', background:'rgba(255,255,255,0.06)', border:`0.5px solid ${C.border}`, borderRadius:8, fontSize:12, color:C.muted, cursor:'pointer' }}>✕</button>
+          <button onClick={() => remove(p.id)} style={{ padding:'7px 10px', background:'rgba(255,255,255,0.06)', border:'0.5px solid ' + C.border, borderRadius:8, fontSize:12, color:C.muted, cursor:'pointer' }}>✕</button>
         </div>
       ))}
     </div>
@@ -155,7 +156,7 @@ function MyDetails({ onBack }) {
     setSaving(false)
   }
 
-  const inp = { width:'100%', padding:'12px 14px', background:'rgba(255,255,255,0.07)', border:`0.5px solid ${C.border}`, borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:14, color:C.text, outline:'none', boxSizing:'border-box', marginBottom:12 }
+  const inp = { width:'100%', padding:'12px 14px', background:'rgba(255,255,255,0.07)', border:'0.5px solid ' + C.border, borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:14, color:C.text, outline:'none', boxSizing:'border-box', marginBottom:12 }
 
   return (
     <div style={{ padding:'20px 16px' }}>
@@ -220,7 +221,7 @@ function MyAddresses({ onBack }) {
         </div>
       )}
       {addresses.map((addr, i) => (
-        <div key={i} style={{ background:C.card, border:`0.5px solid ${C.border}`, borderRadius:12, padding:'12px 14px', marginBottom:8, display:'flex', alignItems:'flex-start', gap:10 }}>
+        <div key={i} style={{ background:C.card, border:'0.5px solid ' + C.border, borderRadius:12, padding:'12px 14px', marginBottom:8, display:'flex', alignItems:'flex-start', gap:10 }}>
           <span style={{ fontSize:16, marginTop:1 }}>📍</span>
           <div style={{ flex:1 }}>
             <div style={{ fontSize:13, color:C.text, fontFamily:'DM Sans,sans-serif', lineHeight:1.4 }}>{addr.delivery_address}</div>
@@ -269,10 +270,10 @@ function MyCredit({ onBack }) {
       await supabase.from('support_tickets').insert({
         customer_id: user.id,
         type: 'credit_cashback_request',
-        message: `Customer requesting cash refund of credit balance: €${credit.toFixed(2)}`,
+        message: 'Customer requesting cash refund of credit balance: €' + credit.toFixed(2),
         status: 'open',
       })
-      alert(`Request sent! Our team will process your €${credit.toFixed(2)} cashback to your original payment method within 3-5 business days.`)
+      alert('Request sent! Our team will process your €' + credit.toFixed(2) + ' cashback to your original payment method within 3-5 business days.')
     } catch { alert('Request failed — please email support@isladrop.net') }
     setRedeeming(false)
   }
@@ -304,7 +305,7 @@ function MyCredit({ onBack }) {
 
       {credit > 0 && (
         <button onClick={requestCashback} disabled={redeeming}
-          style={{ width:'100%', padding:'13px', background:'rgba(255,255,255,0.08)', border:`0.5px solid ${C.border}`, borderRadius:12, fontFamily:'DM Sans,sans-serif', fontSize:14, color:C.muted, cursor:'pointer', marginBottom:16 }}>
+          style={{ width:'100%', padding:'13px', background:'rgba(255,255,255,0.08)', border:'0.5px solid ' + C.border, borderRadius:12, fontFamily:'DM Sans,sans-serif', fontSize:14, color:C.muted, cursor:'pointer', marginBottom:16 }}>
           {redeeming ? 'Requesting...' : 'Request cash refund instead'}
         </button>
       )}
@@ -354,7 +355,7 @@ function AboutIsla({ onBack }) {
         { title:'Concierge', body:"Beyond delivery, we partner with the finest boats, villas, restaurants, beach clubs and experiences on the island. Our AI concierge and human team work together to secure the best bookings for you." },
         { title:'Contact', body:"Email: support@isladrop.net\nConcierge: concierge@isladrop.net\nWebsite: isladrop.net" },
       ].map(({ title, body }) => (
-        <div key={title} style={{ background:C.card, border:`0.5px solid ${C.border}`, borderRadius:12, padding:'14px 16px', marginBottom:10 }}>
+        <div key={title} style={{ background:C.card, border:'0.5px solid ' + C.border, borderRadius:12, padding:'14px 16px', marginBottom:10 }}>
           <div style={{ fontSize:13, fontWeight:500, color:C.text, marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>{title}</div>
           <div style={{ fontSize:13, color:C.muted, lineHeight:1.65, fontFamily:'DM Sans,sans-serif', whiteSpace:'pre-line' }}>{body}</div>
         </div>
@@ -368,6 +369,88 @@ function AboutIsla({ onBack }) {
 }
 
 // ── Main AccountView ──────────────────────────────────────────
+
+// ── Spend Tracker ─────────────────────────────────────────────
+function SpendTracker({ onBack }) {
+  const { user } = useAuthStore()
+  const [orders, setOrders]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [period, setPeriod]   = useState('month')
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { supabase } = await import('../../lib/supabase')
+        const since = period === 'month'
+          ? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+          : period === '3months'
+            ? new Date(Date.now() - 90 * 86400000).toISOString()
+            : new Date(new Date().getFullYear(), 0, 1).toISOString()
+        const { data } = await supabase
+          .from('orders')
+          .select('total, created_at, status, order_items(quantity, product_id)')
+          .eq('customer_id', user.id)
+          .eq('status', 'delivered')
+          .gte('created_at', since)
+          .order('created_at', { ascending: false })
+        if (data) setOrders(data)
+      } catch {}
+      setLoading(false)
+    }
+    load()
+  }, [period])
+
+  const total  = orders.reduce((s, o) => s + (o.total || 0), 0)
+  const avgOrder = orders.length > 0 ? total / orders.length : 0
+  const thisMonthName = new Date().toLocaleDateString('en-GB', { month:'long' })
+
+  return (
+    <div style={{ padding:'0 16px 32px' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', cursor:'pointer', fontSize:20, padding:0 }}>←</button>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white' }}>My Spend</div>
+      </div>
+
+      <div style={{ display:'flex', gap:6, marginBottom:16 }}>
+        {[['month', thisMonthName], ['3months', '3 Months'], ['year', 'This Year']].map(([v,l]) => (
+          <button key={v} onClick={() => { setPeriod(v); setLoading(true) }}
+            style={{ flex:1, padding:'8px', borderRadius:20, fontSize:11, background: period===v?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.08)', color: period===v?'#0D3B4A':'rgba(255,255,255,0.6)', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:20 }}>
+        {[
+          { v:'€' + total.toFixed(2), l:'Total spent', color:'#E8A070' },
+          { v:orders.length, l:'Orders placed', color:'white' },
+          { v:'€' + avgOrder.toFixed(2), l:'Avg order', color:'white' },
+          { v: orders.length > 0 ? '€' + (total / Math.max(1, new Date().getDate())).toFixed(2) : '€0', l:'Daily avg', color:'white' },
+        ].map(s => (
+          <div key={s.l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:12, padding:'14px' }}>
+            <div style={{ fontSize:22, fontWeight:600, color:s.color }}>{s.v}</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2 }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {loading ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)' }}>Loading...</div> : (
+        orders.length === 0
+          ? <div style={{ textAlign:'center', padding:30, color:'rgba(255,255,255,0.4)', fontSize:13 }}>No orders in this period</div>
+          : orders.map((o, i) => (
+            <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:'0.5px solid rgba(255,255,255,0.07)' }}>
+              <div style={{ fontSize:13, color:'white' }}>
+                {new Date(o.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' })}
+              </div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)' }}>{(o.order_items||[]).reduce((s,i)=>s+(i.quantity||1),0)} items</div>
+              <div style={{ fontSize:14, fontWeight:500, color:'#E8A070' }}>€{(o.total||0).toFixed(2)}</div>
+            </div>
+          ))
+      )}
+    </div>
+  )
+}
+
 export default function AccountView({ t }) {
   const { user, profile, clear } = useAuthStore()
   const [showAuth, setShowAuth]   = useState(false)
@@ -385,6 +468,8 @@ export default function AccountView({ t }) {
   if (screen === 'addresses')  return <MyAddresses   onBack={() => setScreen(null)} />
   if (screen === 'credit')     return <MyCredit      onBack={() => setScreen(null)} />
   if (screen === 'about')      return <AboutIsla     onBack={() => setScreen(null)} />
+  if (screen === 'loyalty')    return <LoyaltyPoints  onBack={() => setScreen(null)} />
+  if (screen === 'spend')      return <SpendTracker   onBack={() => setScreen(null)} />
   if (screen === 'support')    return (
     <div style={{ padding:'20px 16px', height:'80vh', display:'flex', flexDirection:'column' }}>
       <SupportChat onBack={() => setScreen(null)} />
@@ -406,7 +491,7 @@ export default function AccountView({ t }) {
               <div style={{ fontSize:16, fontWeight:500, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{profile?.full_name||'Guest'}</div>
               <div style={{ fontSize:12, color:C.muted, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.email}</div>
             </div>
-            <button onClick={() => setScreen('details')} style={{ padding:'7px 12px', background:'rgba(255,255,255,0.08)', border:`0.5px solid ${C.border}`, borderRadius:8, fontSize:12, color:C.muted, cursor:'pointer', fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>Edit</button>
+            <button onClick={() => setScreen('details')} style={{ padding:'7px 12px', background:'rgba(255,255,255,0.08)', border:'0.5px solid ' + C.border, borderRadius:8, fontSize:12, color:C.muted, cursor:'pointer', fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>Edit</button>
           </div>
 
           {/* Main menu */}
@@ -422,6 +507,19 @@ export default function AccountView({ t }) {
             <div style={{ flex:1 }}>
               <div style={{ fontSize:14, color:C.text, fontFamily:'DM Sans,sans-serif' }}>My Credit</div>
               <div style={{ fontSize:11, color:'rgba(196,104,58,0.8)', marginTop:1, fontFamily:'DM Sans,sans-serif' }}>Refund credit · Instant to use at checkout</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+
+          {/* Spend Tracker */}
+          <Row icon="📊" label="My Spend" sub="Monthly spend summary" onPress={() => setScreen('spend')} />
+          {/* Loyalty */}
+          <div onClick={() => setScreen('loyalty')}
+            style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', background:'linear-gradient(135deg,rgba(139,96,32,0.2),rgba(196,104,58,0.1))', border:'0.5px solid rgba(139,96,32,0.3)', borderRadius:12, marginBottom:8, cursor:'pointer' }}>
+            <span style={{ fontSize:18 }}>⭐</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:14, color:'white', fontFamily:'DM Sans,sans-serif' }}>Isla Rewards</div>
+              <div style={{ fontSize:11, color:'rgba(196,104,58,0.8)', marginTop:1, fontFamily:'DM Sans,sans-serif' }}>Earn points · Tier rewards · Refer friends</div>
             </div>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
           </div>
