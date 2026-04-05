@@ -390,17 +390,17 @@ export const PRODUCTS = [
 
 
   // ── POOL PARTY (+30%) ────────────────────────────────────────
-  { id: 'pp-001', name: 'Inflatable Flamingo XL',             category:'pool',  sub:'floats',      emoji:'🦩', price:22.75, age_restricted:false, popular:true  },
-  { id: 'pp-002', name: 'Inflatable Unicorn Giant',           category:'pool',  sub:'floats',      emoji:'🦄', price:29.25, age_restricted:false, popular:true  },
-  { id: 'pp-003', name: 'Inflatable Pizza Slice Float',       category:'pool',  sub:'floats',      emoji:'🍕', price:19.50, age_restricted:false, popular:true  },
-  { id: 'pp-004', name: 'Inflatable Donut Float',             category:'pool',  sub:'floats',      emoji:'🍩', price:16.25, age_restricted:false, popular:false },
-  { id: 'pp-005', name: 'Inflatable Swan Ride-On',            category:'pool',  sub:'floats',      emoji:'🦢', price:26.00, age_restricted:false, popular:false },
-  { id: 'pp-006', name: 'Floating Drinks Holder x4',          category:'pool',  sub:'accessories', emoji:'🥂', price:9.75,  age_restricted:false, popular:true  },
-  { id: 'pp-008', name: 'Pool Noodles 4pk',                   category:'pool',  sub:'accessories', emoji:'🟡', price:13.00, age_restricted:false, popular:false },
-  { id: 'pp-009', name: 'Water Guns 2pk Large',               category:'pool',  sub:'games',       emoji:'💦', price:13.00, age_restricted:false, popular:true  },
-  { id: 'pp-010', name: 'Floating Card Game Waterproof',      category:'pool',  sub:'games',       emoji:'🃏', price:9.75,  age_restricted:false, popular:false },
-  { id: 'pp-011', name: 'Pool Volleyball Net Set',            category:'pool',  sub:'games',       emoji:'🏐', price:26.00, age_restricted:false, popular:false },
-  { id: 'pp-012', name: 'Floating Beer Pong Set',             category:'pool',  sub:'games',       emoji:'🏓', price:19.50, age_restricted:false, popular:true  },
+  { id: 'pp-001', name: 'Inflatable Flamingo XL',             category:'party',  sub:'floats',      emoji:'🦩', price:22.75, age_restricted:false, popular:true  },
+  { id: 'pp-002', name: 'Inflatable Unicorn Giant',           category:'party',  sub:'floats',      emoji:'🦄', price:29.25, age_restricted:false, popular:true  },
+  { id: 'pp-003', name: 'Inflatable Pizza Slice Float',       category:'party',  sub:'floats',      emoji:'🍕', price:19.50, age_restricted:false, popular:true  },
+  { id: 'pp-004', name: 'Inflatable Donut Float',             category:'party',  sub:'floats',      emoji:'🍩', price:16.25, age_restricted:false, popular:false },
+  { id: 'pp-005', name: 'Inflatable Swan Ride-On',            category:'party',  sub:'floats',      emoji:'🦢', price:26.00, age_restricted:false, popular:false },
+  { id: 'pp-006', name: 'Floating Drinks Holder x4',          category:'party',  sub:'accessories', emoji:'🥂', price:9.75,  age_restricted:false, popular:true  },
+  { id: 'pp-008', name: 'Pool Noodles 4pk',                   category:'party',  sub:'accessories', emoji:'🟡', price:13.00, age_restricted:false, popular:false },
+  { id: 'pp-009', name: 'Water Guns 2pk Large',               category:'party',  sub:'games',       emoji:'💦', price:13.00, age_restricted:false, popular:true  },
+  { id: 'pp-010', name: 'Floating Card Game Waterproof',      category:'party',  sub:'games',       emoji:'🃏', price:9.75,  age_restricted:false, popular:false },
+  { id: 'pp-011', name: 'Pool Volleyball Net Set',            category:'party',  sub:'games',       emoji:'🏐', price:26.00, age_restricted:false, popular:false },
+  { id: 'pp-012', name: 'Floating Beer Pong Set',             category:'party',  sub:'games',       emoji:'🏓', price:19.50, age_restricted:false, popular:true  },
 
   // ── PARTY EQUIPMENT & GAMES (+30%) ───────────────────────────
   { id: 'ps-006', name: 'Fairy Lights LED 5m Battery',        category:'party', sub:'decorations', emoji:'✨', price:13.00, age_restricted:false, popular:true  },
@@ -487,15 +487,12 @@ export const CATEGORIES = [
   { key: 'party',      label: 'Party Supplies', emoji: '🎉', subs: [
     { key: 'decorations', label: 'Decorations'    },
     { key: 'disposables', label: 'Cups & Plates'  },
+    { key: 'floats',      label: 'Pool Inflatables'},
     { key: 'games',       label: 'Party Games'    },
     { key: 'equipment',   label: 'Equipment'      },
     { key: 'accessories', label: 'Accessories'    },
   ]},
-  { key: 'pool',       label: 'Pool Party',     emoji: '💦', subs: [
-    { key: 'floats',      label: 'Inflatables'   },
-    { key: 'accessories', label: 'Accessories'   },
-    { key: 'games',       label: 'Pool Games'    },
-  ]},
+
 
 ]
 
