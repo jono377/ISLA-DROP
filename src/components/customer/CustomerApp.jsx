@@ -423,6 +423,74 @@ function SearchView({ t }) {
 }
 
 
+
+// ── On Sale Section ───────────────────────────────────────────
+function OnSaleSection({ t }) {
+  const [saleItems, setSaleItems] = useState([])
+  const { addItem } = useCartStore()
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { supabase } = await import('../../lib/supabase')
+        const { data } = await supabase
+          .from('sale_products')
+          .select('*')
+          .eq('active', true)
+          .order('discount_pct', { ascending: false })
+        if (data && data.length > 0) {
+          // Match to full PRODUCTS for emoji etc
+          const enriched = data.map(s => {
+            const p = PRODUCTS.find(p => p.id === s.product_id)
+            return p ? { ...p, price: s.sale_price, original_price: s.original_price, discount_pct: s.discount_pct, sale_id: s.id } : null
+          }).filter(Boolean)
+          setSaleItems(enriched)
+        }
+      } catch {}
+    }
+    load()
+  }, [])
+
+  if (saleItems.length === 0) return null
+
+  return (
+    <div style={{ marginBottom:24 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0 16px', marginBottom:12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ background:'#C4683A', borderRadius:6, padding:'3px 8px' }}>
+            <span style={{ fontSize:11, fontWeight:700, color:'white', letterSpacing:'0.5px' }}>SALE</span>
+          </div>
+          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white' }}>On Sale</div>
+        </div>
+        <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)' }}>Up to 20% off</div>
+      </div>
+      <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
+        {saleItems.map(p => (
+          <div key={p.id} style={{ flexShrink:0, width:130, background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:14, overflow:'hidden' }}>
+            <div style={{ height:80, background:'linear-gradient(135deg,#2A1205,#5A2810)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32, position:'relative' }}>
+              {p.emoji}
+              <div style={{ position:'absolute', top:6, right:6, background:'#C4683A', borderRadius:20, padding:'2px 7px', fontSize:10, fontWeight:700, color:'white' }}>
+                -{p.discount_pct}%
+              </div>
+            </div>
+            <div style={{ padding:'8px 10px' }}>
+              <div style={{ fontSize:11, fontWeight:500, color:'white', lineHeight:1.3, marginBottom:4, height:28, overflow:'hidden' }}>{p.name}</div>
+              <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:6 }}>
+                <span style={{ fontSize:14, fontWeight:600, color:'#E8A070' }}>€{p.price.toFixed(2)}</span>
+                <span style={{ fontSize:10, color:'rgba(255,255,255,0.35)', textDecoration:'line-through' }}>€{p.original_price.toFixed(2)}</span>
+              </div>
+              <button onClick={() => { addItem(p); toast.success(p.emoji + ' Added!', { duration:900 }) }}
+                style={{ width:'100%', padding:'6px', background:'#C4683A', border:'none', borderRadius:8, fontSize:11, color:'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:500 }}>
+                Add
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onParty }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
@@ -566,6 +634,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
           </div>
 
+          <OnSaleSection t={t} />
           {/* Design Your Experience cards */}
           <div style={{ padding:'0 16px', marginBottom:20 }}>
             <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:12 }}>Design Your Experience</div>

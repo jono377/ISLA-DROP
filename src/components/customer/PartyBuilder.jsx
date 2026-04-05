@@ -247,6 +247,111 @@ function PackageForm({ packageType, onBuild, onBack }) {
   )
 }
 
+
+// ── Amend Package Chat ────────────────────────────────────────
+function AmendPackage({ pkg, details, quantities, onUpdate }) {
+  const [amendment, setAmendment] = useState('')
+  const [loading, setLoading]     = useState(false)
+  const [history, setHistory]     = useState([])
+  const inputRef = useRef(null)
+
+  const sendAmendment = async () => {
+    const text = amendment.trim()
+    if (!text || loading) return
+    setAmendment('')
+    setHistory(prev => [...prev, { role:'user', content: text }])
+    setLoading(true)
+
+    try {
+      const currentPackage = JSON.stringify({
+        package_name: pkg.package_name,
+        sections: pkg.sections?.map(s => ({
+          title: s.title,
+          items: s.items?.map(i => ({
+            product_id: i.product_id,
+            quantity: quantities[i.product_id] ?? i.quantity,
+            reason: i.reason
+          }))
+        }))
+      })
+
+      const catalogue = PRODUCTS
+        .filter(p => ['spirits','champagne','wine','beer_cider','soft_drinks','water','ice','snacks','party','fresh','tobacco'].includes(p.category))
+        .map(p => p.id + '|' + p.name + '|€' + p.price.toFixed(2))
+        .join('\n')
+
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 3000,
+          messages: [{
+            role: 'user',
+            content: 'You are Isla, the party planner. A customer wants to amend their package.\n\nCURRENT PACKAGE:\n' + currentPackage + '\n\nEVENT: ' + details.vibe + ', ' + details.guests + ' guests, ' + details.duration + ' hours\n\nAVAILABLE PRODUCTS:\n' + catalogue + '\n\nCUSTOMER REQUEST: ' + text + '\n\nUpdate the package based on their request. Keep everything they liked, only change what they asked for. Return the complete updated package as JSON:\n{"package_name":"name","tagline":"tagline","hero_emoji":"emoji","sections":[{"title":"title","emoji":"emoji","items":[{"product_id":"id","quantity":1,"reason":"why"}]}],"hosting_tips":["tip1","tip2","tip3"],"isla_note":"personal note confirming what was changed"}'
+          }]
+        })
+      })
+
+      if (!resp.ok) throw new Error('API error')
+      const data = await resp.json()
+      const raw = data.content?.[0]?.text || '{}'
+      const updated = JSON.parse(raw.replace(/```json|```/g, '').trim())
+      setHistory(prev => [...prev, { role:'assistant', content: updated.isla_note || 'Done — I have updated your package!' }])
+      onUpdate(updated)
+      toast.success('Package updated!')
+    } catch {
+      setHistory(prev => [...prev, { role:'assistant', content: 'Sorry, I could not process that right now. Please try again.' }])
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ marginTop:16, background:'rgba(43,122,139,0.1)', border:'0.5px solid rgba(43,122,139,0.25)', borderRadius:14, padding:16 }}>
+      <div style={{ fontSize:13, fontWeight:500, color:'#7ECFE0', marginBottom:12, fontFamily:'DM Sans,sans-serif' }}>
+        💬 Ask Isla to amend your package
+      </div>
+
+      {history.length > 0 && (
+        <div style={{ marginBottom:12, display:'flex', flexDirection:'column', gap:8 }}>
+          {history.map((m, i) => (
+            <div key={i} style={{ display:'flex', justifyContent: m.role==='user'?'flex-end':'flex-start' }}>
+              <div style={{ background: m.role==='user'?'#C4683A':'rgba(255,255,255,0.1)', borderRadius:10, padding:'8px 12px', maxWidth:'85%', fontSize:12, color:'white', lineHeight:1.5, fontFamily:'DM Sans,sans-serif' }}>
+                {m.content}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div style={{ display:'flex', gap:5, padding:'8px 12px', background:'rgba(255,255,255,0.08)', borderRadius:10, width:'fit-content' }}>
+              {[0,1,2].map(d => <div key={d} style={{ width:5, height:5, borderRadius:'50%', background:'rgba(255,255,255,0.4)', animation:'bounce 1.2s ' + (d*0.2) + 's infinite ease-in-out' }} />)}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ display:'flex', gap:8 }}>
+        <input ref={inputRef} value={amendment} onChange={e => setAmendment(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && sendAmendment()}
+          placeholder="e.g. swap wine for more champagne, add cigars, remove beer..."
+          style={{ flex:1, padding:'10px 14px', background:'rgba(255,255,255,0.1)', border:'0.5px solid rgba(255,255,255,0.2)', borderRadius:24, fontFamily:'DM Sans,sans-serif', fontSize:13, color:'white', outline:'none' }} />
+        <button onClick={sendAmendment} disabled={!amendment.trim() || loading}
+          style={{ width:40, height:40, background: amendment.trim()&&!loading?'#2B7A8B':'rgba(255,255,255,0.1)', border:'none', borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+      <div style={{ fontSize:10, color:'rgba(255,255,255,0.3)', marginTop:6, fontFamily:'DM Sans,sans-serif' }}>
+        Isla will update your package while keeping everything you liked
+      </div>
+      <style>{'@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}'}</style>
+    </div>
+  )
+}
+
 // ── Package Result ────────────────────────────────────────────
 function PackageResult({ pkg, details, onRebuild, onBack }) {
   const { addItem, updateQuantity, items } = useCartStore()
@@ -333,7 +438,17 @@ function PackageResult({ pkg, details, onRebuild, onBack }) {
           </div>
         )}
 
-        <button onClick={onRebuild} style={{ width:'100%', marginTop:16, padding:'12px', background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:12, color:'rgba(255,255,255,0.6)', fontSize:13, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+        {/* Amendment chat */}
+        <AmendPackage pkg={pkg} details={details} quantities={quantities} onUpdate={(newPkg) => {
+          setQuantities(() => {
+            const q = {}
+            newPkg.sections?.forEach(s => s.items?.forEach(i => { q[i.product_id] = i.quantity }))
+            return q
+          })
+          Object.assign(pkg, newPkg)
+        }} />
+
+        <button onClick={onRebuild} style={{ width:'100%', marginTop:10, padding:'12px', background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:12, color:'rgba(255,255,255,0.6)', fontSize:13, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
           ↺ Rebuild with different options
         </button>
       </div>
