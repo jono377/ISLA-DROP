@@ -96,7 +96,7 @@ Keep responses practical and concise — under 150 words. Include specific store
         ))}
         {loading && (
           <div style={{ display: 'flex', gap: 5, padding: '8px 12px', background: 'white', borderRadius: 10, alignItems: 'center', width: 'fit-content', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
-            {[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: '#7A6E60', animation: `bounce 1.2s ${d*0.2}s infinite ease-in-out` }} />)}
+            {[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: '#7A6E60', animation: 'bounce 1.2s ' + (d*0.2) + 's infinite ease-in-out' }} />)}
           </div>
         )}
       </div>
@@ -151,13 +151,13 @@ function ConciergeBookings() {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      await fetch(`${supabaseUrl}/functions/v1/process-concierge-booking`, {
+      await fetch(supabaseUrl + '/functions/v1/process-concierge-booking', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + supabaseKey },
         body: JSON.stringify({ type: 'update_status', booking_id: id, status, ops_notes: notes })
       })
       await loadBookings()
-      toast.success(`Booking ${status}`)
+      toast.success('Booking ' + status)
     } catch {
       toast.error('Update failed')
     }
@@ -185,7 +185,7 @@ function ConciergeBookings() {
         {[
           { label: 'Total', value: bookings.length, color: '#0D3B4A' },
           { label: 'Pending', value: bookings.filter(b => b.status === 'pending').length, color: '#8B7020' },
-          { label: 'Commission', value: `€${revenue.toFixed(0)}`, color: '#5A6B3A' },
+          { label: 'Commission', value: '€' + revenue.toFixed(0), color: '#5A6B3A' },
         ].map(s => (
           <div key={s.label} style={{ background: 'white', borderRadius: 12, padding: '12px 14px', border: '0.5px solid rgba(42,35,24,0.1)' }}>
             <div style={{ fontSize: 22, fontWeight: 500, color: s.color }}>{s.value}</div>
@@ -281,14 +281,14 @@ function DriverApprovals() {
       const { supabase } = await import('../../lib/supabase')
       await supabase.from('profiles').update({ status: 'active' }).eq('id', driver.id)
       await supabase.from('drivers').update({ status: 'active' }).eq('id', driver.id)
-      toast.success(`${driver.full_name} approved!`)
+      toast.success('Driver approved!')
       setPending(prev => prev.filter(d => d.id !== driver.id))
     } catch { toast.error('Approval failed') }
     setActing(null)
   }
 
   const reject = async (driver) => {
-    if (!confirm(`Reject ${driver.full_name}? This will delete their account.`)) return
+    if (!confirm('Reject this driver? This will delete their account.')) return
     setActing(driver.id)
     try {
       const { supabase } = await import('../../lib/supabase')
@@ -414,14 +414,14 @@ export default function OpsApp() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
           <KPI val={stats.activeOrders} label="Active orders" delta="Live" />
-          <KPI val={stats.onlineDrivers} label="Drivers online" delta={`${drivers.filter(d => d.is_online && !d.current_order_id).length} idle`} />
-          <KPI val={stats.avgEta ? `${stats.avgEta}m` : '—'} label="Avg ETA" delta="Today" />
+          <KPI val={stats.onlineDrivers} label="Drivers online" delta={drivers.filter(d => d.is_online && !d.current_order_id).length + ' idle'} />
+          <KPI val={stats.avgEta ? stats.avgEta + 'm' : '—'} label="Avg ETA" delta="Today" />
         </div>
       </div>
 
       {/* Sub-tabs */}
       <div style={{ display: 'flex', background: '#F5F0E8', borderBottom: '0.5px solid rgba(42,35,24,0.12)' }}>
-        {['overview', 'orders', 'fleet', 'map', 'stock', 'concierge', 'drivers', 'images'].map(t => (
+        {['overview', 'orders', 'fleet', 'map', 'stock', 'discounts', 'concierge', 'drivers', 'images'].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -445,6 +445,7 @@ export default function OpsApp() {
         {tab === 'map' && <MapTab drivers={drivers} orders={activeOrders} />}
         {tab === 'images' && <div style={{ margin:'0 -16px' }}><ImageManager /></div>}
         {tab === 'stock' && <StockManager />}
+        {tab === 'discounts' && <DiscountManager />}
         {tab === 'concierge' && <ConciergeBookings />}
         {tab === 'drivers' && <DriverApprovals />}
       </div>
@@ -546,7 +547,7 @@ function FleetTab({ drivers }) {
               <div style={{ fontSize: 12, color: '#7A6E60', marginTop: 1 }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: driver.is_online ? '#5A6B3A' : '#CCC', display: 'inline-block', marginRight: 4 }} />
                 {driver.is_online ? 'Online' : 'Offline'}
-                {driver.vehicle_plate ? ` · ${driver.vehicle_plate}` : ''}
+                {driver.vehicle_plate ? ' · ' + driver.vehicle_plate : ''}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -564,7 +565,7 @@ function FleetTab({ drivers }) {
 
 function LiveOrderRow({ order }) {
   const statusColor = STATUS_COLORS[order.status] ?? '#E0D8CC'
-  const itemsText = order.order_items?.map(i => `${i.quantity}× ${i.products?.emoji ?? ''}`).join(' ') ?? ''
+  const itemsText = order.order_items?.map(i => i.quantity + '× ' + (i.products?.emoji ?? '')).join(' ') ?? ''
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 12, marginBottom: 12, borderBottom: '0.5px solid rgba(42,35,24,0.08)' }}>
@@ -582,7 +583,7 @@ function LiveOrderRow({ order }) {
 
 function FullOrderCard({ order }) {
   const statusColor = STATUS_COLORS[order.status] ?? '#E0D8CC'
-  const itemsText = order.order_items?.map(i => `${i.quantity}× ${i.products?.emoji ?? ''} ${i.products?.name ?? ''}`).join(', ') ?? ''
+  const itemsText = order.order_items?.map(i => i.quantity + '× ' + (i.products?.emoji ?? '') + ' ' + (i.products?.name ?? '')).join(', ') ?? ''
   const driverName = order.drivers?.profiles?.full_name
 
   return (
@@ -596,7 +597,7 @@ function FullOrderCard({ order }) {
       <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>{order.delivery_address}</div>
       <div style={{ fontSize: 12, color: '#7A6E60', marginBottom: 6 }}>{itemsText}</div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-        <span style={{ color: '#7A6E60' }}>{driverName ? `🛵 ${driverName}` : '🕐 Unassigned'}</span>
+        <span style={{ color: '#7A6E60' }}>{driverName ? '🛵 ' + driverName : '🕐 Unassigned'}</span>
         <span style={{ fontWeight: 500 }}>€{order.total?.toFixed(2)}</span>
       </div>
       <div style={{ fontSize: 11, color: '#7A6E60', marginTop: 4 }}>
