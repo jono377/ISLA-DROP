@@ -316,64 +316,49 @@ function SearchView({ t }) {
   const [selectedVibe, setSelectedVibe] = useState(null)
   const { addItem } = useCartStore()
   const debounceRef = useRef(null)
+  const lastCallRef = useRef(0)
 
-  // Standard text search on product names
-  const textResults = query.length > 1
-    ? PRODUCTS.filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 30)
-    : []
-
-  // Vibe presets — directly mapped product IDs, no AI needed
+  // Vibe presets with curated product IDs and AI description
   const VIBES = [
-    { key:'pre_drinks',  label:'🌙 Pre-drinks',       desc:'Spirits, mixers, shots & ice for the night ahead',
+    { key:'pre_drinks',  label:'🌙 Pre-drinks',          desc:'Isla picks the perfect spirits, mixers and ice to get the night started',
       ids:['sp-004','sp-001','sp-035','sp-012','sd-003','sd-001','ic-001','ic-002','sn-001'] },
-    { key:'cocktail',    label:'🥃 Cocktail night',    desc:'Gin, vodka, rum & everything to mix a perfect drink',
+    { key:'cocktail',    label:'🥃 Cocktail night',       desc:'Everything you need to mix perfect cocktails — kits, spirits, garnishes and ice',
       ids:['ck-001','ck-004','ck-003','ck-002','ck-006','sp-001','sp-004','sp-012','fr-001','fr-002','ic-001'] },
-    { key:'sundowner',   label:'🌅 Sundowner',          desc:'Rosé, Aperol Spritz, Prosecco & cold drinks for sunset',
-      ids:['wn-021','ck-002','ch-010','sp-019','sp-001','sd-001','ic-001'] },
-    { key:'ladies',      label:'💅 Ladies night',       desc:'Champagne, Prosecco, rosé & glamorous touches',
+    { key:'sundowner',   label:'🌅 Sundowner',            desc:'Rosé, Aperol Spritz and cold drinks for the golden hour',
+      ids:['wn-021','ck-002','ch-010','sp-001','sd-001','ic-001','fr-001'] },
+    { key:'ladies',      label:'💅 Ladies night',         desc:'Champagne, Prosecco, rosé and everything for a glamorous evening',
       ids:['ch-001','ch-010','wn-021','ck-013','ic-001','sn-001','ck-012'] },
-    { key:'boys',        label:'🍺 Boys night',         desc:'Cold beers, shots, crisps & no-fuss party supplies',
+    { key:'boys',        label:'🍺 Boys night',           desc:'Cold beers, shots and party supplies — no fuss, maximum fun',
       ids:['br-001','br-002','sp-035','sp-004','sd-003','sn-001','sn-002','ic-002'] },
-    { key:'hangover',    label:'💊 Hangover cure',      desc:'Electrolytes, vitamins, coconut water & recovery essentials',
-      ids:['wl-014','wl-013','wl-012','wt-001','wt-003','sd-019','sn-001'] },
-    { key:'date_night',  label:'💕 Date night',         desc:'Premium champagne, rosé, a cocktail kit & romantic touches',
+    { key:'hangover',    label:'💊 Hangover cure',        desc:'Electrolytes, vitamins, coconut water and everything your body needs',
+      ids:['wl-014','wl-013','wl-012','wt-001','wt-003','sn-001'] },
+    { key:'date_night',  label:'💕 Date night',           desc:'Premium champagne or rosé, a cocktail kit and romantic touches for two',
       ids:['ch-001','wn-021','ck-005','ck-013','ic-001','fr-001'] },
-    { key:'pool',        label:'💦 Pool party',         desc:'Cold drinks, beers, ice & everything for a pool day',
+    { key:'pool',        label:'💦 Pool party',           desc:'Cold drinks, beers, ice and everything for a perfect pool day',
       ids:['br-001','br-002','sd-001','sd-003','wt-002','ic-002','sn-001','ic-003'] },
-    { key:'gentleman',   label:'🎩 Gentlemans evening', desc:'Premium whisky, cognac, cigars & quality wine',
+    { key:'gentleman',   label:'🎩 Gentleman evening',    desc:'Premium whisky, cognac and quality wine — sophisticated and refined',
       ids:['sp-009','sp-010','sp-011','sp-008','wn-001','tb-005','sn-029'] },
-    { key:'birthday',    label:'🎂 Birthday',           desc:'Champagne, sparklers, balloons & party supplies',
+    { key:'birthday',    label:'🎂 Birthday',             desc:'Champagne, sparklers and party supplies to make it unforgettable',
       ids:['ch-001','ch-010','ic-001','ck-013','ps-001','ps-004','oc-001'] },
-    { key:'beach',       label:'🏖️ Beach day',           desc:'Water, suncream, snacks & everything for the beach',
-      ids:['wt-001','wt-002','wt-003','es-013','sn-001','sn-002','sd-019'] },
-    { key:'snacks',      label:'🍕 Snacks & nibbles',   desc:'Crisps, antipasto, olives, nuts & sharing boards',
+    { key:'beach',       label:'🏖️ Beach day',            desc:'Water, suncream, snacks and essentials for a perfect beach day',
+      ids:['wt-001','wt-002','wt-003','es-013','sn-001','sn-002','sd-001'] },
+    { key:'snacks',      label:'🍕 Snacks board',         desc:'Crisps, antipasto, olives and sharing boards for any occasion',
       ids:['sn-001','sn-002','sn-003','sn-004','sn-029','sn-005'] },
   ]
 
-  const handleVibeSelect = (vibe) => {
-    setSelectedVibe(vibe.key === selectedVibe ? null : vibe.key)
-    setQuery('')
-    setAiResults(null)
-    setAiMessage('')
-  }
-
-  const handleChange = (val) => {
-    setQuery(val)
-    setSelectedVibe(null)
-    setAiResults(null)
-    setAiMessage('')
-    clearTimeout(debounceRef.current)
-    if (val.length >= 3) {
-      debounceRef.current = setTimeout(() => runAiSearch(val), 600)
+  // When a vibe chip is tapped, show its products with Isla description
+  const handleVibeSelect = async (vibe) => {
+    if (selectedVibe === vibe.key) {
+      setSelectedVibe(null); setAiResults(null); setAiMessage(''); return
     }
-  }
-
-  const runAiSearch = async (q) => {
-    if (!q || q.length < 3) return
-    setAiLoading(true)
+    setSelectedVibe(vibe.key)
+    setQuery('')
+    // Show products instantly from curated list
+    const prods = vibe.ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
+    setAiResults(prods)
     setAiMessage('')
+    // Then enhance with Isla message from AI
     try {
-      const catalogue = PRODUCTS.map(p => p.id + '|' + p.name + '|' + p.category + '|€' + p.price.toFixed(2)).join('\n')
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -384,56 +369,108 @@ function SearchView({ t }) {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 400,
-          messages: [{ role: 'user', content: 'You are the Isla Drop product search AI for an Ibiza delivery service. Find the best matching products for this search.\n\nSEARCH: "' + q + '"\n\nThink about what the customer actually needs:\n- "pre drinks / night out / shots" = vodka, gin, tequila, mixers, ice, Red Bull\n- "cocktail" = cocktail kits, spirits, garnish kit, ice\n- "hangover" = electrolytes, vitamins, water, coconut water\n- "date night" = champagne or premium wine, cocktail kit, ice\n- "ladies / girls" = champagne, prosecco, rose wine, garnish\n- "boys / lads" = beers, tequila shots, crisps\n- "beach" = water, sunscreen, snacks\n- "gentleman" = premium whisky, cognac, wine\n\nCATALOGUE:\n' + catalogue + '\n\nReturn a JSON object with:\n{"ids":["id1","id2",...],"message":"One warm sentence from Isla about this selection"} \nInclude up to 10 product IDs. Only use IDs from the catalogue.' }]
+          max_tokens: 120,
+          messages: [{ role:'user', content: 'You are Isla, an Ibiza delivery AI. Write one warm, enthusiastic sentence (max 20 words) recommending this selection for: ' + vibe.label + '. Sound like a knowledgeable friend, not a bot.' }]
         })
       })
-      if (!resp.ok) throw new Error('API error')
+      if (resp.ok) {
+        const data = await resp.json()
+        const msg = data.content?.[0]?.text?.trim() || ''
+        if (msg) setAiMessage(msg)
+      }
+    } catch {}
+  }
+
+  // Free text search — AI powered
+  const runAiSearch = async (q) => {
+    const now = Date.now()
+    if (now - lastCallRef.current < 1500) return
+    lastCallRef.current = now
+    if (!q || q.length < 3) return
+    setAiLoading(true)
+    setAiMessage('')
+    try {
+      const catalogue = PRODUCTS.map(p => p.id + '|' + p.name + '|' + p.category + '|' + (p.sub||'') + '|€' + p.price.toFixed(2) + (p.popular?'|popular':'')).join('\n')
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 350,
+          messages: [{ role:'user', content: 'You are Isla, the AI for Isla Drop — an Ibiza 24/7 delivery service. Find the best products for this customer request.\n\nCUSTOMER SAYS: "' + q + '"\n\nThink creatively about what they actually need:\n- Beach day / sun / sea = water, suncream, snacks, soft drinks\n- Night out / pre drinks / shots / club = spirits, mixers, ice, Red Bull\n- Morning after / rough night / hangover = Dioralyte, vitamins, water, coconut water\n- Romantic / date / couple = champagne, wine, cocktail kit, candles\n- Pool / swim / float = drinks, inflatables, water, ice\n- Cocktail / mix = cocktail kits, spirits, garnish, ice\n- Gentleman / whisky / cigars = premium spirits, wine, tobacco\n- Ladies / girls / prosecco = champagne, prosecco, rose\n- Boys / lads / beer = beers, shots, crisps\n- Refresh / thirsty / water = waters, soft drinks, coconut water\n- Snack / hungry / food = crisps, nuts, antipasto\n\nPRODUCT CATALOGUE (id|name|category|sub|price|popular):\n' + catalogue + '\n\nReturn JSON only:\n{"ids":["id1","id2"],"message":"One warm Isla sentence about this selection"}\nMax 10 product IDs. Only use real IDs from the catalogue.' }]
+        })
+      })
+      if (!resp.ok) throw new Error('API')
       const data = await resp.json()
       const raw = data.content?.[0]?.text || '{}'
       const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim())
-      const found = (parsed.ids || []).map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
+      const found = (parsed.ids||[]).map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
       if (found.length > 0) {
         setAiResults(found)
-        setAiMessage(parsed.message || '')
+        if (parsed.message) setAiMessage(parsed.message)
+      } else {
+        // Fallback to text search
+        const text = PRODUCTS.filter(p =>
+          p.name.toLowerCase().includes(q.toLowerCase()) ||
+          p.category.includes(q.toLowerCase()) ||
+          (p.sub && p.sub.includes(q.toLowerCase()))
+        ).slice(0,12)
+        if (text.length > 0) setAiResults(text)
       }
-    } catch { /* fall through to text results */ }
+    } catch {
+      // Fallback to text search on error
+      const text = PRODUCTS.filter(p =>
+        p.name.toLowerCase().includes(q.toLowerCase())
+      ).slice(0,12)
+      if (text.length > 0) setAiResults(text)
+    }
     setAiLoading(false)
   }
 
-  // What to display
-  const vibeProducts = selectedVibe
-    ? (VIBES.find(v => v.key === selectedVibe)?.ids || []).map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
-    : []
+  const handleChange = (val) => {
+    setQuery(val)
+    setSelectedVibe(null)
+    setAiResults(null)
+    setAiMessage('')
+    clearTimeout(debounceRef.current)
+    if (val.length >= 3) {
+      debounceRef.current = setTimeout(() => runAiSearch(val), 700)
+    }
+  }
 
-  const displayResults = vibeProducts.length > 0 ? vibeProducts : (aiResults || textResults)
+  const vibeData = VIBES.find(v => v.key === selectedVibe)
+  const displayResults = aiResults || (query.length > 1 ? PRODUCTS.filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0,12) : [])
   const hasResults = displayResults.length > 0
-  const selectedVibeData = VIBES.find(v => v.key === selectedVibe)
 
   return (
-    <div style={{ background: C.bg, minHeight:'100vh', paddingBottom:80 }}>
+    <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:80 }}>
       {/* Search bar */}
       <div style={{ padding:'16px 16px 12px', background:'rgba(13,59,74,0.98)', position:'sticky', top:0, zIndex:10 }}>
         <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.1)', borderRadius:12, padding:'10px 14px', gap:10 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input value={query} onChange={e => handleChange(e.target.value)}
-            placeholder="Search or ask Isla anything..."
+            placeholder="Ask Isla anything — beach day, cocktail night, hangover cure..."
             style={{ flex:1, background:'none', border:'none', color:'white', fontFamily:'DM Sans,sans-serif', fontSize:14, outline:'none' }} />
           {query && <button onClick={() => handleChange('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:18, padding:0 }}>✕</button>}
         </div>
       </div>
 
       <div style={{ padding:'14px 16px' }}>
-        {/* Vibe chips */}
+        {/* Vibe chips — always visible when no query */}
         {!query && (
           <>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>
-              ✨ What are you planning?
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'1px', marginBottom:10 }}>
+              ✨ What are you planning tonight?
             </div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:16 }}>
               {VIBES.map(v => (
                 <button key={v.key} onClick={() => handleVibeSelect(v)}
-                  style={{ padding:'8px 14px', background: selectedVibe===v.key?'rgba(196,104,58,0.35)':'rgba(255,255,255,0.07)', border:'0.5px solid ' + (selectedVibe===v.key?'rgba(196,104,58,0.6)':'rgba(255,255,255,0.12)'), borderRadius:20, fontSize:13, color: selectedVibe===v.key?'#E8A070':'rgba(255,255,255,0.8)', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+                  style={{ padding:'8px 14px', background: selectedVibe===v.key?'rgba(196,104,58,0.35)':'rgba(255,255,255,0.07)', border:'0.5px solid ' + (selectedVibe===v.key?'rgba(196,104,58,0.6)':'rgba(255,255,255,0.12)'), borderRadius:20, fontSize:13, color: selectedVibe===v.key?'#E8A070':'rgba(255,255,255,0.8)', cursor:'pointer', fontFamily:'DM Sans,sans-serif', transition:'all 0.15s' }}>
                   {v.label}
                 </button>
               ))}
@@ -441,51 +478,46 @@ function SearchView({ t }) {
           </>
         )}
 
-        {/* Selected vibe description */}
-        {selectedVibeData && (
-          <div style={{ background:'rgba(196,104,58,0.1)', border:'0.5px solid rgba(196,104,58,0.25)', borderRadius:12, padding:'10px 14px', marginBottom:14, display:'flex', alignItems:'center', gap:10 }}>
+        {/* Isla message — shown for both vibe chips and AI search */}
+        {(aiMessage || vibeData) && !aiLoading && (
+          <div style={{ background:'rgba(43,122,139,0.12)', border:'0.5px solid rgba(43,122,139,0.25)', borderRadius:12, padding:'12px 14px', marginBottom:14, display:'flex', gap:10, alignItems:'flex-start' }}>
+            <div style={{ fontSize:20, flexShrink:0 }}>✨</div>
             <div>
-              <div style={{ fontSize:14, fontWeight:500, color:'white', fontFamily:'DM Sans,sans-serif' }}>{selectedVibeData.label}</div>
-              <div style={{ fontSize:12, color:'rgba(255,255,255,0.55)', marginTop:2 }}>{selectedVibeData.desc}</div>
+              {vibeData && <div style={{ fontSize:13, fontWeight:500, color:'white', marginBottom:3 }}>{vibeData.desc}</div>}
+              {aiMessage && <div style={{ fontSize:13, color:'rgba(255,255,255,0.7)', lineHeight:1.5, fontStyle: vibeData ? 'italic' : 'normal' }}>{aiMessage}</div>}
             </div>
           </div>
         )}
 
-        {/* Isla AI message */}
-        {aiMessage && (
-          <div style={{ background:'rgba(43,122,139,0.15)', border:'0.5px solid rgba(43,122,139,0.3)', borderRadius:12, padding:'10px 14px', marginBottom:14 }}>
-            <div style={{ fontSize:12, color:'#7ECFE0', marginBottom:3 }}>✨ Isla</div>
-            <div style={{ fontSize:13, color:'rgba(255,255,255,0.75)', lineHeight:1.5 }}>{aiMessage}</div>
-          </div>
-        )}
-
-        {/* Loading */}
+        {/* Loading state */}
         {aiLoading && (
-          <div style={{ textAlign:'center', padding:'20px 0', color:'rgba(255,255,255,0.5)', fontSize:13 }}>
-            ✨ Isla is finding the best products for you...
+          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 0', color:'rgba(255,255,255,0.5)' }}>
+            <div style={{ width:8, height:8, borderRadius:'50%', background:'#C4683A', animation:'pulse 1s infinite' }} />
+            <span style={{ fontSize:13, fontFamily:'DM Sans,sans-serif' }}>Isla is searching for you...</span>
           </div>
         )}
 
         {/* No results */}
         {query && !hasResults && !aiLoading && (
           <div style={{ textAlign:'center', padding:'30px 0', color:'rgba(255,255,255,0.4)' }}>
-            <div style={{ fontSize:32, marginBottom:10 }}>🔍</div>
-            <div style={{ fontSize:14 }}>No results for "{query}"</div>
-            <div style={{ fontSize:12, marginTop:4 }}>Try a vibe above or describe what you need</div>
+            <div style={{ fontSize:36, marginBottom:10 }}>🔍</div>
+            <div style={{ fontSize:14, fontFamily:'DM Sans,sans-serif', marginBottom:6 }}>No results for "{query}"</div>
+            <div style={{ fontSize:12 }}>Try a vibe chip above or describe what you need</div>
           </div>
         )}
 
-        {/* Results grid */}
+        {/* Results */}
         {hasResults && (
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
             {displayResults.map(p => (
               <div key={p.id} style={{ background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:14, overflow:'hidden' }}>
                 <div style={{ position:'relative' }}>
-                  <ProductImage productId={p.id} emoji={p.emoji} category={p.category} alt={p.name} style={{ width:'100%', height:120, objectFit:'cover' }} />
+                  <ProductImage productId={p.id} emoji={p.emoji} category={p.category} alt={p.name} style={{ width:'100%', height:110, objectFit:'cover' }} />
                   {p.age_restricted && <span style={{ position:'absolute', top:6, left:6, background:'rgba(0,0,0,0.6)', borderRadius:20, padding:'2px 7px', fontSize:9, color:'white' }}>18+</span>}
+                  {p.popular && <span style={{ position:'absolute', top:6, right:6, fontSize:14 }}>⭐</span>}
                 </div>
                 <div style={{ padding:'8px 10px' }}>
-                  <div style={{ fontSize:12, fontWeight:500, color:'white', lineHeight:1.3, marginBottom:4 }}>{p.name}</div>
+                  <div style={{ fontSize:11, fontWeight:500, color:'white', lineHeight:1.3, marginBottom:6, height:30, overflow:'hidden' }}>{p.name}</div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <span style={{ fontSize:14, fontWeight:600, color:'#E8A070' }}>€{p.price.toFixed(2)}</span>
                     <button onClick={() => { addItem(p); toast.success(p.emoji + ' Added!', { duration:900 }) }}
@@ -498,6 +530,7 @@ function SearchView({ t }) {
             ))}
           </div>
         )}
+        <style>{"@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}"}</style>
       </div>
     </div>
   )
@@ -828,7 +861,7 @@ function PromoBannersSection({ onNavigate }) {
   )
 }
 
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onParty }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onParty, onArrival }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -942,7 +975,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
           )}
 
-          <JustLandedBanner onArrival={() => navigate(VIEWS.ARRIVAL)} />
+          <JustLandedBanner onArrival={onArrival} />
           <OnSaleSection t={t} />
           <RecentlyViewedSection />
           <SmartReorderSection />
@@ -1234,7 +1267,7 @@ export default function CustomerApp() {
         <CategoryPage categoryKey={categoryKey} onBack={goBack} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>navigate(VIEWS.ASSIST)} onBest={()=>navigate(VIEWS.BEST)} onNewIn={()=>navigate(VIEWS.NEWIN)} onParty={(type)=>{ setPartyType(type); navigate(VIEWS.PARTY) }} />}
+      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>navigate(VIEWS.ASSIST)} onBest={()=>navigate(VIEWS.BEST)} onNewIn={()=>navigate(VIEWS.NEWIN)} onParty={(type)=>{ setPartyType(type); navigate(VIEWS.PARTY) }} onArrival={()=>navigate(VIEWS.ARRIVAL)} />}
       {view===VIEWS.SEARCH   && <SearchView t={t} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onGroupOrder={()=>navigate(VIEWS.GROUP)} onSchedule={()=>setShowSchedule(true)} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
