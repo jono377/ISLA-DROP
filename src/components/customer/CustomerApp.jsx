@@ -340,7 +340,7 @@ function SearchView({ t }) {
       ids:['ch-001','wn-021','ck-005','ck-013','ic-001','fr-001'] },
     { key:'pool',        label:'💦 Pool party',         desc:'Cold drinks, beers, ice & everything for a pool day',
       ids:['br-001','br-002','sd-001','sd-003','wt-002','ic-002','sn-001','ic-003'] },
-    { key:'gentleman',   label:'🎩 Gentleman's evening', desc:'Premium whisky, cognac, cigars & quality wine',
+    { key:'gentleman',   label:'🎩 Gentlemans evening', desc:'Premium whisky, cognac, cigars & quality wine',
       ids:['sp-009','sp-010','sp-011','sp-008','wn-001','tb-005','sn-029'] },
     { key:'birthday',    label:'🎂 Birthday',           desc:'Champagne, sparklers, balloons & party supplies',
       ids:['ch-001','ch-010','ic-001','ck-013','ps-001','ps-004','oc-001'] },
