@@ -309,102 +309,71 @@ function CategoriesView({ onSelect }) {
 
 // ── Search view ───────────────────────────────────────────────
 function SearchView({ t }) {
-  const [query, setQuery]           = useState('')
-  const [aiResults, setAiResults]   = useState(null)
-  const [aiLoading, setAiLoading]   = useState(false)
-  const [aiUsed, setAiUsed]         = useState(false)
-  const { addItem }                 = useCartStore()
-  const debounceRef                 = useRef(null)
+  const [query, setQuery]         = useState('')
+  const [aiResults, setAiResults] = useState(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiMessage, setAiMessage] = useState('')
+  const [selectedVibe, setSelectedVibe] = useState(null)
+  const { addItem } = useCartStore()
+  const debounceRef = useRef(null)
 
-  // Standard text search
+  // Standard text search on product names
   const textResults = query.length > 1
     ? PRODUCTS.filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 30)
     : []
 
-  // AI search for natural language queries
-  const aiLastCall = { ts: 0 }
+  // Vibe presets — directly mapped product IDs, no AI needed
+  const VIBES = [
+    { key:'pre_drinks',  label:'🌙 Pre-drinks',       desc:'Spirits, mixers, shots & ice for the night ahead',
+      ids:['sp-004','sp-001','sp-035','sp-012','sd-003','sd-001','ic-001','ic-002','sn-001'] },
+    { key:'cocktail',    label:'🥃 Cocktail night',    desc:'Gin, vodka, rum & everything to mix a perfect drink',
+      ids:['ck-001','ck-004','ck-003','ck-002','ck-006','sp-001','sp-004','sp-012','fr-001','fr-002','ic-001'] },
+    { key:'sundowner',   label:'🌅 Sundowner',          desc:'Rosé, Aperol Spritz, Prosecco & cold drinks for sunset',
+      ids:['wn-021','ck-002','ch-010','sp-019','sp-001','sd-001','ic-001'] },
+    { key:'ladies',      label:'💅 Ladies night',       desc:'Champagne, Prosecco, rosé & glamorous touches',
+      ids:['ch-001','ch-010','wn-021','ck-013','ic-001','sn-001','ck-012'] },
+    { key:'boys',        label:'🍺 Boys night',         desc:'Cold beers, shots, crisps & no-fuss party supplies',
+      ids:['br-001','br-002','sp-035','sp-004','sd-003','sn-001','sn-002','ic-002'] },
+    { key:'hangover',    label:'💊 Hangover cure',      desc:'Electrolytes, vitamins, coconut water & recovery essentials',
+      ids:['wl-014','wl-013','wl-012','wt-001','wt-003','sd-019','sn-001'] },
+    { key:'date_night',  label:'💕 Date night',         desc:'Premium champagne, rosé, a cocktail kit & romantic touches',
+      ids:['ch-001','wn-021','ck-005','ck-013','ic-001','fr-001'] },
+    { key:'pool',        label:'💦 Pool party',         desc:'Cold drinks, beers, ice & everything for a pool day',
+      ids:['br-001','br-002','sd-001','sd-003','wt-002','ic-002','sn-001','ic-003'] },
+    { key:'gentleman',   label:'🎩 Gentleman's evening', desc:'Premium whisky, cognac, cigars & quality wine',
+      ids:['sp-009','sp-010','sp-011','sp-008','wn-001','tb-005','sn-029'] },
+    { key:'birthday',    label:'🎂 Birthday',           desc:'Champagne, sparklers, balloons & party supplies',
+      ids:['ch-001','ch-010','ic-001','ck-013','ps-001','ps-004','oc-001'] },
+    { key:'beach',       label:'🏖️ Beach day',           desc:'Water, suncream, snacks & everything for the beach',
+      ids:['wt-001','wt-002','wt-003','es-013','sn-001','sn-002','sd-019'] },
+    { key:'snacks',      label:'🍕 Snacks & nibbles',   desc:'Crisps, antipasto, olives, nuts & sharing boards',
+      ids:['sn-001','sn-002','sn-003','sn-004','sn-029','sn-005'] },
+  ]
+
+  const handleVibeSelect = (vibe) => {
+    setSelectedVibe(vibe.key === selectedVibe ? null : vibe.key)
+    setQuery('')
+    setAiResults(null)
+    setAiMessage('')
+  }
+
+  const handleChange = (val) => {
+    setQuery(val)
+    setSelectedVibe(null)
+    setAiResults(null)
+    setAiMessage('')
+    clearTimeout(debounceRef.current)
+    if (val.length >= 3) {
+      debounceRef.current = setTimeout(() => runAiSearch(val), 600)
+    }
+  }
+
   const runAiSearch = async (q) => {
-    const now = Date.now()
-    if (now - aiLastCall.ts < 2000) return
-    aiLastCall.ts = now
-    if (!q || q.length < 2) return
+    if (!q || q.length < 3) return
     setAiLoading(true)
+    setAiMessage('')
     try {
-      // First: try direct keyword matching for common queries
-      const ql = q.toLowerCase()
-      
-      // Keyword map — returns product categories/subcategories to filter by
-      const keywordMap = [
-        { keys:['pre drink','predrink','night out','pre-drink','shots','club'], cats:['spirits'], subs:['vodka','gin','tequila','rum'], extras:['sd-025','sd-003','ic-002','sd-028'] },
-        { keys:['mojito'], ids:['sp-012','fr-002','sd-023','ic-001','ck-003'] },
-        { keys:['gin tonic','g&t','gin and tonic'], ids:['ck-004','sp-001','sd-025','fr-001','ic-001'] },
-        { keys:['aperol','spritz'], ids:['ck-002','sp-019','ch-010','sd-024'] },
-        { keys:['espresso martini'], ids:['ck-005','sp-004','sp-022'] },
-        { keys:['margarita'], ids:['ck-006','sp-035','fr-002','ic-001'] },
-        { keys:['cocktail','mixer kit'], cats:['cocktail'] },
-        { keys:['hangover','recovery','morning after'], ids:['wl-014','wl-013','wt-001','wt-003','sd-019'] },
-        { keys:['pool party','pool'], cats:['party','beach'], extras:['wt-002','br-001','sd-003'] },
-        { keys:['ladies night','girls night','prosecco','champagne night'], cats:['champagne'], extras:['wn-021','ic-001','ck-013'] },
-        { keys:['boys night','lads night','beer'], cats:['beer_cider'], extras:['sp-035','sd-028','sn-001'] },
-        { keys:['date night','romantic','couple'], ids:['ch-001','wn-021','ic-001','ck-013','ck-005'] },
-        { keys:['whisky','whiskey','gentleman'], cats:['spirits'], subs:['whiskey'], extras:['wn-001','sn-029'] },
-        { keys:['beach','sun'], cats:['beach','essentials','water','soft_drinks'] },
-        { keys:['snack','nibble','food'], cats:['snacks'] },
-        { keys:['birthday'], ids:['ch-001','ch-010','ic-001','ck-013','party-001'] },
-        { keys:['sundowner','sunset'], ids:['wn-021','sp-001','sd-025','ch-010','ic-001'] },
-        { keys:['water','hydrat'], cats:['water'] },
-        { keys:['wine','red wine','white wine','rose','rosé'], cats:['wine'] },
-        { keys:['beer','lager','pint'], cats:['beer_cider'] },
-        { keys:['spirit','vodka','gin','rum','tequila'], cats:['spirits'] },
-        { keys:['ice'], cats:['ice'] },
-        { keys:['tobacco','cigarette','cigar','smoke'], cats:['tobacco'] },
-        { keys:['wellness','vitamin','health'], cats:['wellness'] },
-      ]
-
-      let matched = []
-      for (const rule of keywordMap) {
-        if (rule.keys.some(k => ql.includes(k))) {
-          if (rule.ids) {
-            matched = [...matched, ...rule.ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)]
-          }
-          if (rule.cats) {
-            const catProds = PRODUCTS.filter(p => rule.cats.includes(p.category))
-            if (rule.subs) matched = [...matched, ...catProds.filter(p => rule.subs.includes(p.sub)).slice(0,4)]
-            else matched = [...matched, ...catProds.filter(p => p.popular).slice(0,4)]
-          }
-          if (rule.extras) {
-            matched = [...matched, ...rule.extras.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)]
-          }
-        }
-      }
-
-      // Deduplicate
-      const seen = new Set()
-      matched = matched.filter(p => p && !seen.has(p.id) && seen.add(p.id)).slice(0,12)
-
-      if (matched.length > 0) {
-        setAiResults(matched)
-        setAiUsed(true)
-        setAiLoading(false)
-        return
-      }
-
-      // Fallback: text search across product names
-      const textMatch = PRODUCTS.filter(p =>
-        p.name.toLowerCase().includes(ql) ||
-        p.category.toLowerCase().includes(ql) ||
-        (p.sub && p.sub.toLowerCase().includes(ql))
-      ).slice(0,12)
-
-      if (textMatch.length > 0) {
-        setAiResults(textMatch)
-        setAiUsed(true)
-        setAiLoading(false)
-        return
-      }
-
-      // Last resort: Claude API for truly ambiguous queries
-      const catalogue = PRODUCTS.map(p => p.id + '|' + p.name + '|' + p.category).join('\n')
+      const catalogue = PRODUCTS.map(p => p.id + '|' + p.name + '|' + p.category + '|€' + p.price.toFixed(2)).join('\n')
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -415,133 +384,126 @@ function SearchView({ t }) {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 200,
-          messages: [{ role:'user', content: 'Find up to 10 products for: "' + q + '". Return ONLY a JSON array of IDs: ["id1","id2"]. Catalogue:\n' + catalogue }]
+          max_tokens: 400,
+          messages: [{ role: 'user', content: 'You are the Isla Drop product search AI for an Ibiza delivery service. Find the best matching products for this search.\n\nSEARCH: "' + q + '"\n\nThink about what the customer actually needs:\n- "pre drinks / night out / shots" = vodka, gin, tequila, mixers, ice, Red Bull\n- "cocktail" = cocktail kits, spirits, garnish kit, ice\n- "hangover" = electrolytes, vitamins, water, coconut water\n- "date night" = champagne or premium wine, cocktail kit, ice\n- "ladies / girls" = champagne, prosecco, rose wine, garnish\n- "boys / lads" = beers, tequila shots, crisps\n- "beach" = water, sunscreen, snacks\n- "gentleman" = premium whisky, cognac, wine\n\nCATALOGUE:\n' + catalogue + '\n\nReturn a JSON object with:\n{"ids":["id1","id2",...],"message":"One warm sentence from Isla about this selection"} \nInclude up to 10 product IDs. Only use IDs from the catalogue.' }]
         })
       })
       if (!resp.ok) throw new Error('API error')
       const data = await resp.json()
-      const raw = data.content?.[0]?.text || '[]'
-      const ids = JSON.parse(raw.replace(/```json|```/g, '').trim())
-      const found = ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
-      if (found.length > 0) { setAiResults(found); setAiUsed(true) }
-    } catch { /* fall through */ }
+      const raw = data.content?.[0]?.text || '{}'
+      const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim())
+      const found = (parsed.ids || []).map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
+      if (found.length > 0) {
+        setAiResults(found)
+        setAiMessage(parsed.message || '')
+      }
+    } catch { /* fall through to text results */ }
     setAiLoading(false)
   }
 
+  // What to display
+  const vibeProducts = selectedVibe
+    ? (VIBES.find(v => v.key === selectedVibe)?.ids || []).map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
+    : []
 
-
-  const handleChange = (val) => {
-    setQuery(val)
-    setAiResults(null)
-    setAiUsed(false)
-    clearTimeout(debounceRef.current)
-    if (val.length >= 3) {
-      debounceRef.current = setTimeout(() => runAiSearch(val), 700)
-    }
-  }
-
-  const displayResults = aiResults || textResults
+  const displayResults = vibeProducts.length > 0 ? vibeProducts : (aiResults || textResults)
   const hasResults = displayResults.length > 0
-
-  const SUGGESTIONS = [
-    { label:"🎩 Gentleman's Evening", q:'premium spirits cigars whisky cognac gentleman luxury evening' },
-    { label:'💦 Pool party',           q:'pool party floats inflatables cold drinks ice' },
-    { label:'🌅 Sundowner drinks',     q:'sundowner sunset rosé wine Aperol spritz' },
-    { label:'💊 Hangover cure',        q:'hangover recovery morning after Dioralyte paracetamol coconut water' },
-    { label:'🎂 Birthday party',       q:'birthday party champagne sparklers balloons celebration' },
-    { label:'🏖️ Beach day',            q:'beach day water sunscreen snacks essentials' },
-    { label:'🌙 Club night pre-drinks',q:'pre drinks spirits mixers shots night out' },
-    { label:'🎉 House party',          q:'house party drinks snacks ice cups party supplies' },
-    { label:'🥂 Special occasion',     q:'special occasion Moet Veuve Clicquot luxury champagne' },
-    { label:'🥃 Cocktail night',       q:'cocktail spirits gin vodka rum mixers lemon lime ice' },
-    { label:'💅 Girls night',          q:'girls night prosecco champagne rosé snacks' },
-    { label:'🍕 Snacks & nibbles',     q:'snacks antipasto crisps hummus cheese board nibbles' },
-  ]
+  const selectedVibeData = VIBES.find(v => v.key === selectedVibe)
 
   return (
-    <div style={{ padding:'16px 16px 24px' }}>
-      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:14 }}>Search</div>
-
-      {/* Search input */}
-      <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.09)', border:'0.5px solid rgba(255,255,255,0.14)', borderRadius:12, padding:'11px 14px', gap:8, marginBottom:16 }}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input
-          autoFocus
-          value={query}
-          onChange={e => handleChange(e.target.value)}
-          placeholder="Search products or describe what you need..."
-          style={{ flex:1, border:'none', background:'none', fontFamily:'DM Sans,sans-serif', fontSize:14, color:'white', outline:'none' }}
-        />
-        {aiLoading && <div style={{ width:14, height:14, border:'2px solid rgba(255,255,255,0.2)', borderTopColor:'#C4683A', borderRadius:'50%', animation:'spin 0.8s linear infinite', flexShrink:0 }} />}
-        {query && !aiLoading && <button onClick={() => { setQuery(''); setAiResults(null); setAiUsed(false) }} style={{ border:'none', background:'none', cursor:'pointer', color:'rgba(255,255,255,0.4)', fontSize:16, padding:0, flexShrink:0 }}>✕</button>}
+    <div style={{ background: C.bg, minHeight:'100vh', paddingBottom:80 }}>
+      {/* Search bar */}
+      <div style={{ padding:'16px 16px 12px', background:'rgba(13,59,74,0.98)', position:'sticky', top:0, zIndex:10 }}>
+        <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.1)', borderRadius:12, padding:'10px 14px', gap:10 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input value={query} onChange={e => handleChange(e.target.value)}
+            placeholder="Search or ask Isla anything..."
+            style={{ flex:1, background:'none', border:'none', color:'white', fontFamily:'DM Sans,sans-serif', fontSize:14, outline:'none' }} />
+          {query && <button onClick={() => handleChange('')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:18, padding:0 }}>✕</button>}
+        </div>
       </div>
 
-      {/* AI badge */}
-      {aiUsed && hasResults && (
-        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10 }}>
-          <div style={{ background:'rgba(196,104,58,0.2)', border:'0.5px solid rgba(196,104,58,0.35)', borderRadius:20, padding:'4px 10px', fontSize:11, color:'#E8A070', fontFamily:'DM Sans,sans-serif' }}>
-            ✨ AI search — {displayResults.length} results
-          </div>
-        </div>
-      )}
+      <div style={{ padding:'14px 16px' }}>
+        {/* Vibe chips */}
+        {!query && (
+          <>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>
+              ✨ What are you planning?
+            </div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:16 }}>
+              {VIBES.map(v => (
+                <button key={v.key} onClick={() => handleVibeSelect(v)}
+                  style={{ padding:'8px 14px', background: selectedVibe===v.key?'rgba(196,104,58,0.35)':'rgba(255,255,255,0.07)', border:'0.5px solid ' + (selectedVibe===v.key?'rgba(196,104,58,0.6)':'rgba(255,255,255,0.12)'), borderRadius:20, fontSize:13, color: selectedVibe===v.key?'#E8A070':'rgba(255,255,255,0.8)', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
-      {/* Suggestions — shown when no query */}
-      {!query && (
-        <>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:10, fontFamily:'DM Sans,sans-serif', textTransform:'uppercase', letterSpacing:'0.5px' }}>Try asking Isla</div>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:20 }}>
-            {SUGGESTIONS.map(s => (
-              <button key={s.q} onClick={() => handleChange(s.q)}
-                style={{ padding:'8px 14px', background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:20, fontSize:13, color:'rgba(255,255,255,0.8)', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
-                {s.label}
-              </button>
-            ))}
+        {/* Selected vibe description */}
+        {selectedVibeData && (
+          <div style={{ background:'rgba(196,104,58,0.1)', border:'0.5px solid rgba(196,104,58,0.25)', borderRadius:12, padding:'10px 14px', marginBottom:14, display:'flex', alignItems:'center', gap:10 }}>
+            <div>
+              <div style={{ fontSize:14, fontWeight:500, color:'white', fontFamily:'DM Sans,sans-serif' }}>{selectedVibeData.label}</div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.55)', marginTop:2 }}>{selectedVibeData.desc}</div>
+            </div>
           </div>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:10, fontFamily:'DM Sans,sans-serif', textTransform:'uppercase', letterSpacing:'0.5px' }}>Popular right now</div>
-          <div style={{ display:'flex', gap:10, overflowX:'auto', scrollbarWidth:'none' }}>
-            {PRODUCTS.filter(p=>p.popular).sort(()=>Math.random()-0.5).slice(0,8).map(p => <MiniCard key={p.id} product={p} t={t}/>)}
+        )}
+
+        {/* Isla AI message */}
+        {aiMessage && (
+          <div style={{ background:'rgba(43,122,139,0.15)', border:'0.5px solid rgba(43,122,139,0.3)', borderRadius:12, padding:'10px 14px', marginBottom:14 }}>
+            <div style={{ fontSize:12, color:'#7ECFE0', marginBottom:3 }}>✨ Isla</div>
+            <div style={{ fontSize:13, color:'rgba(255,255,255,0.75)', lineHeight:1.5 }}>{aiMessage}</div>
           </div>
-        </>
-      )}
+        )}
 
-      {/* Results */}
-      {query && !hasResults && !aiLoading && (
-        <div style={{ textAlign:'center', padding:'40px 0', color:'rgba(255,255,255,0.4)' }}>
-          <div style={{ fontSize:32, marginBottom:10 }}>🔍</div>
-          <div style={{ fontSize:14, fontFamily:'DM Sans,sans-serif' }}>No results for "{query}"</div>
-          <div style={{ fontSize:12, marginTop:4 }}>Try describing what you need differently</div>
-        </div>
-      )}
+        {/* Loading */}
+        {aiLoading && (
+          <div style={{ textAlign:'center', padding:'20px 0', color:'rgba(255,255,255,0.5)', fontSize:13 }}>
+            ✨ Isla is finding the best products for you...
+          </div>
+        )}
 
-      {hasResults && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10 }}>
-          {displayResults.map(p => (
-            <div key={p.id} style={{ background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:14, overflow:'hidden' }}>
-              <div style={{ height:80, background:'linear-gradient(135deg,#0D3B4A,#1A5263)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32 }}>{p.emoji}</div>
-              <div style={{ padding:'10px 12px' }}>
-                <div style={{ fontSize:12, fontWeight:500, color:'white', fontFamily:'DM Sans,sans-serif', marginBottom:4, lineHeight:1.3 }}>{p.name}</div>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <span style={{ fontSize:13, fontWeight:500, color:'#E8A070' }}>€{p.price.toFixed(2)}</span>
-                  <button onClick={() => { addItem(p); toast.success(p.emoji + ' Added!', { duration:900 }) }}
-                    style={{ padding:'5px 10px', background:'#C4683A', border:'none', borderRadius:8, fontSize:11, color:'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
-                    Add
-                  </button>
+        {/* No results */}
+        {query && !hasResults && !aiLoading && (
+          <div style={{ textAlign:'center', padding:'30px 0', color:'rgba(255,255,255,0.4)' }}>
+            <div style={{ fontSize:32, marginBottom:10 }}>🔍</div>
+            <div style={{ fontSize:14 }}>No results for "{query}"</div>
+            <div style={{ fontSize:12, marginTop:4 }}>Try a vibe above or describe what you need</div>
+          </div>
+        )}
+
+        {/* Results grid */}
+        {hasResults && (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            {displayResults.map(p => (
+              <div key={p.id} style={{ background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:14, overflow:'hidden' }}>
+                <div style={{ position:'relative' }}>
+                  <ProductImage productId={p.id} emoji={p.emoji} category={p.category} alt={p.name} style={{ width:'100%', height:120, objectFit:'cover' }} />
+                  {p.age_restricted && <span style={{ position:'absolute', top:6, left:6, background:'rgba(0,0,0,0.6)', borderRadius:20, padding:'2px 7px', fontSize:9, color:'white' }}>18+</span>}
+                </div>
+                <div style={{ padding:'8px 10px' }}>
+                  <div style={{ fontSize:12, fontWeight:500, color:'white', lineHeight:1.3, marginBottom:4 }}>{p.name}</div>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <span style={{ fontSize:14, fontWeight:600, color:'#E8A070' }}>€{p.price.toFixed(2)}</span>
+                    <button onClick={() => { addItem(p); toast.success(p.emoji + ' Added!', { duration:900 }) }}
+                      style={{ padding:'5px 12px', background:'#C4683A', border:'none', borderRadius:8, fontSize:12, color:'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:500 }}>
+                      Add
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-      <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 
-
-
-// ── Cancel Countdown ──────────────────────────────────────────
 function CancelCountdown({ deadline, orderId, onCancelled }) {
   const [remaining, setRemaining] = useState(Math.max(0, deadline - Date.now()))
   const [cancelling, setCancelling] = useState(false)
