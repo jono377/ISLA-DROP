@@ -37,7 +37,7 @@ IMPORTANT:
 - Keep responses concise but complete (under 150 words)
 - Never say "I cannot" — always find a solution or escalate path
 - If a real human agent is needed: "I am escalating this to our team — you will hear back within 30 minutes via email."
-- Email for urgent issues: support@isladrop.com | Phone: +34 XXX XXX XXX`
+- Email for urgent issues: support@isladrop.net | Phone: +34 XXX XXX XXX`
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -45,6 +45,7 @@ IMPORTANT:
       'Content-Type': 'application/json',
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
+      'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
@@ -62,13 +63,13 @@ IMPORTANT:
 // Fallback local support responses
 function localSupport(input) {
   const q = input.toLowerCase()
-  if (q.includes('cancel')) return "To cancel your order, please act quickly — cancellations are accepted within 2 minutes of placing, or before a driver is assigned. Email support@isladrop.com immediately with your order number and we will do our best to help."
-  if (q.includes('refund')) return "We are sorry to hear that! Refunds are processed within 3-5 business days. For wrong items, missing items or quality issues we offer a full refund. Please email support@isladrop.com with your order number and a photo if applicable."
-  if (q.includes('missing') || q.includes('wrong item')) return "We sincerely apologise for this! Please email support@isladrop.com with your order number and which items were missing or incorrect — we will arrange a refund or replacement immediately."
-  if (q.includes('late') || q.includes('where is')) return "We are sorry for the delay! If your order is over 45 minutes late, you qualify for a 20% discount on your next order. Please email support@isladrop.com with your order number."
-  if (q.includes('track') || q.includes('status')) return "Once a driver is assigned to your order, you will see live tracking on your order status screen. If you placed an order and are not seeing updates, email support@isladrop.com with your order number."
-  if (q.includes('account') || q.includes('password') || q.includes('login')) return "For account issues, use the Forgot Password link on the sign in screen. If you are still having trouble, email support@isladrop.com and we will sort it within the hour."
-  return "Thank you for reaching out! Our support team is available 24/7. For the fastest response please email support@isladrop.com with your order number and details of the issue — we aim to respond within 30 minutes."
+  if (q.includes('cancel')) return "To cancel your order, please act quickly — cancellations are accepted within 2 minutes of placing, or before a driver is assigned. Email support@isladrop.net immediately with your order number and we will do our best to help."
+  if (q.includes('refund')) return "We are sorry to hear that! Refunds are processed within 3-5 business days. For wrong items, missing items or quality issues we offer a full refund. Please email support@isladrop.net with your order number and a photo if applicable."
+  if (q.includes('missing') || q.includes('wrong item')) return "We sincerely apologise for this! Please email support@isladrop.net with your order number and which items were missing or incorrect — we will arrange a refund or replacement immediately."
+  if (q.includes('late') || q.includes('where is')) return "We are sorry for the delay! If your order is over 45 minutes late, you qualify for a 20% discount on your next order. Please email support@isladrop.net with your order number."
+  if (q.includes('track') || q.includes('status')) return "Once a driver is assigned to your order, you will see live tracking on your order status screen. If you placed an order and are not seeing updates, email support@isladrop.net with your order number."
+  if (q.includes('account') || q.includes('password') || q.includes('login')) return "For account issues, use the Forgot Password link on the sign in screen. If you are still having trouble, email support@isladrop.net and we will sort it within the hour."
+  return "Thank you for reaching out! Our support team is available 24/7. For the fastest response please email support@isladrop.net with your order number and details of the issue — we aim to respond within 30 minutes."
 }
 
 export default function SupportChat({ onBack }) {
@@ -122,7 +123,7 @@ export default function SupportChat({ onBack }) {
       }
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Something went wrong. Please email support@isladrop.com directly and we will respond within 30 minutes.' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Something went wrong. Please email support@isladrop.net directly and we will respond within 30 minutes.' }])
     }
     setLoading(false)
   }
@@ -181,7 +182,7 @@ export default function SupportChat({ onBack }) {
       </div>
 
       <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginTop: 8, fontFamily: 'DM Sans,sans-serif' }}>
-        Urgent? Email support@isladrop.com · Powered by Claude AI
+        Urgent? Email support@isladrop.net · Powered by Claude AI
       </div>
 
       <style>{`@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}`}</style>
