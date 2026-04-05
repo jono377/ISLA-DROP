@@ -27,8 +27,17 @@ async function buildPackage(details) {
       max_tokens: 4000,
       messages: [{
         role: 'user',
-        content: 'You are Isla, the greatest party planner in Ibiza. No budget is too big, no party too ambitious. You have planned 1000-person raves, intimate villa soirees, legendary boat parties. Build the PERFECT package right now.\n\nEVENT DETAILS:\nType: ' + details.packageType + '\nVibe: ' + details.vibe + '\nGuests: ' + details.guests + '\nDuration: ' + details.duration + ' hours\nBudget: ' + (details.budget === 'no_limit' ? 'UNLIMITED - go all out' : 'up to EUR' + details.budget) + '\nAlcohol: ' + details.alcohol + '\nTime of day: ' + details.time + '\nSpecial requests: ' + (details.notes || 'none') + '\n\nAVAILABLE PRODUCTS (id|name|category|price|*=popular):\n' + catalogue + '\n\nRULES:\n- ONLY use product IDs from the catalogue above - never invent IDs\n- Max 6 sections, max 8 items per section\n- Quantities must be realistic integers\n- Always include ice and mixers for spirit events\n- Always include soft drink alternatives\n- Reason field: be specific about why and how many\n\nRespond with ONLY valid JSON, no markdown, no text before or after:\n{"package_name":"name","tagline":"one line","hero_emoji":"emoji","sections":[{"title":"title","emoji":"emoji","items":[{"product_id":"id","quantity":1,"reason":"why"}]}],"hosting_tips":["tip1","tip2","tip3"],"isla_note":"personal note"}'
-      }]
+        content: (() => {
+    const THEMES = [
+      'sun-soaked Ibiza hedonism', 'White Isle underground energy', 'Mediterranean luxury excess',
+      'golden hour glamour', 'island wildness and freedom', 'high energy Ibiza euphoria',
+      'raw Ibiza party spirit', 'effortless Balearic cool', 'pure White Isle madness',
+      'sophisticated island elegance', 'neon-lit Ibiza nights', 'barefoot luxury vibes',
+    ]
+    const theme = THEMES[Math.floor(Math.random() * THEMES.length)]
+    const seed = Math.floor(Math.random() * 9999)
+    return 'You are Isla — the most inventive and unpredictable party planner on the island. Every package is completely unique. You never repeat yourself.\n\nENERGY THIS BUILD: ' + theme + ' [' + seed + ']\n\nEVENT:\nType: ' + details.packageType + '\nVibe: ' + details.vibe + '\nGuests: ' + details.guests + '\nDuration: ' + details.duration + ' hours\nBudget: ' + (details.budget === 'no_limit' ? 'UNLIMITED' : 'EUR' + details.budget) + '\nAlcohol: ' + details.alcohol + '\nTime: ' + details.time + '\nNotes: ' + (details.notes || 'none') + '\n\nIMPORTANT: The package name must describe what the customer actually asked for. Never use generic names like Creative Sanctuary, Artistic Retreat, Bohemian Gathering, or any art/creativity theme the customer did not request. Name it after the energy, the occasion, the vibe they described. Be bold and specific.\n\nFor a villa party think: what does an epic Ibiza villa party actually need? A killer bar setup, the right spirits, ice, mixers, snacks, the works. Not metaphors.\n\nPRODUCTS:\n' + catalogue + '\n\nGUIDANCE BY VIBE:\n- Ladies night: Champagne, Prosecco, Aperol, Rose, light snacks, shot glasses, garnishes.\n- Boys night: Cold beers, tequila shots, sambuca, mixers, crisps.\n- Gentleman evening: Premium whisky, cognac, cigars, fine wine, antipasto.\n- Club/pre-drinks: Spirits, mixers, Red Bull, shots.\n- Villa party: Everything. Full bar. Make it legendary.\n\nRULES: Only use real product IDs. Max 6 sections, 8 items each. Always include ice and soft drinks.\n\nReturn ONLY valid JSON: {"package_name":"name","tagline":"one line","hero_emoji":"emoji","sections":[{"title":"title","emoji":"emoji","items":[{"product_id":"id","quantity":1,"reason":"why"}]}],"hosting_tips":["tip1","tip2","tip3"],"isla_note":"personal note"}'
+  })()     }]
     })
   })
 
