@@ -424,6 +424,24 @@ export const PRODUCTS = [
 ]
 
 // ── Category config ─────────────────────────────────────────
+  // ── COCKTAIL KITS & MIXERS (+30%) ─────────────────────────────
+  { id: 'ck-001', name: 'Classic Cocktail Kit (shaker, strainer, jigger, muddler, bar spoon)', category:'cocktail', sub:'kit', emoji:'🍹', price:22.75, age_restricted:false, popular:true  },
+  { id: 'ck-002', name: 'Aperol Spritz Kit (Aperol 70cl + Prosecco + Soda)', category:'cocktail', sub:'kit', emoji:'🥂', price:28.60, age_restricted:true,  popular:true  },
+  { id: 'ck-003', name: 'Mojito Kit (Rum + Mint + Lime + Sugar + Soda)', category:'cocktail', sub:'kit', emoji:'🌿', price:24.70, age_restricted:true,  popular:true  },
+  { id: 'ck-004', name: 'Gin & Tonic Kit (Premium Gin + Fever-Tree Tonic 4pk + Limes)', category:'cocktail', sub:'kit', emoji:'🫙', price:32.50, age_restricted:true,  popular:true  },
+  { id: 'ck-005', name: 'Espresso Martini Kit (Vodka + Kahlua + Espresso pods)', category:'cocktail', sub:'kit', emoji:'☕', price:35.75, age_restricted:true,  popular:true  },
+  { id: 'ck-006', name: 'Margarita Kit (Tequila + Triple Sec + Lime juice + Salt)', category:'cocktail', sub:'kit', emoji:'🍋', price:29.90, age_restricted:true,  popular:true  },
+  { id: 'ck-007', name: 'Negroni Kit (Gin + Campari + Sweet Vermouth)', category:'cocktail', sub:'kit', emoji:'🍊', price:34.45, age_restricted:true,  popular:false },
+  { id: 'ck-008', name: 'Sangria Kit (Red Wine + Brandy + Orange juice + Fruit)', category:'cocktail', sub:'kit', emoji:'🍷', price:23.40, age_restricted:true,  popular:true  },
+  { id: 'ck-009', name: 'Pina Colada Kit (White Rum + Coconut Cream + Pineapple juice)', category:'cocktail', sub:'kit', emoji:'🥥', price:26.65, age_restricted:true,  popular:true  },
+  { id: 'ck-010', name: 'Bellini Kit (Prosecco + Peach puree)', category:'cocktail', sub:'kit', emoji:'🍑', price:21.45, age_restricted:true,  popular:false },
+  { id: 'ck-011', name: 'Whisky Sour Kit (Bourbon + Lemon juice + Sugar syrup)', category:'cocktail', sub:'kit', emoji:'🥃', price:27.95, age_restricted:true,  popular:false },
+  { id: 'ck-012', name: 'Cosmopolitan Kit (Vodka + Triple Sec + Cranberry + Lime)', category:'cocktail', sub:'kit', emoji:'🌸', price:28.60, age_restricted:true,  popular:true  },
+  { id: 'ck-013', name: 'Cocktail Garnish Kit (Lemons, Limes, Mint, Cucumber, Olives, Cherries)', category:'cocktail', sub:'garnish', emoji:'🍋', price:12.35, age_restricted:false, popular:true  },
+  { id: 'ck-014', name: 'Simple Syrup & Grenadine Set', category:'cocktail', sub:'mixer', emoji:'🍯', price:9.75, age_restricted:false, popular:false },
+  { id: 'ck-015', name: 'Cocktail Napkins & Picks Set 50pk', category:'cocktail', sub:'accessories', emoji:'🍡', price:5.20, age_restricted:false, popular:false },
+
+
 export const CATEGORIES = [
   { key: 'spirits',    label: 'Spirits',      emoji: '🥃', subs: [
     { key: 'tequila',  label: 'Tequila'  },
@@ -479,6 +497,12 @@ export const CATEGORIES = [
     { key: 'towels',      label: 'Towels & Mats' },
     { key: 'swimwear',    label: 'Swimwear' },
     { key: 'accessories', label: 'Accessories' },
+  ]},
+  { key: 'cocktail',   label: 'Cocktail Kits',   emoji: '🍹', subs: [
+    { key: 'kit',        label: 'Cocktail Kits'  },
+    { key: 'garnish',    label: 'Garnishes'      },
+    { key: 'mixer',      label: 'Syrups & Mixes' },
+    { key: 'accessories',label: 'Accessories'    },
   ]},
   { key: 'fresh',      label: 'Fresh & Citrus',  emoji: '🍋', subs: [
     { key: 'citrus',  label: 'Citrus' },
