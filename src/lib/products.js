@@ -347,10 +347,8 @@ export const PRODUCTS = [
   { id: 'sw-001', name: 'Durex Condoms 12 Pack',      category: 'wellness', sub: 'wellness', emoji: '❤️', price: 13.20, age_restricted: false, popular: false },
   { id: 'sw-002', name: 'Durex Condoms 24 Pack',      category: 'wellness', sub: 'wellness', emoji: '❤️', price: 22.80, age_restricted: false, popular: false },
   { id: 'sw-003', name: 'Durex Pleasure Pack 10',     category: 'wellness', sub: 'wellness', emoji: '❤️', price: 15.60, age_restricted: false, popular: false },
-]
 
-// ── Category config ─────────────────────────────────────────
-  // ── PARTY SUPPLIES (+30%) ─────────────────────────────────────
+// ── PARTY SUPPLIES (+30%) ─────────────────────────────────────
   { id: 'ps-001', name: 'Balloons Mixed Colours 50pk',        category:'party', sub:'decorations', emoji:'🎈', price:5.85,  age_restricted:false, popular:true  },
   { id: 'ps-002', name: 'Balloon Pump Hand Pump',             category:'party', sub:'decorations', emoji:'🎈', price:3.90,  age_restricted:false, popular:false },
   { id: 'ps-003', name: 'Happy Birthday Banner Foil',         category:'party', sub:'decorations', emoji:'🎂', price:5.20,  age_restricted:false, popular:true  },
@@ -414,8 +412,9 @@ export const PRODUCTS = [
   { id: 'oc-004', name: 'Personalised Birthday Ribbon',       category:'party', sub:'accessories', emoji:'🎀', price:3.25,  age_restricted:false, popular:false },
   { id: 'oc-007', name: 'Luxury Gift Bag Large',              category:'party', sub:'accessories', emoji:'🎁', price:5.85,  age_restricted:false, popular:false },
   { id: 'oc-008', name: 'Dried Flower Bouquet',               category:'party', sub:'decorations', emoji:'💐', price:19.50, age_restricted:false, popular:false },
+]
 
-
+// ── Category config ─────────────────────────────────────────
 export const CATEGORIES = [
   { key: 'spirits',    label: 'Spirits',      emoji: '🥃', subs: [
     { key: 'tequila',  label: 'Tequila'  },
