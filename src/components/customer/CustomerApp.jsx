@@ -23,6 +23,9 @@ import OrderChat from './OrderChat'
 import OrderRating from './OrderRating'
 // supabase imported dynamically inside functions to prevent blank screen
 
+const FREE_DELIVERY_THRESHOLD = 200
+const FREE_DELIVERY_NUDGE_FROM = 150
+
 const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', CONCIERGE:'concierge', PARTY:'party', GROUP:'group', CLUBS:'clubs', ARRIVAL:'arrival', GIFT:'gift', SPEND:'spend', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
