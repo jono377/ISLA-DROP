@@ -284,10 +284,20 @@ function SearchView({ t }) {
 
   // AI search for natural language queries
   const runAiSearch = async (q) => {
-    if (!q || q.length < 4) return
+    if (!q || q.length < 3) return
     setAiLoading(true)
     try {
+      const isCocktail = /cocktail|mojito|margarita|negroni|spritz|martini|cosmo|sangria|pina|bellini|daiquiri|espresso martini|gin.tonic|whisky sour/i.test(q)
+      const isDate = /date night|romantic|couple/i.test(q)
+
       const catalogue = PRODUCTS.map(p => p.id + '|' + p.name + '|' + p.category + '|€' + p.price.toFixed(2)).join('\n')
+
+      const systemNote = isCocktail
+        ? 'This is a cocktail search. Think about which cocktail the customer wants and find ALL the individual ingredients plus a cocktail kit if available. Also suggest garnishes and ice.'
+        : isDate
+        ? 'This is a date night search. Suggest premium romantic products — quality wine or champagne, a cocktail kit, candles, nice snacks. Keep it intimate and elegant, not excessive.'
+        : ''
+
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -301,19 +311,20 @@ function SearchView({ t }) {
           max_tokens: 300,
           messages: [{
             role: 'user',
-            content: 'Customer searched: ' + q + '. Find up to 12 relevant products from this catalogue. Pool party: floats and drinks. Hangover: remedies. Cocktail: spirits mixers citrus. Gentleman: premium spirits cigars. Birthday: champagne sparklers. CATALOGUE:\n' + catalogue + '\nReturn ONLY JSON array: ["id1","id2"] No other text.'
+            content: 'You are a smart product search for Isla Drop, an Ibiza delivery service. Find the most relevant products for this search query. ' + systemNote + '\n\nSEARCH: ' + q + '\n\nBe creative and smart:\n- "cocktail night" -> gin, vodka, rum, tequila, cocktail kits, mixers, lemon/lime garnish kit, ice, shot glasses\n- "mojito" -> white rum, fresh mint, limes, sugar syrup/grenadine, soda water, ice, cocktail kit\n- "gin and tonic" -> gin & tonic kit or gin + Fever-Tree tonic, lime, ice\n- "margarita" -> margarita kit or tequila + triple sec + lime, salt, ice\n- "aperol spritz" -> Aperol spritz kit or Aperol + Prosecco + soda\n- "espresso martini" -> espresso martini kit or vodka + Kahlua + espresso\n- "hangover" -> Dioralyte, Alka-Seltzer, paracetamol, coconut water, water\n- "pool party" -> inflatables, cold beers, water, soft drinks, ice\n- "ladies night" -> champagne, prosecco, rose, Aperol, garnish kit\n- "boys night" -> beers, tequila, sambuca, mixers, crisps\n- "date night" -> premium wine or champagne, cocktail kit, candles, light snacks\n- "sundowner" -> rose wine, gin, tonic, Aperol, Prosecco, ice\n\nCATALOGUE (id|name|category|price):\n' + catalogue + '\n\nReturn ONLY a JSON array of up to 12 product IDs: ["id1","id2","id3"]'
           }]
         })
       })
       if (!resp.ok) throw new Error('API error')
       const data = await resp.json()
       const raw = data.content?.[0]?.text || '[]'
-      const ids = JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g, '').trim())
+      const ids = JSON.parse(raw.replace(/```json|```/g, '').trim())
       const found = ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
       if (found.length > 0) { setAiResults(found); setAiUsed(true) }
     } catch { /* fall through to text results */ }
     setAiLoading(false)
   }
+
 
   const handleChange = (val) => {
     setQuery(val)
