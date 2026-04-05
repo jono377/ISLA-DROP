@@ -3,9 +3,16 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder', {
-  realtime: { params: { eventsPerSecond: 10 } },
-})
+// Validate env vars are actually set
+if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
+  console.error('CRITICAL: Supabase env vars missing or invalid. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel.')
+}
+
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder',
+  { realtime: { params: { eventsPerSecond: 10 } } }
+)
 
 // ── Auth helpers ──────────────────────────────────────────────
 
