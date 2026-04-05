@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { PRODUCTS, CATEGORIES, BEST_SELLERS, NEW_IN } from '../../lib/products'
+import { calculateETA, shouldShowDriverOnMap, formatETA, isLate } from '../../lib/eta'
 import { LANGUAGES, useT } from '../../i18n/translations'
 import AgeVerification from './AgeVerification'
 import StripeCheckout from './StripeCheckout'
@@ -13,9 +14,10 @@ import CategoryPage, { AllProductsPage } from './CategoryPage'
 import ProductImage from '../shared/ProductImage'
 import AccountView from './AccountView'
 import Concierge from './Concierge'
+import PartyBuilder from './PartyBuilder'
 // supabase imported dynamically inside functions to prevent blank screen
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', CONCIERGE:'concierge', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', CONCIERGE:'concierge', PARTY:'party', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -194,50 +196,167 @@ function CategoriesView({ onSelect }) {
 
 // ── Search view ───────────────────────────────────────────────
 function SearchView({ t }) {
-  const [query, setQuery] = useState('')
-  const { addItem } = useCartStore()
-  const results = query.length>1 ? PRODUCTS.filter(p=>p.name.toLowerCase().includes(query.toLowerCase())).slice(0,40) : []
+  const [query, setQuery]           = useState('')
+  const [aiResults, setAiResults]   = useState(null)
+  const [aiLoading, setAiLoading]   = useState(false)
+  const [aiUsed, setAiUsed]         = useState(false)
+  const { addItem }                 = useCartStore()
+  const debounceRef                 = useRef(null)
+
+  // Standard text search
+  const textResults = query.length > 1
+    ? PRODUCTS.filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 30)
+    : []
+
+  // AI search for natural language queries
+  const runAiSearch = async (q) => {
+    if (!q || q.length < 4) return
+    setAiLoading(true)
+    try {
+      const catalogue = PRODUCTS.map(p => `${p.id}|${p.name}|${p.category}|€${p.price.toFixed(2)}`).join('\n')
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 300,
+          messages: [{
+            role: 'user',
+            content: `Customer searched: "${q}"
+
+Find the most relevant products from this catalogue for their search. Think creatively — if they search "pool party" find floats, speakers, drinks, sunscreen. If they search "hangover" find remedies. If they search "something sweet" find chocolates and sweets.
+
+CATALOGUE (id|name|category|price):
+${catalogue}
+
+Return ONLY a JSON array of up to 12 product IDs: ["id1","id2","id3"]
+No other text.`
+          }]
+        })
+      })
+      if (!resp.ok) throw new Error('API error')
+      const data = await resp.json()
+      const raw = data.content?.[0]?.text || '[]'
+      const ids = JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g, '').trim())
+      const found = ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
+      if (found.length > 0) { setAiResults(found); setAiUsed(true) }
+    } catch { /* fall through to text results */ }
+    setAiLoading(false)
+  }
+
+  const handleChange = (val) => {
+    setQuery(val)
+    setAiResults(null)
+    setAiUsed(false)
+    clearTimeout(debounceRef.current)
+    if (val.length >= 3) {
+      debounceRef.current = setTimeout(() => runAiSearch(val), 700)
+    }
+  }
+
+  const displayResults = aiResults || textResults
+  const hasResults = displayResults.length > 0
+
+  const SUGGESTIONS = [
+    { label:'🎉 Party tonight',     q:'party supplies for tonight' },
+    { label:'💦 Pool party',        q:'pool party floats drinks' },
+    { label:'🌅 Sundowner drinks',  q:'sundowner sunset drinks' },
+    { label:'💊 Hangover cure',     q:'hangover recovery morning after' },
+    { label:'🎂 Birthday party',    q:'birthday party celebration' },
+    { label:'🏖️ Beach day',         q:'beach day essentials' },
+    { label:'🌙 Night party',       q:'night party spirits mixers' },
+    { label:'☀️ Daytime party',     q:'daytime party snacks drinks' },
+    { label:'🥂 Special occasion',  q:'special occasion champagne luxury' },
+    { label:'🍕 Snacks platter',    q:'snacks crisps nibbles' },
+    { label:'🥃 Cocktail night',    q:'cocktail spirits mixers ice' },
+    { label:'💅 Girls night',       q:'girls night champagne prosecco' },
+  ]
+
   return (
-    <div style={{ padding:'16px 16px 0' }}>
-      <div style={{ display:'flex',gap:8,marginBottom:16 }}>
-        <div style={{ flex:1,display:'flex',alignItems:'center',background:'rgba(255,255,255,0.1)',borderRadius:12,padding:'10px 14px',gap:8,border:'0.5px solid rgba(255,255,255,0.1)' }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder={t.searchPlaceholder} style={{ flex:1,border:'none',background:'none',fontFamily:'DM Sans,sans-serif',fontSize:14,color:'white',outline:'none' }}/>
-          {query&&<button onClick={()=>setQuery('')} style={{ border:'none',background:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:15,padding:0 }}>✕</button>}
-        </div>
-        <button
-          onClick={() => {/* handled by parent */}}
-          title="Ask Isla AI"
-          style={{ width:44, height:44, background:'rgba(255,255,255,0.09)', border:'0.5px solid rgba(255,255,255,0.14)', borderRadius:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#E8A070" stroke="#E8A070" strokeWidth="1">
-            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
-          </svg>
-        </button>
+    <div style={{ padding:'16px 16px 24px' }}>
+      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:14 }}>Search</div>
+
+      {/* Search input */}
+      <div style={{ display:'flex', alignItems:'center', background:'rgba(255,255,255,0.09)', border:'0.5px solid rgba(255,255,255,0.14)', borderRadius:12, padding:'11px 14px', gap:8, marginBottom:16 }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input
+          autoFocus
+          value={query}
+          onChange={e => handleChange(e.target.value)}
+          placeholder="Search products or describe what you need..."
+          style={{ flex:1, border:'none', background:'none', fontFamily:'DM Sans,sans-serif', fontSize:14, color:'white', outline:'none' }}
+        />
+        {aiLoading && <div style={{ width:14, height:14, border:'2px solid rgba(255,255,255,0.2)', borderTopColor:'#C4683A', borderRadius:'50%', animation:'spin 0.8s linear infinite', flexShrink:0 }} />}
+        {query && !aiLoading && <button onClick={() => { setQuery(''); setAiResults(null); setAiUsed(false) }} style={{ border:'none', background:'none', cursor:'pointer', color:'rgba(255,255,255,0.4)', fontSize:16, padding:0, flexShrink:0 }}>✕</button>}
       </div>
-      {query.length>1 && results.length>0 && (
-        <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
-          {results.map(p=>(
-            <div key={p.id} style={{ background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.1)',borderRadius:14,overflow:'hidden',position:'relative' }}>
-              <div style={{ position:'relative' }}>
-                <ProductImage productId={p.id} emoji={p.emoji} category={p.category} alt={p.name} size="card" style={{ height:110 }} />
-                <button onClick={()=>{addItem(p);toast.success(p.emoji+' Added!',{duration:900})}} style={{ position:'absolute',top:7,right:7,width:28,height:28,background:'#C4683A',border:'2px solid white',borderRadius:'50%',color:'white',fontSize:17,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',lineHeight:1 }}>+</button>
-              </div>
-              <div style={{ padding:'9px 10px 11px' }}>
-                <div style={{ fontSize:11,fontWeight:500,color:'white',lineHeight:1.3,marginBottom:4 }}>{p.name}</div>
-                <div style={{ fontSize:13,fontWeight:500,color:'#E8A070' }}>€{p.price.toFixed(2)}</div>
+
+      {/* AI badge */}
+      {aiUsed && hasResults && (
+        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10 }}>
+          <div style={{ background:'rgba(196,104,58,0.2)', border:'0.5px solid rgba(196,104,58,0.35)', borderRadius:20, padding:'4px 10px', fontSize:11, color:'#E8A070', fontFamily:'DM Sans,sans-serif' }}>
+            ✨ AI search — {displayResults.length} results
+          </div>
+        </div>
+      )}
+
+      {/* Suggestions — shown when no query */}
+      {!query && (
+        <>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:10, fontFamily:'DM Sans,sans-serif', textTransform:'uppercase', letterSpacing:'0.5px' }}>Try asking Isla</div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:20 }}>
+            {SUGGESTIONS.map(s => (
+              <button key={s.q} onClick={() => handleChange(s.q)}
+                style={{ padding:'8px 14px', background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:20, fontSize:13, color:'rgba(255,255,255,0.8)', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:10, fontFamily:'DM Sans,sans-serif', textTransform:'uppercase', letterSpacing:'0.5px' }}>Popular right now</div>
+          <div style={{ display:'flex', gap:10, overflowX:'auto', scrollbarWidth:'none' }}>
+            {PRODUCTS.filter(p=>p.popular).sort(()=>Math.random()-0.5).slice(0,8).map(p => <MiniCard key={p.id} product={p} t={t}/>)}
+          </div>
+        </>
+      )}
+
+      {/* Results */}
+      {query && !hasResults && !aiLoading && (
+        <div style={{ textAlign:'center', padding:'40px 0', color:'rgba(255,255,255,0.4)' }}>
+          <div style={{ fontSize:32, marginBottom:10 }}>🔍</div>
+          <div style={{ fontSize:14, fontFamily:'DM Sans,sans-serif' }}>No results for "{query}"</div>
+          <div style={{ fontSize:12, marginTop:4 }}>Try describing what you need differently</div>
+        </div>
+      )}
+
+      {hasResults && (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10 }}>
+          {displayResults.map(p => (
+            <div key={p.id} style={{ background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:14, overflow:'hidden' }}>
+              <div style={{ height:80, background:'linear-gradient(135deg,#0D3B4A,#1A5263)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:32 }}>{p.emoji}</div>
+              <div style={{ padding:'10px 12px' }}>
+                <div style={{ fontSize:12, fontWeight:500, color:'white', fontFamily:'DM Sans,sans-serif', marginBottom:4, lineHeight:1.3 }}>{p.name}</div>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <span style={{ fontSize:13, fontWeight:500, color:'#E8A070' }}>€{p.price.toFixed(2)}</span>
+                  <button onClick={() => { addItem(p); toast.success(p.emoji + ' Added!', { duration:900 }) }}
+                    style={{ padding:'5px 10px', background:'#C4683A', border:'none', borderRadius:8, fontSize:11, color:'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+                    Add
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
-      {query.length===0&&<div style={{ textAlign:'center',padding:'40px 0',color:'rgba(255,255,255,0.35)',fontSize:14 }}><div style={{ fontSize:36,marginBottom:10 }}>🔍</div>Search 150+ products</div>}
-      {query.length>1&&results.length===0&&<div style={{ textAlign:'center',padding:'30px',color:'rgba(255,255,255,0.4)',fontSize:14 }}>No results for "{query}"</div>}
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 }
 
-// ── Home view ─────────────────────────────────────────────────
+
 function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
@@ -378,6 +497,19 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
                   <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)' }}>{item.sub}</div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Party Package Builder card */}
+          <div onClick={()=>navigate(VIEWS.PARTY)}
+            style={{ margin:'0 16px 20px', background:'linear-gradient(135deg,rgba(196,104,58,0.3),rgba(139,58,104,0.3))', border:'0.5px solid rgba(196,104,58,0.35)', borderRadius:16, padding:'18px 20px', cursor:'pointer', display:'flex', alignItems:'center', gap:14 }}>
+            <div style={{ fontSize:44, flexShrink:0 }}>🎉</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:3 }}>Party Package Builder</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.55)', fontFamily:'DM Sans,sans-serif', lineHeight:1.4 }}>Tell Isla your party details — she builds the perfect drinks and snacks package, delivered to your door</div>
+              <div style={{ marginTop:10, display:'inline-flex', alignItems:'center', gap:5, background:'#C4683A', borderRadius:20, padding:'6px 14px' }}>
+                <span style={{ fontSize:12, fontWeight:500, color:'white', fontFamily:'DM Sans,sans-serif' }}>✨ Build my package</span>
+              </div>
             </div>
           </div>
 
@@ -547,19 +679,59 @@ export default function CustomerApp() {
             <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:6 }}>Give this code to your driver to confirm delivery</div>
           </div>
         )}
-        {activeOrder.estimated_minutes&&activeOrder.status!=='delivered'&&(
-          <div style={{ background:'rgba(43,122,139,0.2)',border:'0.5px solid rgba(43,122,139,0.35)',borderRadius:14,padding:'14px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:12 }}>
-            <span style={{ fontSize:28 }}>🛵</span>
-            <div><div style={{ fontSize:12,color:'rgba(255,255,255,0.45)' }}>Estimated arrival</div><div style={{ fontSize:22,fontWeight:500,color:'white' }}>{activeOrder.estimated_minutes} min</div></div>
-          </div>
-        )}
-        {/* Live tracking map */}
-        {activeOrder.driver_id && (
+        {/* Late order warning — 10% credit if 30+ mins past ETA */}
+        {activeOrder.original_eta && activeOrder.status !== 'delivered' && (() => {
+          const originalEta = new Date(activeOrder.original_eta)
+          const minsLate = (Date.now() - originalEta) / 60000
+          if (minsLate > 30) return (
+            <div style={{ background:'rgba(245,201,122,0.15)', border:'0.5px solid rgba(245,201,122,0.35)', borderRadius:12, padding:'12px 14px', marginBottom:12, display:'flex', gap:10, alignItems:'flex-start' }}>
+              <span style={{ fontSize:16 }}>⏱️</span>
+              <div style={{ fontSize:12, color:'#F5C97A', fontFamily:'DM Sans,sans-serif', lineHeight:1.5 }}>
+                Your order is running a little late. If it arrives more than 30 minutes past the estimated time, 10% credit will be added to your account automatically.
+              </div>
+            </div>
+          )
+          return null
+        })()}
+        {activeOrder.status!=='delivered'&&activeOrder.status!=='pending'&&(()=>{
+          const driverLat = activeOrder.driver_lat
+          const driverLng = activeOrder.driver_lng
+          const eta = calculateETA({
+            driverLat, driverLng,
+            orderStatus: activeOrder.status,
+            deliveryLat: activeOrder.delivery_lat,
+            deliveryLng: activeOrder.delivery_lng,
+          })
+          if (!eta) return null
+          return (
+            <div style={{ background:'rgba(43,122,139,0.2)',border:'0.5px solid rgba(43,122,139,0.35)',borderRadius:14,padding:'14px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:12 }}>
+              <span style={{ fontSize:28 }}>{eta.phase==='collecting'?'📦':'🛵'}</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12,color:'rgba(255,255,255,0.45)' }}>
+                  {eta.phase==='collecting' ? 'Collecting your order' : eta.phase==='arriving' ? 'Almost there' : 'Estimated arrival'}
+                </div>
+                <div style={{ fontSize:24,fontWeight:500,color:'white' }}>{eta.label}</div>
+                <div style={{ fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:2 }}>
+                  {eta.detail} · ETA {formatETA(eta.eta)}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+        {/* Live tracking map — only shown after pickup and outside warehouse radius */}
+        {activeOrder.driver_id && shouldShowDriverOnMap(activeOrder.status, activeOrder.driver_lat, activeOrder.driver_lng) ? (
           <div style={{ marginBottom:16 }}>
             <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:10 }}>Live tracking</div>
             <OrderTrackingMap order={activeOrder} driverId={activeOrder.driver_id} />
           </div>
-        )}
+        ) : activeOrder.driver_id && activeOrder.status === 'assigned' ? (
+          <div style={{ background:'rgba(255,255,255,0.05)',borderRadius:12,padding:'14px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:10 }}>
+            <span style={{ fontSize:20 }}>📦</span>
+            <div style={{ fontSize:13,color:'rgba(255,255,255,0.55)',fontFamily:'DM Sans,sans-serif' }}>
+              Live map will appear once your driver has collected your order
+            </div>
+          </div>
+        ) : null}
         <button onClick={()=>setView(VIEWS.HOME)} style={{ width:'100%',padding:15,background:'#C4683A',color:'white',border:'none',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:15,cursor:'pointer' }}>Place another order</button>
       </div>
     )
@@ -578,6 +750,7 @@ export default function CustomerApp() {
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>setView(VIEWS.HOME)} />}
+      {view===VIEWS.PARTY     && <PartyBuilder onBack={goBack} />}
       {view===VIEWS.ASSIST   && <AssistBot onClose={goBack} />}
       {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={goBack} />}
       {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={goBack} />}
