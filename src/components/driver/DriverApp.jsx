@@ -289,13 +289,39 @@ export default function DriverApp() {
 
   useEffect(() => {
     if (!isOnline || !user) return
+
+    const pushLocation = async (lat, lng) => {
+      updateLocation(lat, lng)
+      updateDriverLocation(user.id, lat, lng).catch(console.error)
+
+      // Also push to active order for live customer ETA
+      if (currentOrder && ['warehouse_confirmed','en_route'].includes(currentOrder.status)) {
+        try {
+          const { supabase } = await import('../../lib/supabase')
+          const { calculateETA, shouldShowDriverOnMap } = await import('../../lib/eta')
+          const eta = calculateETA({
+            driverLat: lat, driverLng: lng,
+            orderStatus: currentOrder.status,
+            deliveryLat: currentOrder.delivery_lat,
+            deliveryLng: currentOrder.delivery_lng,
+          })
+          await supabase.from('orders').update({
+            driver_lat: lat,
+            driver_lng: lng,
+            eta_minutes: eta?.totalMins || null,
+            eta_calculated_at: new Date().toISOString(),
+          }).eq('id', currentOrder.id)
+        } catch (err) { console.warn('ETA push failed:', err) }
+      }
+    }
+
     const watchId = navigator.geolocation?.watchPosition(
-      (pos) => { updateLocation(pos.coords.latitude, pos.coords.longitude); updateDriverLocation(user.id, pos.coords.latitude, pos.coords.longitude).catch(console.error) },
+      (pos) => pushLocation(pos.coords.latitude, pos.coords.longitude),
       (err) => console.warn('GPS error:', err),
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+      { enableHighAccuracy: true, maximumAge: 8000, timeout: 5000 }
     )
     return () => { if (watchId) navigator.geolocation?.clearWatch(watchId) }
-  }, [isOnline, user])
+  }, [isOnline, user, currentOrder])
 
   const toggleOnline = async () => {
     const next = !isOnline
