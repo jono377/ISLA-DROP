@@ -329,7 +329,7 @@ function SearchView({ t }) {
   const hasResults = displayResults.length > 0
 
   const SUGGESTIONS = [
-    { label:'🎩 Gentleman's Evening', q:'premium spirits cigars whisky cognac gentleman luxury evening' },
+    { label:"🎩 Gentleman's Evening", q:'premium spirits cigars whisky cognac gentleman luxury evening' },
     { label:'💦 Pool party',           q:'pool party floats inflatables cold drinks ice' },
     { label:'🌅 Sundowner drinks',     q:'sundowner sunset rosé wine Aperol spritz' },
     { label:'💊 Hangover cure',        q:'hangover recovery morning after Dioralyte paracetamol coconut water' },
