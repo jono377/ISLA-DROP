@@ -746,6 +746,7 @@ function DesignExperience({ onBook }) {
 
 // ── Main Concierge Page ───────────────────────────────────────
 export default function Concierge({ onBack }) {
+  const { t } = useLang()
   const [activeCategory, setActiveCategory] = useState('all')
   const [bookingService, setBookingService] = useState(null)
   const [directionsService, setDirectionsService] = useState(null)

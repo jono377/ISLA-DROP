@@ -4,6 +4,7 @@ import { useCartStore, useAuthStore } from '../../lib/store'
 import { PRODUCTS, CATEGORIES, BEST_SELLERS, NEW_IN } from '../../lib/products'
 import { calculateETA, shouldShowDriverOnMap, formatETA, isLate } from '../../lib/eta'
 import { LANGUAGES, useT } from '../../i18n/translations'
+import { useLang } from '../../i18n/LangContext'
 import AgeVerification from './AgeVerification'
 import StripeCheckout from './StripeCheckout'
 import DeliveryMap from './DeliveryMap'
@@ -1029,7 +1030,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 export default function CustomerApp() {
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [viewHistory, setViewHistory] = useState([])
-  const [lang, setLang]               = useState('en')
+  const { lang, setLang, t: tCtx } = useLang()
   const [categoryKey, setCategoryKey] = useState(null)
   const [prevCategoryKey, setPrevCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
@@ -1041,7 +1042,7 @@ export default function CustomerApp() {
   const [cancelDeadline, setCancelDeadline] = useState(null)
   const { user } = useAuthStore()
   const cart = useCartStore()
-  const t    = useT(lang)
+  const t    = tCtx
   const estimatedMins = cart.deliveryAddress ? 18 : null
 
   const navigate = (newView, opts = {}) => {

@@ -48,6 +48,7 @@ const ARRIVAL_PACKAGES = [
 
 export default function ArrivalPackage({ onBack }) {
   const { addItem } = useCartStore()
+  const { t } = useLang()
   const [selected, setSelected] = useState(null)
   const [adding, setAdding] = useState(false)
 
