@@ -53,7 +53,7 @@ function SplashScreen({ onEnter }) {
         <div style={{ fontFamily:'DM Serif Display,serif', fontSize:58, color:'white', lineHeight:1, letterSpacing:'-1.5px', marginBottom:6, textShadow:'0 3px 20px rgba(0,0,0,0.4)' }}>Isla Drop</div>
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.68)', letterSpacing:'3.5px', textTransform:'uppercase', marginBottom:5 }}>24/7 Delivery · Ibiza</div>
         <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:40 }}>Drinks · Snacks · Tobacco</div>
-        <button onClick={onEnter} style={{ width:'100%', padding:'18px', background:'#C4683A', color:'white', border:'none', borderRadius:16, fontFamily:'DM Sans,sans-serif', fontSize:17, fontWeight:500, cursor:'pointer', boxShadow:'0 8px 32px rgba(196,104,58,0.55)', marginBottom:14 }}>{t.orderNow||'Order Now'}</button>
+        <button onClick={onEnter} style={{ width:'100%', padding:'18px', background:'#C4683A', color:'white', border:'none', borderRadius:16, fontFamily:'DM Sans,sans-serif', fontSize:17, fontWeight:500, cursor:'pointer', boxShadow:'0 8px 32px rgba(196,104,58,0.55)', marginBottom:14 }}>{'Order Now'||'Order Now'}</button>
         <div style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.3)' }}>Anytime. Anywhere. Ibiza.</div>
       </div>
     </div>
@@ -296,7 +296,7 @@ function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
 function CategoriesView({ onSelect }) {
   return (
     <div style={{ padding:'16px 16px 0' }}>
-      <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:16 }}>{t.categories||'Categories'}</div>
+      <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:16 }}>{'Categories'||'Categories'}</div>
       <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
         {CATEGORIES.map(cat=>(
           <button key={cat.key} onClick={()=>onSelect(cat.key)}
@@ -755,7 +755,7 @@ function SmartReorderSection() {
   return (
     <div style={{ marginBottom:20 }}>
       <div style={{ padding:'0 16px', marginBottom:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>{t.orderAgain||'Order again'}</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>{'Order again'||'Order again'}</div>
       </div>
       <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
         {lastOrders.map(o => {
@@ -802,7 +802,7 @@ function RecentlyViewedSection() {
   return (
     <div style={{ marginBottom:20 }}>
       <div style={{ padding:'0 16px', marginBottom:10 }}>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>{t.recentlyViewed||'Recently viewed'}</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>{'Recently viewed'||'Recently viewed'}</div>
       </div>
       <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
         {items.map(p => (
@@ -937,7 +937,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
         <div style={{ paddingBottom:20 }}>
           {prevItems.length>0 && (
             <div style={{ paddingTop:20,marginBottom:22 }}>
-              <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,padding:'0 16px',marginBottom:12,color:'white' }}>🔄 {t.orderAgain}</div>
+              <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,padding:'0 16px',marginBottom:12,color:'white' }}>🔄 {'Order again'}</div>
               <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{prevItems.slice(0,8).map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
             </div>
           )}
