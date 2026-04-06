@@ -53,7 +53,7 @@ function SplashScreen({ onEnter }) {
         <div style={{ fontFamily:'DM Serif Display,serif', fontSize:58, color:'white', lineHeight:1, letterSpacing:'-1.5px', marginBottom:6, textShadow:'0 3px 20px rgba(0,0,0,0.4)' }}>Isla Drop</div>
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.68)', letterSpacing:'3.5px', textTransform:'uppercase', marginBottom:5 }}>24/7 Delivery · Ibiza</div>
         <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:40 }}>Drinks · Snacks · Tobacco</div>
-        <button onClick={onEnter} style={{ width:'100%', padding:'18px', background:'#C4683A', color:'white', border:'none', borderRadius:16, fontFamily:'DM Sans,sans-serif', fontSize:17, fontWeight:500, cursor:'pointer', boxShadow:'0 8px 32px rgba(196,104,58,0.55)', marginBottom:14 }}>Order Now</button>
+        <button onClick={onEnter} style={{ width:'100%', padding:'18px', background:'#C4683A', color:'white', border:'none', borderRadius:16, fontFamily:'DM Sans,sans-serif', fontSize:17, fontWeight:500, cursor:'pointer', boxShadow:'0 8px 32px rgba(196,104,58,0.55)', marginBottom:14 }}>{t.orderNow||'Order Now'}</button>
         <div style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.3)' }}>Anytime. Anywhere. Ibiza.</div>
       </div>
     </div>
@@ -85,27 +85,27 @@ function LanguagePicker({ lang, setLang }) {
 // ── Tab Bar — rendered ONLY on the home screen ────────────────
 function TabBar({ view, setView, cartCount }) {
   const tabs = [
-    { id:VIEWS.HOME,     label:'Home'||'Home',       path:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+    { id:VIEWS.HOME,     label:'Home',       path:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
     { id:VIEWS.CATEGORY, label:'Categories', path:'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z' },
-    { id:VIEWS.BASKET,   label:'Basket'||'Basket',     path:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', badge:cartCount },
-    { id:VIEWS.SEARCH,   label:'Search'||'Search',     search:true },
-    { id:VIEWS.CONCIERGE,label:'Concierge'||'Concierge',  star:true },
-    { id:VIEWS.ACCOUNT,  label:'Account'||'Account',    path:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' },
+    { id:VIEWS.BASKET,   label:'Basket',     path:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', badge:cartCount },
+    { id:VIEWS.SEARCH,   label:'Search',     search:true },
+    { id:VIEWS.CONCIERGE,label:'Concierge',  star:true },
+    { id:VIEWS.ACCOUNT,  label:'Account',    path:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' },
   ]
   return (
     <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:480, display:'flex', background:C.tabBg, backdropFilter:'blur(14px)', borderTop:'0.5px solid rgba(43,122,139,0.2)', zIndex:100, paddingBottom:'env(safe-area-inset-bottom,0px)' }}>
-      {tabs.map(t => {
-        const on = view === t.id
+      {tabs.map(tab => {
+        const on = view === tab.id
         return (
-          <button key={t.id} onClick={()=>setView(t.id)}
+          <button key={tab.id} onClick={()=>setView(tab.id)}
             style={{ flex:1, padding:'11px 4px 9px', border:'none', background:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, fontFamily:'DM Sans,sans-serif', fontSize:10, color:on?'#7EE8C8':'rgba(150,220,200,0.35)', fontWeight:on?500:400, position:'relative', transition:'color 0.15s' }}>
             <div style={{ position:'relative' }}>
               <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={on?2:1.7}>
-                {'Search' ? <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></> : t.star ? <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="currentColor" stroke="none"/> : <path d={t.path}/>}
+                {tab.search ? <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></> : tab.star ? <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="currentColor" stroke="none"/> : <path d={tab.path}/>}
               </svg>
-              {t.badge>0 && <span style={{ position:'absolute',top:-5,right:-7,background:'#C4683A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:9,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:600,border:'1.5px solid rgba(10,30,40,0.97)' }}>{t.badge>9?'9+':t.badge}</span>}
+              {tab.badge>0 && <span style={{ position:'absolute',top:-5,right:-7,background:'#C4683A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:9,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:600,border:'1.5px solid rgba(10,30,40,0.97)' }}>{tab.badge>9?'9+':tab.badge}</span>}
             </div>
-            {t.label}
+            {tab.label}
           </button>
         )
       })}
@@ -218,8 +218,8 @@ function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
   if (cart.getItemCount()===0) return (
     <div style={{ display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:40,minHeight:'60vh' }}>
       <div style={{ fontSize:52,marginBottom:14 }}>🛒</div>
-      <div style={{ fontFamily:'DM Serif Display,serif',fontSize:22,color:'rgba(255,255,255,0.85)',marginBottom:6 }}>Your basket is empty</div>
-      <div style={{ fontSize:14,color:'rgba(255,255,255,0.45)' }}>Add something delicious</div>
+      <div style={{ fontFamily:'DM Serif Display,serif',fontSize:22,color:'rgba(255,255,255,0.85)',marginBottom:6 }}>{t.yourBasketEmpty||'Your basket is empty'}</div>
+      <div style={{ fontSize:14,color:'rgba(255,255,255,0.45)' }}>{t.addSomethingDelicious||'Add something delicious'}</div>
     </div>
   )
   return (
@@ -242,7 +242,7 @@ function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
         </div>
       ))}
       <div style={{ marginTop:16,padding:'14px 0',borderTop:'0.5px solid rgba(255,255,255,0.1)' }}>
-        <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:5 }}><span>Subtotal</span><span>€{cart.getSubtotal().toFixed(2)}</span></div>
+        <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:5 }}><span>{t.subtotal||'Subtotal'}</span><span>€{cart.getSubtotal().toFixed(2)}</span></div>
         <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:10 }}><span>{t.delivery}</span><span>€3.50</span></div>
         <div style={{ display:'flex',justifyContent:'space-between',fontSize:16,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{cart.getTotal().toFixed(2)}</span></div>
       </div>
@@ -296,7 +296,7 @@ function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
 function CategoriesView({ onSelect }) {
   return (
     <div style={{ padding:'16px 16px 0' }}>
-      <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:16 }}>Categories</div>
+      <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:16 }}>{t.categories||'Categories'}</div>
       <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
         {CATEGORIES.map(cat=>(
           <button key={cat.key} onClick={()=>onSelect(cat.key)}
@@ -496,7 +496,7 @@ function SearchView({ t }) {
         {aiLoading && (
           <div style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 0', color:'rgba(255,255,255,0.5)' }}>
             <div style={{ width:8, height:8, borderRadius:'50%', background:'#C4683A', animation:'pulse 1s infinite' }} />
-            <span style={{ fontSize:13, fontFamily:'DM Sans,sans-serif' }}>Isla is searching for you...</span>
+            <span style={{ fontSize:13, fontFamily:'DM Sans,sans-serif' }}>{t.islaSearching||t.islaSearching||'Isla is searching for you...'}</span>
           </div>
         )}
 
@@ -624,7 +624,7 @@ function OnSaleSection({ t }) {
           <div style={{ background:'#C4683A', borderRadius:6, padding:'3px 8px' }}>
             <span style={{ fontSize:11, fontWeight:700, color:'white', letterSpacing:'0.5px' }}>SALE</span>
           </div>
-          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>On Sale</div>
+          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>{t.onSale||'On Sale'}</div>
         </div>
         <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>Up to 20% off</div>
       </div>
@@ -755,7 +755,7 @@ function SmartReorderSection() {
   return (
     <div style={{ marginBottom:20 }}>
       <div style={{ padding:'0 16px', marginBottom:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>Order again</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>{t.orderAgain||'Order again'}</div>
       </div>
       <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
         {lastOrders.map(o => {
@@ -802,7 +802,7 @@ function RecentlyViewedSection() {
   return (
     <div style={{ marginBottom:20 }}>
       <div style={{ padding:'0 16px', marginBottom:10 }}>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>Recently viewed</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>{t.recentlyViewed||'Recently viewed'}</div>
       </div>
       <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
         {items.map(p => (
@@ -1118,7 +1118,7 @@ export default function CustomerApp() {
           <div style={{ borderRadius:14,overflow:'hidden',marginBottom:20 }}>
             <DeliveryMap onLocationSet={()=>setLocationSet(true)} />
           </div>
-          <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>Order summary</div>
+          <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>{t.orderSummary||'Order summary'}</div>
           <div style={{ background:'rgba(255,255,255,0.07)',borderRadius:14,padding:16,marginBottom:20 }}>
             {cart.items.map(({product,quantity})=>(
               <div key={product.id} style={{ display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:8,color:'rgba(255,255,255,0.82)' }}>
@@ -1127,7 +1127,7 @@ export default function CustomerApp() {
               </div>
             ))}
             <div style={{ borderTop:'0.5px solid rgba(255,255,255,0.1)',paddingTop:10,marginTop:6 }}>
-              <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:5 }}><span>Subtotal</span><span>€{cart.getSubtotal().toFixed(2)}</span></div>
+              <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:5 }}><span>{t.subtotal||'Subtotal'}</span><span>€{cart.getSubtotal().toFixed(2)}</span></div>
               <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:10 }}><span>{t.delivery}</span><span>€3.50</span></div>
               <div style={{ display:'flex',justifyContent:'space-between',fontSize:15,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{cart.getTotal().toFixed(2)}</span></div>
             </div>
@@ -1137,7 +1137,7 @@ export default function CustomerApp() {
               </div>
             )}
           </div>
-          <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:16 }}>Payment</div>
+          <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:16 }}>{t.payment||'Payment'}</div>
           <StripeCheckout onSuccess={handlePaymentSuccess} onCancel={()=>setView(VIEWS.BASKET)} />
         </div>
       </div>
@@ -1246,7 +1246,7 @@ export default function CustomerApp() {
         {/* Live tracking map — only shown after pickup and outside warehouse radius */}
         {activeOrder.driver_id && shouldShowDriverOnMap(activeOrder.status, activeOrder.driver_lat, activeOrder.driver_lng) ? (
           <div style={{ marginBottom:16 }}>
-            <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:10 }}>Live tracking</div>
+            <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:10 }}>{t.liveTracking||'Live tracking'}</div>
             <OrderTrackingMap order={activeOrder} driverId={activeOrder.driver_id} />
           </div>
         ) : activeOrder.driver_id && activeOrder.status === 'assigned' ? (
@@ -1257,7 +1257,7 @@ export default function CustomerApp() {
             </div>
           </div>
         ) : null}
-        <button onClick={()=>setView(VIEWS.HOME)} style={{ width:'100%',padding:15,background:'#C4683A',color:'white',border:'none',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:15,cursor:'pointer' }}>Place another order</button>
+        <button onClick={()=>setView(VIEWS.HOME)} style={{ width:'100%',padding:15,background:'#C4683A',color:'white',border:'none',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:15,cursor:'pointer' }}>{t.placeAnotherOrder||'Place another order'}</button>
       </div>
     )
   }
@@ -1315,7 +1315,7 @@ export default function CustomerApp() {
                activeOrder.status === 'collecting' ? 'Driver collecting your order' :
                activeOrder.eta_minutes ? 'Arriving in ~' + activeOrder.eta_minutes + ' min' : 'Driver on the way'}
             </div>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:'DM Sans,sans-serif' }}>Tap to track</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:'DM Sans,sans-serif' }}>{t.tapToTrack||'Tap to track'}</div>
           </div>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
