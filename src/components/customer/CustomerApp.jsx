@@ -4,7 +4,6 @@ import { useCartStore, useAuthStore } from '../../lib/store'
 import { PRODUCTS, CATEGORIES, BEST_SELLERS, NEW_IN } from '../../lib/products'
 import { calculateETA, shouldShowDriverOnMap, formatETA, isLate } from '../../lib/eta'
 import { LANGUAGES, useT } from '../../i18n/translations'
-import { useLang } from '../../i18n/LangContext'
 import AgeVerification from './AgeVerification'
 import StripeCheckout from './StripeCheckout'
 import DeliveryMap from './DeliveryMap'
@@ -116,7 +115,7 @@ function TabBar({ view, setView, cartCount }) {
 
 // ── Mini product card ─────────────────────────────────────────
 function MiniCard({ product, t }) {
-  const { getProductName } = useLang()
+  const getProductName = (_id, name) => name || ""
   const qty = useCartStore(s=>s.items.find(i=>i.product.id===product.id)?.quantity??0)
   const { addItem, updateQuantity } = useCartStore()
   return (
@@ -215,7 +214,7 @@ function CheckoutSuggestions({ cartItems }) {
 }
 
 function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
-  const { getProductName } = useLang()
+  const getProductName = (_id, name) => name || ""
   const cart = useCartStore()
   const { updateQuantity } = useCartStore()
   if (cart.getItemCount()===0) return (
@@ -315,7 +314,8 @@ function CategoriesView({ onSelect }) {
 
 // ── Search view ───────────────────────────────────────────────
 function SearchView({ t }) {
-  const { getProductName, getCategoryLabel } = useLang()
+  const getProductName = (_id, name) => name || ""
+  const getCategoryLabel = (_key, label) => label || ""
   const [query, setQuery]         = useState('')
   const [aiResults, setAiResults] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -869,7 +869,7 @@ function PromoBannersSection({ onNavigate }) {
 }
 
 function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onParty, onArrival }) {
-  const { getCategoryLabel } = useLang()
+  const getCategoryLabel = (_key, label) => label || ""
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -1034,7 +1034,9 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 export default function CustomerApp() {
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [viewHistory, setViewHistory] = useState([])
-  const { lang, setLang, t: tCtx, translating } = useLang()
+  const [lang, setLang]               = useState("en")
+  const t                              = useT(lang)
+  // t available from parent scope
   const [categoryKey, setCategoryKey] = useState(null)
   const [prevCategoryKey, setPrevCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
@@ -1046,7 +1048,6 @@ export default function CustomerApp() {
   const [cancelDeadline, setCancelDeadline] = useState(null)
   const { user } = useAuthStore()
   const cart = useCartStore()
-  const t    = tCtx
   const estimatedMins = cart.deliveryAddress ? 18 : null
 
   const navigate = (newView, opts = {}) => {
