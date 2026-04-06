@@ -73,14 +73,14 @@ export default function ArrivalPackage({ onBack }) {
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', cursor:'pointer', fontSize:20, padding:0 }}>←</button>
         <div>
-          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white' }}>Ibiza Arrival Package</div>
+          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white' }}>{t.ibizaArrivalPackage||'Ibiza Arrival Package'}</div>
           <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)' }}>Just landed? Get your essentials fast</div>
         </div>
       </div>
 
       <div style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.3),rgba(43,122,139,0.3))', borderRadius:16, padding:'18px 16px', marginBottom:20, textAlign:'center' }}>
         <div style={{ fontSize:40, marginBottom:8 }}>✈️</div>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:6 }}>Welcome to the White Isle</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:6 }}>{t.welcomeWhiteIsle||'Welcome to the White Isle'}</div>
         <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)', lineHeight:1.5 }}>
           Pick your arrival pack and Isla will deliver everything you need in under 30 minutes. Start the holiday right.
         </div>

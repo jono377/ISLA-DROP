@@ -55,7 +55,7 @@ function SplashScreen({ onEnter }) {
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.68)', letterSpacing:'3.5px', textTransform:'uppercase', marginBottom:5 }}>24/7 Delivery · Ibiza</div>
         <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:40 }}>Drinks · Snacks · Tobacco</div>
         <button onClick={onEnter} style={{ width:'100%', padding:'18px', background:'#C4683A', color:'white', border:'none', borderRadius:16, fontFamily:'DM Sans,sans-serif', fontSize:17, fontWeight:500, cursor:'pointer', boxShadow:'0 8px 32px rgba(196,104,58,0.55)', marginBottom:14 }}>{'Order Now'||'Order Now'}</button>
-        <div style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.3)' }}>Anytime. Anywhere. Ibiza.</div>
+        <div style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.3)' }}>{t.anytime||'Anytime. Anywhere. Ibiza.'}</div>
       </div>
     </div>
   )
@@ -116,6 +116,7 @@ function TabBar({ view, setView, cartCount }) {
 
 // ── Mini product card ─────────────────────────────────────────
 function MiniCard({ product, t }) {
+  const { getProductName } = useLang()
   const qty = useCartStore(s=>s.items.find(i=>i.product.id===product.id)?.quantity??0)
   const { addItem, updateQuantity } = useCartStore()
   return (
@@ -132,7 +133,7 @@ function MiniCard({ product, t }) {
         }
       </div>
       <div style={{ padding:'8px 10px 10px' }}>
-        <div style={{ fontSize:11, fontWeight:500, color:C.text, lineHeight:1.3, height:28, overflow:'hidden', marginBottom:3 }}>{product.name}</div>
+        <div style={{ fontSize:11, fontWeight:500, color:C.text, lineHeight:1.3, height:28, overflow:'hidden', marginBottom:3 }}>{getProductName(product.id, product.name)}</div>
         <div style={{ fontSize:13, fontWeight:500, color:'#C4683A' }}>€{product.price.toFixed(2)}</div>
       </div>
     </div>
@@ -214,6 +215,7 @@ function CheckoutSuggestions({ cartItems }) {
 }
 
 function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
+  const { getProductName } = useLang()
   const cart = useCartStore()
   const { updateQuantity } = useCartStore()
   if (cart.getItemCount()===0) return (
@@ -313,6 +315,7 @@ function CategoriesView({ onSelect }) {
 
 // ── Search view ───────────────────────────────────────────────
 function SearchView({ t }) {
+  const { getProductName, getCategoryLabel } = useLang()
   const [query, setQuery]         = useState('')
   const [aiResults, setAiResults] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -324,31 +327,31 @@ function SearchView({ t }) {
 
   // Vibe presets with curated product IDs and AI description
   const VIBES = [
-    { key:'pre_drinks',  label:'🌙 Pre-drinks',          desc:'Isla picks the perfect spirits, mixers and ice to get the night started',
+    { key:'pre_drinks',  label: t.vibePreDrinks||'Pre-drinks',       desc: t.vibePreDrinksSub||'Spirits, mixers, shots & ice for the night ahead',
       ids:['sp-004','sp-001','sp-035','sp-012','sd-003','sd-001','ic-001','ic-002','sn-001'] },
-    { key:'cocktail',    label:'🥃 Cocktail night',       desc:'Everything you need to mix perfect cocktails — kits, spirits, garnishes and ice',
+    { key:'cocktail',    label: t.vibeCocktail||'Cocktail night',     desc: t.vibeCocktailSub||'Everything to mix perfect cocktails',
       ids:['ck-001','ck-004','ck-003','ck-002','ck-006','sp-001','sp-004','sp-012','fr-001','fr-002','ic-001'] },
-    { key:'sundowner',   label:'🌅 Sundowner',            desc:'Rosé, Aperol Spritz and cold drinks for the golden hour',
+    { key:'sundowner',   label: t.vibeSundowner||'Sundowner',          desc: t.vibeSundDownerSub||'Rosé, Aperol Spritz and cold drinks for sunset',
       ids:['wn-021','ck-002','ch-010','sp-001','sd-001','ic-001','fr-001'] },
-    { key:'ladies',      label:'💅 Ladies night',         desc:'Champagne, Prosecco, rosé and everything for a glamorous evening',
+    { key:'ladies',      label: t.vibeLadies||'Ladies night',         desc: t.vibeLadiesSub||'Champagne, Prosecco, rosé and everything for a glamorous evening',
       ids:['ch-001','ch-010','wn-021','ck-013','ic-001','sn-001','ck-012'] },
-    { key:'boys',        label:'🍺 Boys night',           desc:'Cold beers, shots and party supplies — no fuss, maximum fun',
+    { key:'boys',        label: t.vibeBoys||'Boys night',             desc: t.vibeBoysSub||'Cold beers, shots and party supplies',
       ids:['br-001','br-002','sp-035','sp-004','sd-003','sn-001','sn-002','ic-002'] },
-    { key:'hangover',    label:'💊 Hangover cure',        desc:'Electrolytes, vitamins, coconut water and everything your body needs',
+    { key:'hangover',    label: t.vibeHangover||'Hangover cure',      desc: t.vibeHangoverSub||'Electrolytes, vitamins, coconut water',
       ids:['wl-014','wl-013','wl-012','wt-001','wt-003','sn-001'] },
-    { key:'date_night',  label:'💕 Date night',           desc:'Premium champagne or rosé, a cocktail kit and romantic touches for two',
+    { key:'date_night',  label: t.vibeDateNight||'Date night',        desc: t.vibeDateSub||'Premium champagne, rosé and a cocktail kit for two',
       ids:['ch-001','wn-021','ck-005','ck-013','ic-001','fr-001'] },
-    { key:'pool',        label:'💦 Pool party',           desc:'Cold drinks, beers, ice and everything for a perfect pool day',
+    { key:'pool',        label: t.vibePool||'Pool party',             desc: t.vibePoolSub||'Cold drinks, beers, ice and pool essentials',
       ids:['br-001','br-002','sd-001','sd-003','wt-002','ic-002','sn-001','ic-003'] },
-    { key:'gentleman',   label:'🎩 Gentleman evening',    desc:'Premium whisky, cognac and quality wine — sophisticated and refined',
+    { key:'gentleman',   label: t.vibeGentleman||'Gentleman evening', desc: t.vibeGentlemanSub||'Premium whisky, cognac and quality wine',
       ids:['sp-009','sp-010','sp-011','sp-008','wn-001','tb-005','sn-029'] },
-    { key:'birthday',    label:'🎂 Birthday',             desc:'Champagne, sparklers and party supplies to make it unforgettable',
+    { key:'birthday',    label: t.vibeBirthday||'Birthday',           desc: t.vibeBirthdaySub||'Champagne, sparklers and party supplies',
       ids:['ch-001','ch-010','ic-001','ck-013','ps-001','ps-004','oc-001'] },
-    { key:'beach',       label:'🏖️ Beach day',            desc:'Water, suncream, snacks and essentials for a perfect beach day',
+    { key:'beach',       label: t.vibeBeach||'Beach day',            desc: t.vibeBeachSub||'Water, suncream, snacks and beach essentials',
       ids:['wt-001','wt-002','wt-003','es-013','sn-001','sn-002','sd-001'] },
-    { key:'snacks',      label:'🍕 Snacks board',         desc:'Crisps, antipasto, olives and sharing boards for any occasion',
+    { key:'snacks',      label: t.vibeSnacks||'Snacks board',        desc: t.vibeSnacksSub||'Crisps, antipasto, olives and sharing boards',
       ids:['sn-001','sn-002','sn-003','sn-004','sn-029','sn-005'] },
-  ]
+  ]]
 
   // When a vibe chip is tapped, show its products with Isla description
   const handleVibeSelect = async (vibe) => {
@@ -521,7 +524,7 @@ function SearchView({ t }) {
                   {p.popular && <span style={{ position:'absolute', top:6, right:6, fontSize:14 }}>⭐</span>}
                 </div>
                 <div style={{ padding:'8px 10px' }}>
-                  <div style={{ fontSize:11, fontWeight:500, color:'white', lineHeight:1.3, marginBottom:6, height:30, overflow:'hidden' }}>{p.name}</div>
+                  <div style={{ fontSize:11, fontWeight:500, color:'white', lineHeight:1.3, marginBottom:6, height:30, overflow:'hidden' }}>{getProductName(p.id, p.name)}</div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <span style={{ fontSize:14, fontWeight:600, color:'#E8A070' }}>€{p.price.toFixed(2)}</span>
                     <button onClick={() => { addItem(p); toast.success(p.emoji + ' Added!', { duration:900 }) }}
@@ -678,7 +681,7 @@ function JustLandedBanner({ onArrival, t = {} }) {
         <div style={{ fontSize:28, marginBottom:6 }}>✈️</div>
         <div style={{ fontFamily:'DM Serif Display,serif', fontSize:19, color:'white', marginBottom:4 }}>{t.justLanded || 'Just landed in Ibiza?'}</div>
         <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)', marginBottom:12, lineHeight:1.5 }}>
-          Get everything you need delivered in under 30 minutes — drinks, food, sun cream, the works.
+          {t.justLandedDesc||'Get everything you need delivered in under 30 minutes — drinks, food, sun cream, the works.'}
         </div>
         <button onClick={() => { onArrival(); dismiss() }}
           style={{ padding:'10px 20px', background:'#C4683A', border:'none', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, fontWeight:500, color:'white', cursor:'pointer', boxShadow:'0 3px 12px rgba(196,104,58,0.4)' }}>
@@ -866,6 +869,7 @@ function PromoBannersSection({ onNavigate }) {
 }
 
 function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onParty, onArrival }) {
+  const { getCategoryLabel } = useLang()
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -1010,7 +1014,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <div key={cat.key} style={{ marginBottom:24 }}>
                 <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
                   <button onClick={()=>onCategorySelect(cat.key)} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>
-                    {cat.emoji} {cat.label}
+                    {cat.emoji} {getCategoryLabel(cat.key, cat.label)}
                   </button>
                   <button onClick={()=>onCategorySelect(cat.key)} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
                 </div>
@@ -1030,7 +1034,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 export default function CustomerApp() {
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [viewHistory, setViewHistory] = useState([])
-  const { lang, setLang, t: tCtx } = useLang()
+  const { lang, setLang, t: tCtx, translating } = useLang()
   const [categoryKey, setCategoryKey] = useState(null)
   const [prevCategoryKey, setPrevCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
@@ -1123,7 +1127,7 @@ export default function CustomerApp() {
           <div style={{ background:'rgba(255,255,255,0.07)',borderRadius:14,padding:16,marginBottom:20 }}>
             {cart.items.map(({product,quantity})=>(
               <div key={product.id} style={{ display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:8,color:'rgba(255,255,255,0.82)' }}>
-                <span>{product.emoji} {product.name} × {quantity}</span>
+                <span>{product.emoji} {getProductName(product.id, product.name)} × {quantity}</span>
                 <span style={{ fontWeight:500 }}>€{(product.price*quantity).toFixed(2)}</span>
               </div>
             ))}
@@ -1266,6 +1270,12 @@ export default function CustomerApp() {
   // ── MAIN SHELL — tab bar lives here only ──────────────────
   return (
     <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
+      {translating && (
+        <div style={{ position:'fixed', top:0, left:'50%', transform:'translateX(-50%)', zIndex:999, background:'rgba(196,104,58,0.95)', color:'white', fontSize:12, padding:'6px 16px', fontFamily:'DM Sans,sans-serif', borderRadius:'0 0 10px 10px', display:'flex', alignItems:'center', gap:6 }}>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:'white', animation:'pulse 0.8s infinite' }} />
+          Translating app...
+        </div>
+      )}
 
       {view===VIEWS.CATEGORY && categoryKey && (
         <CategoryPage categoryKey={categoryKey} onBack={goBack} />

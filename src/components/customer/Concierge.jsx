@@ -262,7 +262,7 @@ const SERVICES = [
     name: 'Nobu Ibiza — Omakase Experience',
     subtitle: 'Talamanca Bay · Japanese-Peruvian fusion',
     description: 'The legendary Nobu brand in Ibiza. Stunning bay views, world-famous Nikkei fusion cuisine and the most elegant atmosphere on the island. The Omakase experience is unmissable.',
-    price: 185, unit: 'per person', emoji: '🍣',
+    price: 185, unit: t.perPerson||'per person', emoji: '🍣',
     partner: 'Nobu Hotel Ibiza Bay', location: 'Talamanca Bay, Ibiza Town',
     lat: 38.9260, lng: 1.4520,
     highlights: ['Nobu signature', 'Bay views', 'Omakase option', 'Celebrity favourite'],
@@ -273,7 +273,7 @@ const SERVICES = [
     name: 'Amante Ibiza — Clifftop Dinner',
     subtitle: "Sol d'en Serra · Cliffside · Organic cuisine",
     description: 'An extraordinary restaurant on cliffs above turquoise waters. Contemporary organic Spanish and Italian cuisine from its own kitchen garden. Moonlit dinners here are unforgettable.',
-    price: 95, unit: 'per person', emoji: '🌙',
+    price: 95, unit: t.perPerson||'per person', emoji: '🌙',
     partner: 'Amante Ibiza', location: "Sol d'en Serra, Santa Eulalia",
     lat: 38.9800, lng: 1.5600,
     highlights: ['Cliff setting', 'Organic menu', 'Sea views', 'Romantic'],
@@ -284,7 +284,7 @@ const SERVICES = [
     name: 'Blue Marlin — Beach Restaurant',
     subtitle: 'Cala Jondal · Mediterranean and Sushi · Seafront',
     description: "Dine with your feet almost in the sand at one of the world's most glamorous beach restaurants. Mediterranean cuisine meets sushi, served to the soundtrack of legendary DJ sets.",
-    price: 110, unit: 'per person', emoji: '🐟',
+    price: 110, unit: t.perPerson||'per person', emoji: '🐟',
     partner: 'Blue Marlin Ibiza', location: 'Cala Jondal, South Ibiza',
     lat: 38.8720, lng: 1.3580,
     highlights: ['Beach setting', 'Sushi bar', 'DJ soundtrack', 'Seafront tables'],
@@ -295,7 +295,7 @@ const SERVICES = [
     name: 'Atzaro — Garden Estate Dinner',
     subtitle: 'San Lorenzo · Orange groves · Garden restaurant',
     description: 'A stunning countryside estate surrounded by orange groves. Creative Mediterranean cuisine in the most romantic, fragrant garden setting on the island.',
-    price: 85, unit: 'per person', emoji: '🌿',
+    price: 85, unit: t.perPerson||'per person', emoji: '🌿',
     partner: 'Atzaro Agroturismo', location: 'San Lorenzo, North Ibiza',
     lat: 39.0300, lng: 1.4750,
     highlights: ['Garden setting', 'Orange groves', 'Romantic', 'Creative menu'],
@@ -310,7 +310,7 @@ const SERVICES = [
     subtitle: '4 course meal · Up to 12 guests · Ingredients included',
     description: 'A professional Ibiza chef comes to your villa to prepare a stunning 4-course Mediterranean dinner. Everything included — shopping, cooking, serving and cleanup. Just enjoy.',
     price: 165,
-    unit: 'per person',
+    unit: t.perPerson||'per person',
     emoji: '👨‍🍳',
     partner: 'Deliciously Sorted Ibiza',
     location: 'Your villa, anywhere on Ibiza',
@@ -327,7 +327,7 @@ const SERVICES = [
     subtitle: '90 min · All levels · Mats provided',
     description: 'Start your morning with yoga on one of Ibiza\'s most beautiful beaches as the sun rises over the salt flats. A magical, peaceful way to begin a day in paradise.',
     price: 88,
-    unit: 'per person',
+    unit: t.perPerson||'per person',
     emoji: '🧘',
     partner: 'Ibiza Retreats',
     location: 'Ses Salines Beach, South Ibiza',
@@ -344,7 +344,7 @@ const SERVICES = [
     subtitle: '3 hours · Guide included · Countryside & coves',
     description: 'Explore Ibiza\'s stunning interior and hidden coves on a quad bike. Your guide leads you through countryside tracks, traditional villages and to secret swimming spots.',
     price: 132,
-    unit: 'per person',
+    unit: t.perPerson||'per person',
     emoji: '🏍️',
     partner: 'Quad Ibiza',
     location: 'San Antonio area, Ibiza',
@@ -378,7 +378,7 @@ const SERVICES = [
     subtitle: '2 hours · UNESCO heritage · Private guide',
     description: 'Discover the magic of Ibiza\'s ancient walled city after dark. Your private guide reveals the history, secrets and legends of Dalt Vila under the stars.',
     price: 77,
-    unit: 'per person',
+    unit: t.perPerson||'per person',
     emoji: '🏰',
     partner: 'Ibiza Culture Tours',
     location: 'Dalt Vila, Ibiza Town',
@@ -389,29 +389,29 @@ const SERVICES = [
     minGuests: 2, maxGuests: 10,
   },,
   // ── CLUBS 2025 ──────────────────────────────────────────────
-  { id:'club-001', category:'clubs', name:'Pacha Ibiza — Entry', subtitle:'The original icon · Ibiza Town', price:110, unit:'per person', emoji:'🍒', partner:'Pacha Ibiza', location:'Passeig de Joan Carles I, Ibiza Town', lat:38.9054, lng:1.4380, highlights:['Ibiza institution since 1973','World-class DJ residencies','Multiple rooms','VIP tables available'], popular:true, duration:'All night', minGuests:1, maxGuests:20, insider_tip:'Arrive after 1am when the energy peaks. Fridays are legendary for house music.' },
-  { id:'club-002', category:'clubs', name:'Ushuaia — Open-air Show', subtitle:'Open-air superclub · Playa den Bossa', price:143, unit:'per person', emoji:'🌴', partner:'Ushuaia Entertainment', location:"Playa d'en Bossa, Sant Josep", lat:38.8837, lng:1.4012, highlights:["World's biggest open-air club",'Giant pool stage','David Guetta residency','Calvin Harris & more'], popular:true, duration:'Evening show', minGuests:1, maxGuests:20, insider_tip:'Shows run 4pm-midnight. Buy in advance — sells out weeks ahead.' },
-  { id:'club-003', category:'clubs', name:'Hi Ibiza — Entry Ticket', subtitle:'Most modern superclub · Playa den Bossa', price:99, unit:'per person', emoji:'⚡', partner:'Hi Ibiza', location:"Platja d'en Bossa, Sant Josep", lat:38.8831, lng:1.4008, highlights:['LED light art installation','Theatre & Club rooms','Best sound system on island','Top 10 world club'], popular:true, duration:'All night', minGuests:1, maxGuests:20, insider_tip:'The Club room has the best production. Arrive before 2am.' },
-  { id:'club-004', category:'clubs', name:'Amnesia Ibiza — Entry', subtitle:'Legendary superclub · San Rafael', price:88, unit:'per person', emoji:'🎊', partner:'Amnesia', location:'Ctra. Ibiza a San Antonio, San Rafael', lat:38.9390, lng:1.3960, highlights:['Iconic Foam Party','Two massive dance floors','Terrace & Club Room','Techno & house legends'], popular:true, duration:'All night', minGuests:1, maxGuests:20, insider_tip:'The Terrace room is the soul of Amnesia. Foam parties on Tuesdays are unmissable.' },
-  { id:'club-005', category:'clubs', name:'DC-10 — Entry Ticket', subtitle:'Underground legend · Airport road', price:60, unit:'per person', emoji:'✈️', partner:'DC-10', location:'Cami de sa Fita, Sant Josep', lat:38.8920, lng:1.3760, highlights:['The original underground club','Circoloco Mondays','Terrace under the planes','Techno & deep house'], popular:true, duration:'All night', minGuests:1, maxGuests:10, insider_tip:'Circoloco on Mondays is the most legendary party in Ibiza.' },
-  { id:'club-006', category:'clubs', name:'UNVRS Ibiza — Entry', subtitle:'New hyperclub 10000 capacity · San Rafael', price:80, unit:'per person', emoji:'🛸', partner:'UNVRS', location:'Urbanizacion San Rafael, Ibiza', lat:38.9380, lng:1.3970, highlights:['10000 capacity hyperclub','Futuristic light tunnel','Built on old Privilege site','Grand opening 2025'], popular:true, duration:'All night', minGuests:1, maxGuests:20, insider_tip:'The biggest club on the island. VIP tickets at 500 include full table service.' },
-  { id:'club-007', category:'clubs', name:'Cova Santa — Dinner & Party', subtitle:'Natural cave venue · San Jose hills', price:130, unit:'per person', emoji:'🌿', partner:'Cova Santa', location:'Ctra San Jose, Ibiza', lat:38.9120, lng:1.3560, highlights:['Natural cave setting','Elevated dinner show','Outdoor party under stars','Completely unique venue'], popular:true, duration:'Evening', minGuests:2, maxGuests:10, insider_tip:'Start with dinner in the cave, stay for the party outside. Unlike anything else in Ibiza.' },
-  { id:'club-008', category:'clubs', name:'Lio Ibiza — Cabaret Show', subtitle:'Upscale cabaret · Ibiza Town marina', price:200, unit:'per person', emoji:'🎭', partner:'Lio', location:'Marina Botafoch, Ibiza Town', lat:38.9060, lng:1.4400, highlights:['Spectacular marina views','Acrobatic cabaret show','Dress code enforced','Most glamorous night out'], popular:true, duration:'Evening', minGuests:2, maxGuests:10, insider_tip:'Book the dinner package. The show is the main event. Dress to impress.' },
-  { id:'club-009', category:'clubs', name:'O Beach — Pool Party', subtitle:'Wild pool party · San Antonio', price:65, unit:'per person', emoji:'💦', partner:'O Beach', location:'San Antonio, Ibiza', lat:38.9790, lng:1.3030, highlights:['Acrobatics & confetti shows','Wild atmosphere','Multiple DJs','Great for groups'], popular:true, duration:'Afternoon-evening', minGuests:2, maxGuests:20, insider_tip:'Saturday afternoons are peak energy. Book a group bed for the best position.' },
-  { id:'club-010', category:'clubs', name:'Destino Five — Pool Party', subtitle:'Luxury pool club · Talamanca', price:120, unit:'per person', emoji:'🏊', partner:'Destino Five', location:'Talamanca, Ibiza', lat:38.9160, lng:1.4480, highlights:['Mediterranean views','Adults-only luxury','World-class DJs','Elegant atmosphere'], popular:false, duration:'Afternoon-evening', minGuests:1, maxGuests:10, insider_tip:'Thursdays host Music On with Marco Carola.' },
+  { id:'club-001', category:'clubs', name:'Pacha Ibiza — Entry', subtitle:'The original icon · Ibiza Town', price:110, unit:t.perPerson||'per person', emoji:'🍒', partner:'Pacha Ibiza', location:'Passeig de Joan Carles I, Ibiza Town', lat:38.9054, lng:1.4380, highlights:['Ibiza institution since 1973','World-class DJ residencies','Multiple rooms','VIP tables available'], popular:true, duration:'All night', minGuests:1, maxGuests:20, insider_tip:'Arrive after 1am when the energy peaks. Fridays are legendary for house music.' },
+  { id:'club-002', category:'clubs', name:'Ushuaia — Open-air Show', subtitle:'Open-air superclub · Playa den Bossa', price:143, unit:t.perPerson||'per person', emoji:'🌴', partner:'Ushuaia Entertainment', location:"Playa d'en Bossa, Sant Josep", lat:38.8837, lng:1.4012, highlights:["World's biggest open-air club",'Giant pool stage','David Guetta residency','Calvin Harris & more'], popular:true, duration:'Evening show', minGuests:1, maxGuests:20, insider_tip:'Shows run 4pm-midnight. Buy in advance — sells out weeks ahead.' },
+  { id:'club-003', category:'clubs', name:'Hi Ibiza — Entry Ticket', subtitle:'Most modern superclub · Playa den Bossa', price:99, unit:t.perPerson||'per person', emoji:'⚡', partner:'Hi Ibiza', location:"Platja d'en Bossa, Sant Josep", lat:38.8831, lng:1.4008, highlights:['LED light art installation','Theatre & Club rooms','Best sound system on island','Top 10 world club'], popular:true, duration:'All night', minGuests:1, maxGuests:20, insider_tip:'The Club room has the best production. Arrive before 2am.' },
+  { id:'club-004', category:'clubs', name:'Amnesia Ibiza — Entry', subtitle:'Legendary superclub · San Rafael', price:88, unit:t.perPerson||'per person', emoji:'🎊', partner:'Amnesia', location:'Ctra. Ibiza a San Antonio, San Rafael', lat:38.9390, lng:1.3960, highlights:['Iconic Foam Party','Two massive dance floors','Terrace & Club Room','Techno & house legends'], popular:true, duration:'All night', minGuests:1, maxGuests:20, insider_tip:'The Terrace room is the soul of Amnesia. Foam parties on Tuesdays are unmissable.' },
+  { id:'club-005', category:'clubs', name:'DC-10 — Entry Ticket', subtitle:'Underground legend · Airport road', price:60, unit:t.perPerson||'per person', emoji:'✈️', partner:'DC-10', location:'Cami de sa Fita, Sant Josep', lat:38.8920, lng:1.3760, highlights:['The original underground club','Circoloco Mondays','Terrace under the planes','Techno & deep house'], popular:true, duration:'All night', minGuests:1, maxGuests:10, insider_tip:'Circoloco on Mondays is the most legendary party in Ibiza.' },
+  { id:'club-006', category:'clubs', name:'UNVRS Ibiza — Entry', subtitle:'New hyperclub 10000 capacity · San Rafael', price:80, unit:t.perPerson||'per person', emoji:'🛸', partner:'UNVRS', location:'Urbanizacion San Rafael, Ibiza', lat:38.9380, lng:1.3970, highlights:['10000 capacity hyperclub','Futuristic light tunnel','Built on old Privilege site','Grand opening 2025'], popular:true, duration:'All night', minGuests:1, maxGuests:20, insider_tip:'The biggest club on the island. VIP tickets at 500 include full table service.' },
+  { id:'club-007', category:'clubs', name:'Cova Santa — Dinner & Party', subtitle:'Natural cave venue · San Jose hills', price:130, unit:t.perPerson||'per person', emoji:'🌿', partner:'Cova Santa', location:'Ctra San Jose, Ibiza', lat:38.9120, lng:1.3560, highlights:['Natural cave setting','Elevated dinner show','Outdoor party under stars','Completely unique venue'], popular:true, duration:'Evening', minGuests:2, maxGuests:10, insider_tip:'Start with dinner in the cave, stay for the party outside. Unlike anything else in Ibiza.' },
+  { id:'club-008', category:'clubs', name:'Lio Ibiza — Cabaret Show', subtitle:'Upscale cabaret · Ibiza Town marina', price:200, unit:t.perPerson||'per person', emoji:'🎭', partner:'Lio', location:'Marina Botafoch, Ibiza Town', lat:38.9060, lng:1.4400, highlights:['Spectacular marina views','Acrobatic cabaret show','Dress code enforced','Most glamorous night out'], popular:true, duration:'Evening', minGuests:2, maxGuests:10, insider_tip:'Book the dinner package. The show is the main event. Dress to impress.' },
+  { id:'club-009', category:'clubs', name:'O Beach — Pool Party', subtitle:'Wild pool party · San Antonio', price:65, unit:t.perPerson||'per person', emoji:'💦', partner:'O Beach', location:'San Antonio, Ibiza', lat:38.9790, lng:1.3030, highlights:['Acrobatics & confetti shows','Wild atmosphere','Multiple DJs','Great for groups'], popular:true, duration:'Afternoon-evening', minGuests:2, maxGuests:20, insider_tip:'Saturday afternoons are peak energy. Book a group bed for the best position.' },
+  { id:'club-010', category:'clubs', name:'Destino Five — Pool Party', subtitle:'Luxury pool club · Talamanca', price:120, unit:t.perPerson||'per person', emoji:'🏊', partner:'Destino Five', location:'Talamanca, Ibiza', lat:38.9160, lng:1.4480, highlights:['Mediterranean views','Adults-only luxury','World-class DJs','Elegant atmosphere'], popular:false, duration:'Afternoon-evening', minGuests:1, maxGuests:10, insider_tip:'Thursdays host Music On with Marco Carola.' },
   // ── MORE BEACH CLUBS ─────────────────────────────────────────
-  { id:'bc-005', category:'beach_clubs', name:'Nikki Beach — Champagne Brunch', subtitle:'Jet-set luxury · Santa Eulalia', price:150, unit:'per person', emoji:'🥂', partner:'Nikki Beach', location:"Playa s'Argamassa, Santa Eulalia", lat:38.9900, lng:1.5550, highlights:['Arrive by yacht','Champagne rituals','Live music & themed events','International jet-set crowd'], popular:true, duration:'Brunch to evening', minGuests:2, maxGuests:10, insider_tip:'Sunday Brunch is the event. White attire encouraged.' },
+  { id:'bc-005', category:'beach_clubs', name:'Nikki Beach — Champagne Brunch', subtitle:'Jet-set luxury · Santa Eulalia', price:150, unit:t.perPerson||'per person', emoji:'🥂', partner:'Nikki Beach', location:"Playa s'Argamassa, Santa Eulalia", lat:38.9900, lng:1.5550, highlights:['Arrive by yacht','Champagne rituals','Live music & themed events','International jet-set crowd'], popular:true, duration:'Brunch to evening', minGuests:2, maxGuests:10, insider_tip:'Sunday Brunch is the event. White attire encouraged.' },
   { id:'bc-006', category:'beach_clubs', name:'Nassau Beach Club — Daybed', subtitle:'Stylish & glamorous · Playa den Bossa', price:330, unit:'per daybed', emoji:'🌊', partner:'Nassau', location:"Playa d'en Bossa, Sant Josep", lat:38.8832, lng:1.3950, highlights:['Yacht service to shore','Resident DJs all day','Gourmet cuisine','Stunning interiors'], popular:true, duration:'Full day', minGuests:2, maxGuests:4, insider_tip:'Peak vibe 3-6pm. Their private yacht service is a memorable arrival.' },
-  { id:'bc-007', category:'beach_clubs', name:'Beso Beach — Long Lunch', subtitle:'Barefoot luxury · Ses Salines', price:95, unit:'per person', emoji:'🦩', partner:'Beso Beach', location:'Ses Salines, Sant Josep', lat:38.8710, lng:1.3960, highlights:['Legendary long lunches turn into parties','Barefoot luxury','Fresh seafood','Laid-back Ibiza energy'], popular:true, duration:'Lunch to sunset', minGuests:2, maxGuests:10, insider_tip:'Arrive at 1:30pm for lunch. By 4pm the dancing starts naturally.' },
-  { id:'bc-008', category:'beach_clubs', name:'Jockey Club Salinas — Lunch', subtitle:'Hipster-chic · Playa Salinas', price:80, unit:'per person', emoji:'🌿', partner:'Jockey Club', location:'Playa de Salinas, Sant Josep', lat:38.8750, lng:1.4060, highlights:['Ibiza institution','Mediterranean dishes','Nature reserve backdrop','Laid-back authentic vibe'], popular:true, duration:'Lunch', minGuests:2, maxGuests:8, insider_tip:'One of the most authentic beach club experiences on the island.' },
+  { id:'bc-007', category:'beach_clubs', name:'Beso Beach — Long Lunch', subtitle:'Barefoot luxury · Ses Salines', price:95, unit:t.perPerson||'per person', emoji:'🦩', partner:'Beso Beach', location:'Ses Salines, Sant Josep', lat:38.8710, lng:1.3960, highlights:['Legendary long lunches turn into parties','Barefoot luxury','Fresh seafood','Laid-back Ibiza energy'], popular:true, duration:'Lunch to sunset', minGuests:2, maxGuests:10, insider_tip:'Arrive at 1:30pm for lunch. By 4pm the dancing starts naturally.' },
+  { id:'bc-008', category:'beach_clubs', name:'Jockey Club Salinas — Lunch', subtitle:'Hipster-chic · Playa Salinas', price:80, unit:t.perPerson||'per person', emoji:'🌿', partner:'Jockey Club', location:'Playa de Salinas, Sant Josep', lat:38.8750, lng:1.4060, highlights:['Ibiza institution','Mediterranean dishes','Nature reserve backdrop','Laid-back authentic vibe'], popular:true, duration:'Lunch', minGuests:2, maxGuests:8, insider_tip:'One of the most authentic beach club experiences on the island.' },
   { id:'bc-009', category:'beach_clubs', name:'El Silencio — Art Beach Club', subtitle:'Avant-garde design · Cala Moli', price:180, unit:'per daybed', emoji:'🎨', partner:'El Silencio', location:'Cala Moli, Sant Josep', lat:38.9170, lng:1.2780, highlights:['Art meets gastronomy','Designer atmosphere','Avant-garde cuisine','Intimate and exclusive'], popular:false, duration:'Full day', minGuests:2, maxGuests:4, insider_tip:'The most design-forward beach club in Ibiza. A quieter alternative.' },
-  { id:'bc-010', category:'beach_clubs', name:'Tropicana Ibiza — Sundowner', subtitle:'Relaxed style · Cala Jondal', price:90, unit:'per person', emoji:'🍹', partner:'Tropicana', location:'Cala Jondal, Sant Josep', lat:38.8700, lng:1.3700, highlights:['Fresh seafood','Expertly crafted cocktails','Live music','Relaxed stylish crowd'], popular:false, duration:'Lunch to evening', minGuests:2, maxGuests:8, insider_tip:'Better value than Blue Marlin next door. Same beautiful Cala Jondal setting.' },
+  { id:'bc-010', category:'beach_clubs', name:'Tropicana Ibiza — Sundowner', subtitle:'Relaxed style · Cala Jondal', price:90, unit:t.perPerson||'per person', emoji:'🍹', partner:'Tropicana', location:'Cala Jondal, Sant Josep', lat:38.8700, lng:1.3700, highlights:['Fresh seafood','Expertly crafted cocktails','Live music','Relaxed stylish crowd'], popular:false, duration:'Lunch to evening', minGuests:2, maxGuests:8, insider_tip:'Better value than Blue Marlin next door. Same beautiful Cala Jondal setting.' },
   // ── MORE RESTAURANTS ─────────────────────────────────────────
-  { id:'rest-010', category:'restaurants', name:"Gordon Ramsay Hell's Kitchen Ibiza", subtitle:"First European outpost · The Unexpected Hotel", price:120, unit:'per person', emoji:'👨‍🍳', partner:"Hell's Kitchen Ibiza", location:"The Unexpected Hotel, Playa d'en Bossa", lat:38.8835, lng:1.4005, highlights:["Gordon Ramsay's first European venue",'Red & blue kitchen setup','Opening summer 2025','Dramatic atmosphere'], popular:true, duration:'Dinner', minGuests:2, maxGuests:10, insider_tip:'Book the moment reservations open. Summer 2025 opening.' },
-  { id:'rest-011', category:'restaurants', name:'Sublimotion — Gastro-sensory', subtitle:"World's most immersive dinner · Hard Rock Hotel", price:1800, unit:'per person', emoji:'🎭', partner:'Sublimotion', location:"Hard Rock Hotel, Playa d'en Bossa", lat:38.8840, lng:1.4000, highlights:['Maximum 12 guests per night','Aromatically & musically controlled space','Multi-course Michelin experience','World record immersive dining'], popular:false, duration:'3-4 hours', minGuests:2, maxGuests:12, insider_tip:'Must be booked months ahead. Not just dinner — an unforgettable experience.' },
-  { id:'rest-012', category:'restaurants', name:'El Chiringuito Es Cavallet', subtitle:'Barefoot elegance · Es Cavallet beach', price:85, unit:'per person', emoji:'🐟', partner:'El Chiringuito', location:'Es Cavallet, Ses Salines', lat:38.8730, lng:1.4100, highlights:['Salinas Nature Reserve backdrop','Views to Formentera','Fresh fish of the day','Ibiza insider favourite'], popular:false, duration:'Lunch', minGuests:2, maxGuests:8, insider_tip:'One of those rare places where everything fits perfectly. Order the fish.' },
-  { id:'rest-013', category:'restaurants', name:'Jondal — Barefoot Seafood', subtitle:'Chef Rafa Zafra · Cala Jondal', price:130, unit:'per person', emoji:'🦞', partner:'Jondal', location:'Cala Jondal, Sant Josep', lat:38.8690, lng:1.3680, highlights:['Acclaimed chef Rafa Zafra','Grilled lobster sharing plates','Pine trees & waves soundtrack','Crisp rose all afternoon'], popular:false, duration:'Long lunch', minGuests:2, maxGuests:6, insider_tip:'Long lunches are the art form here. Block the whole afternoon.' },
-  { id:'rest-014', category:'restaurants', name:'Nobu Ibiza Bay — Dinner', subtitle:'Beachfront Japanese · Talamanca', price:185, unit:'per person', emoji:'🍣', partner:'Nobu Ibiza Bay', location:'Talamanca Beach, Ibiza', lat:38.9130, lng:1.4450, highlights:['Black cod miso signature','Lobster tempura','Private moorings for yachts','Cool sophisticated crowd'], popular:true, duration:'Dinner', minGuests:2, maxGuests:8, insider_tip:'Book the outdoor Beach Deck for sunset. Private moorings available.' }
+  { id:'rest-010', category:'restaurants', name:"Gordon Ramsay Hell's Kitchen Ibiza", subtitle:"First European outpost · The Unexpected Hotel", price:120, unit:t.perPerson||'per person', emoji:'👨‍🍳', partner:"Hell's Kitchen Ibiza", location:"The Unexpected Hotel, Playa d'en Bossa", lat:38.8835, lng:1.4005, highlights:["Gordon Ramsay's first European venue",'Red & blue kitchen setup','Opening summer 2025','Dramatic atmosphere'], popular:true, duration:'Dinner', minGuests:2, maxGuests:10, insider_tip:'Book the moment reservations open. Summer 2025 opening.' },
+  { id:'rest-011', category:'restaurants', name:'Sublimotion — Gastro-sensory', subtitle:"World's most immersive dinner · Hard Rock Hotel", price:1800, unit:t.perPerson||'per person', emoji:'🎭', partner:'Sublimotion', location:"Hard Rock Hotel, Playa d'en Bossa", lat:38.8840, lng:1.4000, highlights:['Maximum 12 guests per night','Aromatically & musically controlled space','Multi-course Michelin experience','World record immersive dining'], popular:false, duration:'3-4 hours', minGuests:2, maxGuests:12, insider_tip:'Must be booked months ahead. Not just dinner — an unforgettable experience.' },
+  { id:'rest-012', category:'restaurants', name:'El Chiringuito Es Cavallet', subtitle:'Barefoot elegance · Es Cavallet beach', price:85, unit:t.perPerson||'per person', emoji:'🐟', partner:'El Chiringuito', location:'Es Cavallet, Ses Salines', lat:38.8730, lng:1.4100, highlights:['Salinas Nature Reserve backdrop','Views to Formentera','Fresh fish of the day','Ibiza insider favourite'], popular:false, duration:'Lunch', minGuests:2, maxGuests:8, insider_tip:'One of those rare places where everything fits perfectly. Order the fish.' },
+  { id:'rest-013', category:'restaurants', name:'Jondal — Barefoot Seafood', subtitle:'Chef Rafa Zafra · Cala Jondal', price:130, unit:t.perPerson||'per person', emoji:'🦞', partner:'Jondal', location:'Cala Jondal, Sant Josep', lat:38.8690, lng:1.3680, highlights:['Acclaimed chef Rafa Zafra','Grilled lobster sharing plates','Pine trees & waves soundtrack','Crisp rose all afternoon'], popular:false, duration:'Long lunch', minGuests:2, maxGuests:6, insider_tip:'Long lunches are the art form here. Block the whole afternoon.' },
+  { id:'rest-014', category:'restaurants', name:'Nobu Ibiza Bay — Dinner', subtitle:'Beachfront Japanese · Talamanca', price:185, unit:t.perPerson||'per person', emoji:'🍣', partner:'Nobu Ibiza Bay', location:'Talamanca Beach, Ibiza', lat:38.9130, lng:1.4450, highlights:['Black cod miso signature','Lobster tempura','Private moorings for yachts','Cool sophisticated crowd'], popular:true, duration:'Dinner', minGuests:2, maxGuests:8, insider_tip:'Book the outdoor Beach Deck for sunset. Private moorings available.' }
 
 ]
 
@@ -457,12 +457,12 @@ function BookingModal({ service, onClose, onBook }) {
           </div>
         </div>
 
-        <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>Select date</div>
+        <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>{t.selectDate||'Select date'}</div>
         <input type="date" value={date} min={minDateStr} onChange={e => setDate(e.target.value)} style={{ ...inp, colorScheme: 'dark' }} />
 
         {service.unit.includes('person') && service.maxGuests > 1 && (
           <>
-            <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>Number of guests</div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>{t.numberOfGuests||'Number of guests'}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
               <button onClick={() => setGuests(Math.max(service.minGuests, guests - 1))}
                 style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', color: 'white', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</button>
@@ -518,7 +518,7 @@ function DirectionsModal({ service, onClose }) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 600, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onClose}>
       <div style={{ background: 'linear-gradient(170deg,#0D3545,#1A5060)', borderRadius: '20px 20px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }} onClick={e => e.stopPropagation()}>
         <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 2, margin: '0 auto 20px' }} />
-        <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 20, color: 'white', marginBottom: 6 }}>Get Directions</div>
+        <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 20, color: 'white', marginBottom: 6 }}>{t.getDirections||'Get Directions'}</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20, fontFamily: 'DM Sans,sans-serif' }}>📍 {service.location}</div>
         <button onClick={() => openMaps('google')}
           style={{ width: '100%', padding: '14px', background: '#4285F4', color: 'white', border: 'none', borderRadius: 12, fontFamily: 'DM Sans,sans-serif', fontSize: 14, fontWeight: 500, cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -652,13 +652,13 @@ function DesignExperience({ onBook }) {
       <div style={{ display: 'flex', gap: 10 }}>
         <button onClick={() => setMode('day')} style={{ flex: 1, padding: '14px', background: 'rgba(245,201,122,0.15)', border: '0.5px solid rgba(245,201,122,0.3)', borderRadius: 12, cursor: 'pointer', textAlign: 'center' }}>
           <div style={{ fontSize: 24, marginBottom: 4 }}>☀️</div>
-          <div style={{ fontSize: 13, fontWeight: 500, color: 'white', fontFamily: 'DM Sans,sans-serif' }}>Design My Day</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'white', fontFamily: 'DM Sans,sans-serif' }}>{t.designMyDay||'Design My Day'}</div>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>Boats, beaches, lunch</div>
         </button>
         <button onClick={() => setMode('night')} style={{ flex: 1, padding: '14px', background: 'rgba(43,122,139,0.2)', border: '0.5px solid rgba(43,122,139,0.35)', borderRadius: 12, cursor: 'pointer', textAlign: 'center' }}>
           <div style={{ fontSize: 24, marginBottom: 4 }}>🌙</div>
-          <div style={{ fontSize: 13, fontWeight: 500, color: 'white', fontFamily: 'DM Sans,sans-serif' }}>Design My Night</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>Dinner, clubs, VIP</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'white', fontFamily: 'DM Sans,sans-serif' }}>{t.designMyNight||'Design My Night'}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{t.dinnerClubsVip||'Dinner, clubs, VIP'}</div>
         </button>
       </div>
     </div>
@@ -828,7 +828,7 @@ export default function Concierge({ onBack }) {
   if (bookingConfirmed) return (
     <div style={{ padding: '20px 16px', textAlign: 'center' }}>
       <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-      <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 26, color: 'white', marginBottom: 8 }}>Request Sent!</div>
+      <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 26, color: 'white', marginBottom: 8 }}>{t.requestSent||'Request sent!'}</div>
       <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 24, lineHeight: 1.6, fontFamily: 'DM Sans,sans-serif' }}>
         Your booking request for {bookingConfirmed.service.name} on {new Date(bookingConfirmed.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} has been received.
         Our concierge team will confirm within 2 hours via email.

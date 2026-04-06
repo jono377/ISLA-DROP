@@ -21,7 +21,7 @@ function ProductCard({ product }) {
   const { addItem, updateQuantity } = useCartStore()
 
   return (
-    <div style={{ background:C.card, border:`0.5px solid ${C.border}`, borderRadius:14, overflow:'hidden', position:'relative' }}>
+    <div style={{ background:C.card, border:'0.5px solid ' + C.border, borderRadius:14, overflow:'hidden', position:'relative' }}>
       <div style={{ position:'relative' }}>
         <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="card" style={{ height:120 }} />
         {qty === 0
@@ -38,7 +38,7 @@ function ProductCard({ product }) {
         )}
       </div>
       <div style={{ padding:'10px 12px 12px' }}>
-        <div style={{ fontSize:12,fontWeight:500,color:C.text,lineHeight:1.3,marginBottom:4,minHeight:30 }}>{product.name}</div>
+        <div style={{ fontSize:12,fontWeight:500,color:C.text,lineHeight:1.3,marginBottom:4,minHeight:30 }}>{getProductName(product.id, product.name)}</div>
         <div style={{ fontSize:14,fontWeight:500,color:C.accentAlt }}>€{product.price.toFixed(2)}</div>
       </div>
     </div>
@@ -69,6 +69,7 @@ export function AllProductsPage({ title, products, onBack }) {
 
 // ── Category page ─────────────────────────────────────────────
 export default function CategoryPage({ categoryKey, onBack }) {
+  const { getProductName, getCategoryLabel } = useLang()
   const [activeSub, setActiveSub] = useState(null)
   const catConfig = CATEGORIES.find(c => c.key === categoryKey)
   if (!catConfig) return null
