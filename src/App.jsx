@@ -2,6 +2,7 @@ import { useEffect, useState, Component } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './lib/store'
 import CustomerApp from './components/customer/CustomerApp'
+import { LangProvider } from './i18n/LangContext'
 import DriverApp from './components/driver/DriverApp'
 import OpsApp from './components/ops/OpsApp'
 import StaffLogin from './components/shared/StaffLogin'
@@ -38,8 +39,8 @@ const toastCfg = {
 }
 
 // Staff portal selector shown when no user is logged in and staff=true
-function StaffPortal() {
-  const [role, setRole] = useState(null)
+function StaffPortal({ autoRole }) {
+  const [role, setRole] = useState(autoRole || null)
 
   if (role) return <StaffLogin role={role} onBack={() => setRole(null)} />
 
@@ -81,9 +82,17 @@ function AppInner() {
   const { user, profile, setUser, setProfile, clear } = useAuthStore()
 
   // Check if this is a staff URL
+  const hostname = window.location.hostname
   const isStaffUrl = window.location.pathname.startsWith('/staff') ||
                      window.location.search.includes('staff=true') ||
-                     window.location.hostname.includes('staff')
+                     hostname.includes('staff') ||
+                     hostname.startsWith('ops.') ||
+                     hostname.startsWith('driver.')
+
+  // Auto-select role based on subdomain
+  const autoRole = hostname.startsWith('ops.') ? 'ops'
+                 : hostname.startsWith('driver.') ? 'driver'
+                 : null
 
   useEffect(() => {
     const url = import.meta.env.VITE_SUPABASE_URL
@@ -119,7 +128,7 @@ function AppInner() {
   }
 
   // Staff portal (not logged in)
-  if (isStaffUrl) return <StaffPortal />
+  if (isStaffUrl) return <StaffPortal autoRole={autoRole} />
 
   // Customer app
   return (
@@ -134,8 +143,10 @@ function AppInner() {
 export default function App() {
   return (
     <ErrorBoundary>
+      <LangProvider>
       <Toaster {...toastCfg} />
       <AppInner />
+    </LangProvider>
     </ErrorBoundary>
   )
 }
