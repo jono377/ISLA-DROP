@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLang } from '../../i18n/LangContext'
 import { PRODUCTS } from '../../lib/products'
 import { useCartStore } from '../../lib/store'
 import toast from 'react-hot-toast'
