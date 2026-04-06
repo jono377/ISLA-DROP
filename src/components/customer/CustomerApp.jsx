@@ -85,12 +85,12 @@ function LanguagePicker({ lang, setLang }) {
 // ── Tab Bar — rendered ONLY on the home screen ────────────────
 function TabBar({ view, setView, cartCount }) {
   const tabs = [
-    { id:VIEWS.HOME,     label:'Home',       path:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+    { id:VIEWS.HOME,     label:t.home||'Home',       path:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
     { id:VIEWS.CATEGORY, label:'Categories', path:'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z' },
-    { id:VIEWS.BASKET,   label:'Basket',     path:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', badge:cartCount },
-    { id:VIEWS.SEARCH,   label:'Search',     search:true },
-    { id:VIEWS.CONCIERGE,label:'Concierge',  star:true },
-    { id:VIEWS.ACCOUNT,  label:'Account',    path:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' },
+    { id:VIEWS.BASKET,   label:t.basket||'Basket',     path:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', badge:cartCount },
+    { id:VIEWS.SEARCH,   label:t.search||'Search',     search:true },
+    { id:VIEWS.CONCIERGE,label:t.concierge||'Concierge',  star:true },
+    { id:VIEWS.ACCOUNT,  label:t.account||'Account',    path:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' },
   ]
   return (
     <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:480, display:'flex', background:C.tabBg, backdropFilter:'blur(14px)', borderTop:'0.5px solid rgba(43,122,139,0.2)', zIndex:100, paddingBottom:'env(safe-area-inset-bottom,0px)' }}>
@@ -202,7 +202,7 @@ function CheckoutSuggestions({ cartItems }) {
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 <span style={{ fontSize:12, color:'#E8A070' }}>€{p.price.toFixed(2)}</span>
                 <button onClick={() => { addItem(p); toast.success(p.emoji + ' Added!', { duration:900 }) }}
-                  style={{ padding:'4px 8px', background:'#C4683A', border:'none', borderRadius:6, fontSize:11, color:'white', cursor:'pointer' }}>Add</button>
+                  style={{ padding:'4px 8px', background:'#C4683A', border:'none', borderRadius:6, fontSize:11, color:'white', cursor:'pointer' }}>{t.addToCart||'Add'}</button>
               </div>
             </div>
           ))}
@@ -278,15 +278,15 @@ function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
       <div style={{ display:'flex', gap:8, marginBottom:10 }}>
         <button onClick={() => onGroupOrder()}
           style={{ flex:1, padding:'11px', background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:12, color:'rgba(255,255,255,0.7)', cursor:'pointer' }}>
-          👥 Group order
+          {'👥 ' + (t.groupOrder || 'Group order')}
         </button>
         <button onClick={() => onSchedule()}
           style={{ flex:1, padding:'11px', background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:12, color:'rgba(255,255,255,0.7)', cursor:'pointer' }}>
-          🕐 Schedule for later
+          {'🕐 ' + (t.scheduleOrder || 'Schedule for later')}
         </button>
       </div>
       <button onClick={onCheckout} style={{ width:'100%',padding:'16px',background:'#C4683A',color:'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:'pointer',boxShadow:'0 4px 20px rgba(196,104,58,0.4)' }}>
-        Order now — deliver ASAP →
+        {t.checkout || 'Order now'} →
       </button>
     </div>
   )
@@ -675,13 +675,13 @@ function JustLandedBanner({ onArrival }) {
         <button onClick={dismiss}
           style={{ position:'absolute', top:10, right:12, background:'none', border:'none', color:'rgba(255,255,255,0.4)', fontSize:16, cursor:'pointer', padding:0 }}>✕</button>
         <div style={{ fontSize:28, marginBottom:6 }}>✈️</div>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:19, color:'white', marginBottom:4 }}>Just landed in Ibiza?</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:19, color:'white', marginBottom:4 }}>{t.justLanded || 'Just landed in Ibiza?'}</div>
         <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)', marginBottom:12, lineHeight:1.5 }}>
           Get everything you need delivered in under 30 minutes — drinks, food, sun cream, the works.
         </div>
         <button onClick={() => { onArrival(); dismiss() }}
           style={{ padding:'10px 20px', background:'#C4683A', border:'none', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, fontWeight:500, color:'white', cursor:'pointer', boxShadow:'0 3px 12px rgba(196,104,58,0.4)' }}>
-          See arrival packages →
+          {(t.arrivalPackages || 'See arrival packages') + ' →'}
         </button>
       </div>
     </div>
@@ -984,19 +984,19 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <SmartReorderSection />
           {/* Design Your Experience cards */}
           <div style={{ padding:'0 16px', marginBottom:20 }}>
-            <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:12 }}>Design Your Experience</div>
+            <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:12 }}>{t.designExperience || 'Design Your Experience'}</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
               <div onClick={()=>onParty('design_night')}
                 style={{ background:'linear-gradient(135deg,rgba(90,30,120,0.7),rgba(30,60,120,0.7))', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:16, padding:'18px 14px', cursor:'pointer' }}>
                 <div style={{ fontSize:36, marginBottom:8 }}>🌙</div>
-                <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:4 }}>Design Your Night</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', lineHeight:1.4 }}>Club nights, villa parties, pre-drinks & more</div>
+                <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:4 }}>{t.designNight || 'Design Your Night'}</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', lineHeight:1.4 }}>{t.designNightSub || 'Club nights, villa parties, pre-drinks & more'}</div>
               </div>
               <div onClick={()=>onParty('design_day')}
                 style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.6),rgba(200,140,30,0.5))', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:16, padding:'18px 14px', cursor:'pointer' }}>
                 <div style={{ fontSize:36, marginBottom:8 }}>☀️</div>
-                <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:4 }}>Design Your Day</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', lineHeight:1.4 }}>Pool parties, beach days, boat trips & more</div>
+                <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:4 }}>{t.designDay || 'Design Your Day'}</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', lineHeight:1.4 }}>{t.designDaySub || 'Pool parties, beach days, boat trips & more'}</div>
               </div>
             </div>
           </div>
