@@ -351,7 +351,7 @@ function SearchView({ t }) {
       ids:['wt-001','wt-002','wt-003','es-013','sn-001','sn-002','sd-001'] },
     { key:'snacks',      label: t.vibeSnacks||'Snacks board',        desc: t.vibeSnacksSub||'Crisps, antipasto, olives and sharing boards',
       ids:['sn-001','sn-002','sn-003','sn-004','sn-029','sn-005'] },
-  ]]
+  ]
 
   // When a vibe chip is tapped, show its products with Isla description
   const handleVibeSelect = async (vibe) => {
