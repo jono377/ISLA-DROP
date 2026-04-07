@@ -24,7 +24,8 @@ function Row({ icon, label, sub, onClick, accent: useAccent, danger, right }) {
 }
 
 // ── My Orders ─────────────────────────────────────────────────
-function MyOrders({ onBack }) {
+function MyOrders({
+  const t = useT_ctx() onBack }) {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const { addItem } = useCartStore()
@@ -93,7 +94,8 @@ function MyOrders({ onBack }) {
 }
 
 // ── My Favourites ─────────────────────────────────────────────
-function MyFavourites({ onBack }) {
+function MyFavourites({
+  const t = useT_ctx() onBack }) {
   const [favourites, setFavourites] = useState([])
   const { addItem } = useCartStore()
 
@@ -180,7 +182,8 @@ function MyDetails({ onBack }) {
 }
 
 // ── Addresses ─────────────────────────────────────────────────
-function MyAddresses({ onBack }) {
+function MyAddresses({
+  const t = useT_ctx() onBack }) {
   const { user } = useAuthStore()
   const [addresses, setAddresses] = useState([])
   const [loading, setLoading] = useState(true)
@@ -236,7 +239,8 @@ function MyAddresses({ onBack }) {
 }
 
 // ── Credit ────────────────────────────────────────────────────
-function MyCredit({ onBack }) {
+function MyCredit({
+  const t = useT_ctx() onBack }) {
   const { user } = useAuthStore()
   const [credit, setCredit] = useState(0)
   const [transactions, setTransactions] = useState([])
@@ -336,7 +340,8 @@ function MyCredit({ onBack }) {
 }
 
 // ── About ─────────────────────────────────────────────────────
-function AboutIsla({ onBack }) {
+function AboutIsla({
+  const t = useT_ctx() onBack }) {
   return (
     <div style={{ padding:'20px 16px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:24 }}>

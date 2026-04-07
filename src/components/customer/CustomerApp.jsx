@@ -53,7 +53,7 @@ function SplashScreen({ onEnter }) {
       <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'0 28px 64px', opacity:vis?1:0, transform:vis?'translateY(0)':'translateY(20px)', transition:'all 0.9s cubic-bezier(0.34,1.1,0.64,1)' }}>
         <div style={{ fontFamily:'DM Serif Display,serif', fontSize:58, color:'white', lineHeight:1, letterSpacing:'-1.5px', marginBottom:6, textShadow:'0 3px 20px rgba(0,0,0,0.4)' }}>Isla Drop</div>
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.68)', letterSpacing:'3.5px', textTransform:'uppercase', marginBottom:5 }}>24/7 Delivery · Ibiza</div>
-        <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:40 }}>{t.drinksSub||'Drinks · Snacks · Tobacco'}</div>
+        <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:40 }}>{'Drinks · Snacks · Tobacco'||'Drinks · Snacks · Tobacco'}</div>
         <button onClick={onEnter} style={{ width:'100%', padding:'18px', background:'#C4683A', color:'white', border:'none', borderRadius:16, fontFamily:'DM Sans,sans-serif', fontSize:17, fontWeight:500, cursor:'pointer', boxShadow:'0 8px 32px rgba(196,104,58,0.55)', marginBottom:14 }}>{'Order Now'||'Order Now'}</button>
         <div style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.3)' }}>{'Anytime. Anywhere. Ibiza.'}</div>
       </div>
@@ -709,7 +709,8 @@ const PAIRINGS = {
   'wn-021': ['ic-001'],                             // Rose -> Ice
 }
 
-function DrinkPairingToast({ productId, onAdd, onDismiss }) {
+function DrinkPairingToast({
+  const t = useT_ctx() productId, onAdd, onDismiss }) {
   const pairIds = PAIRINGS[productId] || []
   const pairs = pairIds.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
   if (pairs.length === 0) return null

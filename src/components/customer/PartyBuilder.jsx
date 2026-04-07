@@ -136,7 +136,8 @@ const PACKAGE_TYPES = [
 ]
 
 // ── Package Form ──────────────────────────────────────────────
-function PackageForm({ packageType, onBuild, onBack }) {
+function PackageForm({
+  const t = useT_ctx() packageType, onBuild, onBack }) {
   const pt = PACKAGE_TYPES.find(p => p.id === packageType)
   const [form, setForm] = useState({
     vibe: pt.vibes[0].value, guests:'10', duration:'5',

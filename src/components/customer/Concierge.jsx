@@ -619,7 +619,8 @@ async function designExperience(prompt, type, userBookings) {
 }
 
 
-function DesignExperience({ onBook }) {
+function DesignExperience({
+  const t = useT_ctx() onBook }) {
   const [mode, setMode] = useState(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)

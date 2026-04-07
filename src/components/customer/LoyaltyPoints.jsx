@@ -1,3 +1,4 @@
+import { useT_ctx } from '../../i18n/TranslationContext'
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../../lib/store'
 import toast from 'react-hot-toast'
@@ -13,7 +14,8 @@ function getTier(points) {
   return TIERS.find(tier => points >= tier.min && points <= tier.max) || TIERS[0]
 }
 
-export default function LoyaltyPoints({ onBack }) {
+export default function LoyaltyPoints({
+  const t = useT_ctx() onBack }) {
   const { user } = useAuthStore()
   const [balance, setBalance]   = useState(0)
   const [history, setHistory]   = useState([])
