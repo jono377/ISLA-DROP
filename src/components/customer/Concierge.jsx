@@ -463,8 +463,16 @@ function BookingModal({ service, onClose, onBook }) {
         <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>{'Select date'||'Select date'}</div>
         <input type="date" value={date} min={minDateStr} onChange={e => setDate(e.target.value)} style={{ ...inp, colorScheme: 'dark' }} />
 
-        <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif', marginTop: 12 }}>Preferred time</div>
-        <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ ...inp, colorScheme: 'dark' }} />
+        <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 8, fontFamily: 'DM Sans,sans-serif', marginTop: 12 }}>Preferred start time</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
+          {['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00'].map(slot => (
+            <button key={slot} onClick={() => setTime(slot)}
+              style={{ padding: '8px 14px', borderRadius: 20, fontSize: 13, border: '0.5px solid ' + (time === slot ? '#C4683A' : 'rgba(255,255,255,0.2)'), background: time === slot ? 'rgba(196,104,58,0.25)' : 'rgba(255,255,255,0.06)', color: time === slot ? '#E8A070' : 'rgba(255,255,255,0.7)', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: time === slot ? 600 : 400 }}>
+              {slot}
+            </button>
+          ))}
+        </div>
+        {time && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: 'DM Sans,sans-serif', marginBottom: 4 }}>Selected: {time}</div>}
 
         {service.unit.includes('person') && service.maxGuests > 1 && (
           <>
