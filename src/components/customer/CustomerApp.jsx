@@ -4,6 +4,7 @@ import { useCartStore, useAuthStore } from '../../lib/store'
 import { PRODUCTS, CATEGORIES, BEST_SELLERS, NEW_IN } from '../../lib/products'
 import { calculateETA, shouldShowDriverOnMap, formatETA, isLate } from '../../lib/eta'
 import { LANGUAGES, useT } from '../../i18n/translations'
+import { getInitialLang, saveLang, saveSession, restoreSession } from '../../lib/langInit'
 import { TranslationContext, useT_ctx } from '../../i18n/TranslationContext'
 import AgeVerification from './AgeVerification'
 import StripeCheckout from './StripeCheckout'
@@ -116,7 +117,6 @@ function TabBar({ view, setView, cartCount }) {
 
 // ── Mini product card ─────────────────────────────────────────
 function MiniCard({ product, t }) {
-  const getProductName = (_id, name) => name || ""
   const qty = useCartStore(s=>s.items.find(i=>i.product.id===product.id)?.quantity??0)
   const { addItem, updateQuantity } = useCartStore()
   return (
@@ -133,7 +133,7 @@ function MiniCard({ product, t }) {
         }
       </div>
       <div style={{ padding:'8px 10px 10px' }}>
-        <div style={{ fontSize:11, fontWeight:500, color:C.text, lineHeight:1.3, height:28, overflow:'hidden', marginBottom:3 }}>{getProductName(product.id, product.name)}</div>
+        <div style={{ fontSize:11, fontWeight:500, color:C.text, lineHeight:1.3, height:28, overflow:'hidden', marginBottom:3 }}>{product.name}</div>
         <div style={{ fontSize:13, fontWeight:500, color:'#C4683A' }}>€{product.price.toFixed(2)}</div>
       </div>
     </div>
@@ -215,7 +215,6 @@ function CheckoutSuggestions({ cartItems }) {
 }
 
 function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
-  const getProductName = (_id, name) => name || ""
   const cart = useCartStore()
   const { updateQuantity, clearCart } = useCartStore()
   if (cart.getItemCount()===0) return (
@@ -319,7 +318,6 @@ function CategoriesView({ onSelect }) {
 
 // ── Search view ───────────────────────────────────────────────
 function SearchView({ t }) {
-  const getProductName = (_id, name) => name || ""
   const getCategoryLabel = (_key, label) => label || ""
   const [query, setQuery]         = useState('')
   const [aiResults, setAiResults] = useState(null)
@@ -529,7 +527,7 @@ function SearchView({ t }) {
                   {p.popular && <span style={{ position:'absolute', top:6, right:6, fontSize:14 }}>⭐</span>}
                 </div>
                 <div style={{ padding:'8px 10px' }}>
-                  <div style={{ fontSize:11, fontWeight:500, color:'white', lineHeight:1.3, marginBottom:6, height:30, overflow:'hidden' }}>{getProductName(p.id, p.name)}</div>
+                  <div style={{ fontSize:11, fontWeight:500, color:'white', lineHeight:1.3, marginBottom:6, height:30, overflow:'hidden' }}>{p.name}</div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <span style={{ fontSize:14, fontWeight:600, color:'#E8A070' }}>€{p.price.toFixed(2)}</span>
                     <button onClick={() => { addItem(p); toast.success(p.emoji + ' Added!', { duration:900 }) }}
@@ -1034,25 +1032,22 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 
 // ── Root App ──────────────────────────────────────────────────
 function CustomerAppInner() {
-  const getProductName = (_id, name) => name || ""
   const getCategoryLabel = (_key, label) => label || ""
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [viewHistory, setViewHistory] = useState([])
-  const [lang, setLangState]           = useState(() => {
-    // Detect device language on first load
-    try {
-      const supported = ['en','es','fr','it','de','ru','zh','ar','nl','pt','sv','pl','tr']
-      const nav = (navigator.language || 'en').slice(0,2).toLowerCase()
-      return supported.includes(nav) ? nav : 'en'
-    } catch { return 'en' }
-  })
+  const [lang, setLangState]           = useState(getInitialLang)
   const [aiStrings, setAiStrings]      = useState({})
   const [translating, setTranslating]  = useState(false)
   const tBase                          = useT(lang)
   const t                              = { ...tBase, ...aiStrings }
 
-  const setLang = async (newLang) => {
-    setLangState(newLang)
+  const setLang = (newLang) => {
+    saveSession({ view, categoryKey, lang: newLang })
+    saveLang(newLang)
+    window.location.reload()
+  }
+
+  const translateApp = async (newLang) => {
     if (newLang === 'en') { setAiStrings({}); return }
     const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
     if (!apiKey) return
@@ -1185,13 +1180,25 @@ function CustomerAppInner() {
     setTranslating(false)
   }
 
-  // Auto-detect device language on mount
+  // Restore session state after language reload
   useEffect(() => {
-    try {
-      const supported = ['es','fr','it','de','ru','zh','ar','nl','pt','sv','pl','tr']
-      const nav = (navigator.language || 'en').slice(0,2).toLowerCase()
-      if (supported.includes(nav)) setLang(nav)
-    } catch {}
+    const session = restoreSession()
+    if (session) {
+      if (session.view && Object.values(VIEWS).includes(session.view)) {
+        setView(session.view)
+      }
+      if (session.categoryKey) {
+        setCategoryKey(session.categoryKey)
+      }
+      // Clear session after restoring so it doesn't persist forever
+      setTimeout(() => localStorage.removeItem('isla_session'), 1000)
+    }
+
+    // Trigger AI translation if non-English lang loaded from storage
+    const savedLang = getInitialLang()
+    if (savedLang !== 'en') {
+      translateApp(savedLang)
+    }
   }, [])
 
   const [categoryKey, setCategoryKey] = useState(null)
@@ -1288,7 +1295,7 @@ function CustomerAppInner() {
           <div style={{ background:'rgba(255,255,255,0.07)',borderRadius:14,padding:16,marginBottom:20 }}>
             {cart.items.map(({product,quantity})=>(
               <div key={product.id} style={{ display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:8,color:'rgba(255,255,255,0.82)' }}>
-                <span>{product.emoji} {getProductName(product.id, product.name)} × {quantity}</span>
+                <span>{product.emoji} {product.name} × {quantity}</span>
                 <span style={{ fontWeight:500 }}>€{(product.price*quantity).toFixed(2)}</span>
               </div>
             ))}
