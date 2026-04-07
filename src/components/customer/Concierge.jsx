@@ -649,13 +649,15 @@ function DesignExperience({ onBook }) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [prompt, setPrompt] = useState('')
+  const [startTime, setStartTime] = useState('')
 
   const QUICK_DAY = ['Romantic couple day', 'Group of 8 friends', 'Family with children', 'Solo luxury escape', 'Birthday celebration day', 'Pool party day', 'Beach club day']
   const QUICK_NIGHT = ['VIP club night', 'Ladies night out', 'Boys night out', "Gentleman's evening", 'Birthday night out', 'Intimate dinner evening', 'Sunset to sunrise', 'Luxury couple evening']
 
   const generate = async (p) => {
+    const timeContext = startTime ? ' Starting at ' + startTime + '.' : ''
     const fullPrompt = mode === 'day'
-      ? 'Design the perfect Ibiza day experience for: ' + (p || prompt) + '. Be specific about times, venues and Ibiza knowledge. Include beach clubs, restaurants, boat trips where relevant. Give insider timing tips.'
+      ? 'Design the perfect Ibiza day experience for: ' + (p || prompt) + timeContext + '. Be specific about times, venues and Ibiza knowledge. Include beach clubs, restaurants, boat trips where relevant. Give insider timing tips.'
       : 'Design the perfect Ibiza night experience for: ' + (p || prompt) + '. ' +
       (((p || prompt).toLowerCase().includes('ladies') || (p || prompt).toLowerCase().includes('girls')) ? 'This is a ladies night — think champagne, classy cocktail bars, chic beach clubs, VIP table experiences. Sophisticated and glamorous.' : '') +
       (((p || prompt).toLowerCase().includes('boys') || (p || prompt).toLowerCase().includes('lads')) ? 'This is a boys night out — think cold beers, buzzing bars, shots, fun atmosphere, good music, late night energy.' : '') +
@@ -713,6 +715,22 @@ function DesignExperience({ onBook }) {
             {(mode === 'day' ? QUICK_DAY : QUICK_NIGHT).map(q => (
               <button key={q} onClick={() => generate(q)} style={{ padding: '7px 13px', background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: 20, fontSize: 12, color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>{q}</button>
             ))}
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8, fontFamily: 'DM Sans,sans-serif' }}>
+              {mode === 'day' ? 'Start time (optional)' : 'Start time (optional)'}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {(mode === 'day'
+                ? ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00']
+                : ['18:00','19:00','20:00','21:00','22:00','23:00','00:00']
+              ).map(slot => (
+                <button key={slot} onClick={() => setStartTime(startTime === slot ? '' : slot)}
+                  style={{ padding: '7px 13px', borderRadius: 20, fontSize: 12, border: '0.5px solid ' + (startTime === slot ? '#C4683A' : 'rgba(255,255,255,0.18)'), background: startTime === slot ? 'rgba(196,104,58,0.25)' : 'rgba(255,255,255,0.05)', color: startTime === slot ? '#E8A070' : 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: startTime === slot ? 600 : 400 }}>
+                  {slot}
+                </button>
+              ))}
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <input value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && generate()} placeholder="Describe your group, occasion or vibe..." style={{ flex: 1, padding: '11px 14px', background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: 24, fontFamily: 'DM Sans,sans-serif', fontSize: 13, color: 'white', outline: 'none' }} />
