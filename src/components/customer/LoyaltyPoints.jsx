@@ -14,8 +14,8 @@ function getTier(points) {
   return TIERS.find(tier => points >= tier.min && points <= tier.max) || TIERS[0]
 }
 
-export default function LoyaltyPoints({
-  const t = useT_ctx() onBack }) {
+export default function LoyaltyPoints({ onBack }) {
+  const t = useT_ctx()
   const { user } = useAuthStore()
   const [balance, setBalance]   = useState(0)
   const [history, setHistory]   = useState([])
