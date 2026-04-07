@@ -59,7 +59,7 @@ export default function ClubCalendar({ onBack }) {
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', cursor:'pointer', fontSize:20, padding:0 }}>←</button>
         <div>
-          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white' }}>Club Night Calendar</div>
+          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white' }}>{t.clubNightCalendar||'Club Night Calendar'}</div>
           <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)' }}>Ibiza 2025 season · Every night of the week</div>
         </div>
       </div>

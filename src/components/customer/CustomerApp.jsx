@@ -53,7 +53,7 @@ function SplashScreen({ onEnter }) {
       <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'0 28px 64px', opacity:vis?1:0, transform:vis?'translateY(0)':'translateY(20px)', transition:'all 0.9s cubic-bezier(0.34,1.1,0.64,1)' }}>
         <div style={{ fontFamily:'DM Serif Display,serif', fontSize:58, color:'white', lineHeight:1, letterSpacing:'-1.5px', marginBottom:6, textShadow:'0 3px 20px rgba(0,0,0,0.4)' }}>Isla Drop</div>
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.68)', letterSpacing:'3.5px', textTransform:'uppercase', marginBottom:5 }}>24/7 Delivery · Ibiza</div>
-        <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:40 }}>Drinks · Snacks · Tobacco</div>
+        <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:40 }}>{t.drinksSub||'Drinks · Snacks · Tobacco'}</div>
         <button onClick={onEnter} style={{ width:'100%', padding:'18px', background:'#C4683A', color:'white', border:'none', borderRadius:16, fontFamily:'DM Sans,sans-serif', fontSize:17, fontWeight:500, cursor:'pointer', boxShadow:'0 8px 32px rgba(196,104,58,0.55)', marginBottom:14 }}>{'Order Now'||'Order Now'}</button>
         <div style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.3)' }}>{'Anytime. Anywhere. Ibiza.'}</div>
       </div>
@@ -635,7 +635,7 @@ function OnSaleSection({ t }) {
           </div>
           <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>{t.onSale||'On Sale'}</div>
         </div>
-        <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>Up to 20% off</div>
+        <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>{t.upTo20||'Up to 20% off'}</div>
       </div>
       <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
         {saleItems.map(p => (
@@ -724,7 +724,7 @@ function DrinkPairingToast({ productId, onAdd, onDismiss }) {
           </button>
         ))}
       </div>
-      <button onClick={onDismiss} style={{ fontSize:10, color:'rgba(255,255,255,0.3)', background:'none', border:'none', cursor:'pointer', marginTop:6, fontFamily:'DM Sans,sans-serif' }}>No thanks</button>
+      <button onClick={onDismiss} style={{ fontSize:10, color:'rgba(255,255,255,0.3)', background:'none', border:'none', cursor:'pointer', marginTop:6, fontFamily:'DM Sans,sans-serif' }}>{t.noThanks||'No thanks'}</button>
     </div>
   )
 }
@@ -937,7 +937,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
                 </div>
               </div>
             ))}
-            {searchResults.length===0&&<div style={{ gridColumn:'span 2',textAlign:'center',padding:'20px',color:'rgba(255,255,255,0.35)',fontSize:13 }}>No results — try different words</div>}
+            {searchResults.length===0&&<div style={{ gridColumn:'span 2',textAlign:'center',padding:'20px',color:'rgba(255,255,255,0.35)',fontSize:13 }}>{t.noResults||'No results — try different words'}</div>}
           </div>
         </div>
       )}
@@ -954,14 +954,14 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
-              <button onClick={onBest} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
+              <button onClick={onBest} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>{(t.seeAll||'See all') + ' →'}</button>
             </div>
             <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{BEST_SELLERS.map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
           </div>
           <div style={{ marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onNewIn} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>✨ {t.newIn}</button>
-              <button onClick={onNewIn} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
+              <button onClick={onNewIn} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>{(t.seeAll||'See all') + ' →'}</button>
             </div>
             <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{NEW_IN.slice(0,10).map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
           </div>
@@ -1021,7 +1021,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
                   <button onClick={()=>onCategorySelect(cat.key)} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>
                     {cat.emoji} {getCategoryLabel(cat.key, cat.label)}
                   </button>
-                  <button onClick={()=>onCategorySelect(cat.key)} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
+                  <button onClick={()=>onCategorySelect(cat.key)} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>{(t.seeAll||'See all') + ' →'}</button>
                 </div>
                 <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>
                   {catProducts.map(p=><MiniCard key={p.id} product={p} t={t}/>)}
@@ -1037,6 +1037,8 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 
 // ── Root App ──────────────────────────────────────────────────
 function CustomerAppInner() {
+  const getProductName = (_id, name) => name || ""
+  const getCategoryLabel = (_key, label) => label || ""
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [viewHistory, setViewHistory] = useState([])
   const [lang, setLangState]           = useState(() => {
@@ -1061,33 +1063,56 @@ function CustomerAppInner() {
     try {
       const langNames = { es:'Spanish', fr:'French', it:'Italian', de:'German', ru:'Russian', zh:'Chinese (Simplified)', ar:'Arabic', nl:'Dutch', pt:'Portuguese', sv:'Swedish', pl:'Polish', tr:'Turkish' }
       const UI = {
-        home:'Home', search:'Search', basket:'Basket', account:'Account', concierge:'Concierge', categories:'Categories',
-        tagline:'24/7 Delivery - Ibiza', orderNow:'Order Now', back:'Back', cancel:'Cancel', save:'Save', apply:'Apply',
-        searchPlaceholder:'Ask Isla anything, beach day, cocktail night, hangover cure',
-        bestSellers:'Best sellers', newIn:'New in', orderAgain:'Order again', popularNow:'Popular right now',
-        designExperience:'Design Your Experience', designNight:'Design Your Night', designDay:'Design Your Day',
+        // ── Navigation & Core ──
+        home:'Home', search:'Search', basket:'Basket', account:'Account', 
+        concierge:'Concierge', categories:'Categories', back:'Back', 
+        cancel:'Cancel', save:'Save', apply:'Apply', close:'Close',
+        loading:'Loading', loadingOrders:'Loading orders',
+        // ── Home screen ──
+        tagline:'24/7 Delivery - Ibiza', orderNow:'Order Now',
+        searchPlaceholder:'Ask Isla anything - beach day, cocktail night, hangover cure',
+        bestSellers:'Best sellers', newIn:'New in', orderAgain:'Order again', 
+        popularNow:'Popular right now', recommended:'Recommended',
+        designExperience:'Design Your Experience', 
+        designNight:'Design Your Night', designDay:'Design Your Day',
         designNightSub:'Club nights, villa parties, pre-drinks and more',
         designDaySub:'Pool parties, beach days, boat trips and more',
         justLanded:'Just landed in Ibiza?',
-        justLandedDesc:'Get everything you need delivered in under 30 minutes, drinks, food, sun cream, the works.',
-        arrivalPackages:'See arrival packages', onSale:'On Sale', recentlyViewed:'Recently viewed',
-        seeAll:'See all', addToCart:'Add',
-        viewCart:'View basket', checkout:'Order now, deliver ASAP', yourBasketEmpty:'Your basket is empty',
-        addSomethingDelicious:'Add something delicious', orderSummary:'Order summary',
-        subtotal:'Subtotal', delivery:'Delivery', total:'Total', free:'Free',
-        discountCode:'Discount code', freeDelivery:'Free delivery on orders over 200 euros',
+        justLandedDesc:'Get everything you need delivered in under 30 minutes - drinks, food, sun cream, the works.',
+        arrivalPackages:'See arrival packages', onSale:'On Sale', 
+        recentlyViewed:'Recently viewed', seeAll:'See all', addToCart:'Add',
+        drinksSub:'Drinks - Snacks - Tobacco', deliveryLocation:'Delivery location',
+        noThanks:'No thanks', upTo20:'Up to 20% off',
+        // ── Basket & Checkout ──
+        viewCart:'View basket', checkout:'Order now - deliver ASAP', 
+        yourBasketEmpty:'Your basket is empty',
+        addSomethingDelicious:'Add something delicious',
+        orderSummary:'Order summary', subtotal:'Subtotal', 
+        delivery:'Delivery', total:'Total', free:'Free',
+        discountCode:'Discount code', clearBasket:'Empty basket',
+        freeDelivery:'Free delivery on orders over 200 euros',
         scheduleOrder:'Schedule for later', groupOrder:'Group order',
-        ageWarning:'ID required at delivery for alcohol and tobacco', payment:'Payment',
+        ageWarning:'ID required at delivery for alcohol and tobacco',
+        payment:'Payment', continueShopping:'Continue shopping',
+        items:'items', item:'item',
+        // ── Account ──
         signIn:'Sign in', signUp:'Create account', signOut:'Sign out',
-        myOrders:'My orders', myAccount:'My account', myDetails:'My details', myCredit:'My credit',
-        noOrdersYet:'No orders yet', loading:'Loading',
-        whatPlanning:'What are you planning tonight?', islaSearching:'Isla is searching for you',
-        noResults:'No results, try different words',
+        email:'Email', password:'Password', name:'Full name',
+        myOrders:'My orders', myAccount:'My account', myDetails:'My details',
+        myCredit:'My credit', noOrdersYet:'No orders yet',
+        loyaltyRewards:'Isla Rewards', pointsHistory:'Points history',
+        availableCredit:'Available Credit', aboutIsla:'About Isla Drop',
+        addressesFromPrev:'Addresses from your previous orders',
+        appliedAtCheckout:'Applied automatically at checkout',
+        // ── Search ──
+        whatPlanning:'What are you planning tonight?',
+        islaSearching:'Isla is searching for you',
+        noResults:'No results - try different words',
         vibePreDrinks:'Pre-drinks', vibePreDrinksSub:'Spirits, mixers, shots and ice for the night ahead',
         vibeCocktail:'Cocktail night', vibeCocktailSub:'Everything to mix perfect cocktails',
         vibeSundowner:'Sundowner', vibeSundDownerSub:'Rose, Aperol Spritz and cold drinks for the golden hour',
         vibeLadies:'Ladies night', vibeLadiesSub:'Champagne, Prosecco, rose and everything for a glamorous evening',
-        vibeBoys:'Boys night', vibeBoysSub:'Cold beers, shots and party supplies',
+        vibeBoys:'Boys night', vibeBoysSub:'Cold beers, shots and party supplies - no fuss maximum fun',
         vibeHangover:'Hangover cure', vibeHangoverSub:'Electrolytes, vitamins, coconut water',
         vibeDateNight:'Date night', vibeDateSub:'Premium champagne, rose and a cocktail kit for two',
         vibePool:'Pool party', vibePoolSub:'Cold drinks, beers, ice and everything for a perfect pool day',
@@ -1095,18 +1120,48 @@ function CustomerAppInner() {
         vibeBirthday:'Birthday', vibeBirthdaySub:'Champagne, sparklers and party supplies',
         vibeBeach:'Beach day', vibeBeachSub:'Water, suncream, snacks and beach essentials',
         vibeSnacks:'Snacks board', vibeSnacksSub:'Crisps, antipasto, olives and sharing boards',
+        // ── Categories ──
         spirits:'Spirits', champagne:'Champagne', wine:'Wine', beerCider:'Beer and Cider',
         softDrinks:'Soft drinks', water:'Water', ice:'Ice', snacks:'Snacks',
-        tobacco:'Tobacco', wellness:'Wellness', essentials:'Essentials', beach:'Beach',
-        party:'Party', cocktail:'Cocktails', fresh:'Fresh and Garnish',
-        numberOfGuests:'Number of guests', selectDate:'Select date', getDirections:'Get directions',
-        designMyNight:'Design My Night', designMyDay:'Design My Day', requestSent:'Request sent!',
-        dinnerClubsVip:'Dinner, clubs, VIP', bookNow:'Book now',
-        welcomeWhiteIsle:'Welcome to the White Isle', ibizaArrivalPackage:'Ibiza Arrival Package',
-        addAllToBasket:'Add all to basket', liveTracking:'Live tracking',
-        tapToTrack:'Tap to track', placeAnotherOrder:'Place another order',
-        deliveryAddress:'Enter delivery address',
-        continueShopping:'Continue shopping', items:'items', item:'item', noThanks:'No thanks',
+        tobacco:'Tobacco', wellness:'Wellness', essentials:'Essentials', 
+        beach:'Beach', party:'Party', cocktail:'Cocktails', fresh:'Fresh and Garnish',
+        // ── Concierge ──
+        luxuryExperiences:'Luxury experiences - Ibiza',
+        boatsBeachesLunch:'Boats, beaches, lunch', specialRequests:'Special requests (optional)',
+        islaDropConcierge:'Isla Drop concierge service',
+        islaInsider:'Isla insider', numberOfGuests:'Number of guests',
+        selectDate:'Select date', getDirections:'Get directions',
+        designMyNight:'Design My Night', designMyDay:'Design My Day',
+        requestSent:'Request sent!', dinnerClubsVip:'Dinner, clubs, VIP',
+        bookNow:'Book now', highlights:'Highlights',
+        boats:'Boats and Yachts', villas:'Villas', clubs:'Club Tickets',
+        vip:'VIP Packages', beachClubs:'Beach Clubs',
+        restaurants:'Restaurants', experiences:'Experiences', all:'All',
+        // ── Arrival packages ──
+        welcomeWhiteIsle:'Welcome to the White Isle',
+        ibizaArrivalPackage:'Ibiza Arrival Package',
+        addAllToBasket:'Add all to basket', viewPackage:'View package',
+        customise:'Customise', readyMade:'Ready-made', askIsla:'Ask Isla',
+        designMyArrival:'Design my arrival with Isla',
+        choosePackage:'Choose your package',
+        backToPackages:'Back to packages',
+        // ── Party Builder ──
+        alcohol:'Alcohol', budget:'Budget', guests:'Guests', duration:'Duration',
+        noAlcohol:'No alcohol', beerAndWine:'Beer and wine',
+        mixedSpiritsWine:'Mixed spirits and wine', champagneFocused:'Champagne focused',
+        // ── Schedule ──
+        scheduleYourOrder:'Schedule Your Order',
+        // ── Group order ──
+        groupOrder2:'Group Order', orderTogether:'Order together',
+        // ── Tracking ──
+        liveTracking:'Live tracking', tapToTrack:'Tap to track',
+        placeAnotherOrder:'Place another order', orderPlaced:'Order placed',
+        driverAssigned:'Driver assigned', delivered:'Delivered',
+        // ── Support & Misc ──
+        customerSupport:'Customer Support', messageDriver:'Message Driver',
+        rateYourOrder:'Rate your order', rateYourDriver:'Rate your driver',
+        howWasYourOrder:'How was your order?', addTip:'Add a tip for your driver',
+        deliveryAddress:'Enter delivery address', clubNightCalendar:'Club Night Calendar',
       }
       const list = Object.entries(UI).map(([k,v]) => k + ': ' + v).join('\n')
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1228,7 +1283,7 @@ function CustomerAppInner() {
         <div style={{ padding:'16px 16px 20px' }}>
           <button onClick={()=>setView(VIEWS.BASKET)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:14,cursor:'pointer',fontFamily:'DM Sans,sans-serif',marginBottom:12 }}>← Back to basket</button>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:20 }}>{t.checkout}</div>
-          <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>Delivery location</div>
+          <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>{t.deliveryLocation||'Delivery location'}</div>
           <div style={{ borderRadius:14,overflow:'hidden',marginBottom:20 }}>
             <DeliveryMap onLocationSet={()=>setLocationSet(true)} />
           </div>
@@ -1381,6 +1436,7 @@ function CustomerAppInner() {
 
   // ── MAIN SHELL — tab bar lives here only ──────────────────
   return (
+    <TranslationContext.Provider value={t}>
     <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
       {translating && (
         <div style={{ position:'fixed', top:0, left:'50%', transform:'translateX(-50%)', zIndex:999, background:'rgba(196,104,58,0.95)', color:'white', fontSize:12, padding:'6px 16px', fontFamily:'DM Sans,sans-serif', borderRadius:'0 0 10px 10px', display:'flex', alignItems:'center', gap:6 }}>
@@ -1461,6 +1517,7 @@ function CustomerAppInner() {
 
       <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}'}</style>
     </div>
+    </TranslationContext.Provider>
   )
 }
 

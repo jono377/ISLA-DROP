@@ -429,6 +429,7 @@ const CATEGORIES = [
 
 // ── Calendar ─────────────────────────────────────────────────
 function BookingModal({ service, onClose, onBook }) {
+  const t = useT_ctx()
   const [date, setDate] = useState('')
   const [guests, setGuests] = useState(service.minGuests)
   const [notes, setNotes] = useState('')
@@ -859,8 +860,8 @@ export default function Concierge({ onBack }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           </button>
           <div>
-            <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 24, color: 'white', lineHeight: 1 }}>Concierge</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Luxury experiences · Ibiza</div>
+            <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 24, color: 'white', lineHeight: 1 }}>{t.concierge||'Concierge'}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{t.luxuryExperiences||'Luxury experiences · Ibiza'}</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', scrollbarWidth: 'none' }}>

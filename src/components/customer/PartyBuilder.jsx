@@ -189,13 +189,13 @@ function PackageForm({ packageType, onBuild, onBack }) {
 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:0 }}>
         <div>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>Guests</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>{t.guests||'Guests'}</div>
           <select value={form.guests} onChange={set('guests')} style={sel}>
             {['2','4','6','8','10','12','15','20','25','30','40','50+'].map(n => <option key={n} value={n}>{n} guests</option>)}
           </select>
         </div>
         <div>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>Duration</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>{t.duration||'Duration'}</div>
           <select value={form.duration} onChange={set('duration')} style={sel}>
             {['2','3','4','5','6','8','all night'].map(h => <option key={h} value={h}>{h === 'all night' ? 'All night' : h + ' hours'}</option>)}
           </select>
@@ -204,7 +204,7 @@ function PackageForm({ packageType, onBuild, onBack }) {
 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
         <div>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>Alcohol</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>{t.alcohol||'Alcohol'}</div>
           <select value={form.alcohol} onChange={set('alcohol')} style={sel}>
             <option value="yes_mixed">Mixed — spirits and wine</option>
             <option value="yes_champagne">Champagne focused</option>
@@ -215,7 +215,7 @@ function PackageForm({ packageType, onBuild, onBack }) {
           </select>
         </div>
         <div>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>Budget</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:6, fontFamily:'DM Sans,sans-serif' }}>{t.budget||'Budget'}</div>
           <select value={form.budget} onChange={set('budget')} style={sel}>
             <option value="100">Up to €100</option>
             <option value="200">Up to €200</option>

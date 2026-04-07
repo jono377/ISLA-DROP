@@ -52,9 +52,9 @@ function MyOrders({ onBack }) {
     <div style={{ padding:'20px 16px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:20, padding:0 }}>←</button>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>{t.myOrders||'My orders'}</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>{t.myOrders||'My orders'||t.myOrders||'My orders'}</div>
       </div>
-      {loading && <div style={{ textAlign:'center', padding:40, color:C.muted }}>Loading orders...</div>}
+      {loading && <div style={{ textAlign:'center', padding:40, color:C.muted }}>{t.loadingOrders||'Loading orders...'}</div>}
       {!loading && orders.length === 0 && (
         <div style={{ textAlign:'center', padding:'40px 0' }}>
           <div style={{ fontSize:48, marginBottom:12 }}>📦</div>
@@ -119,7 +119,7 @@ function MyFavourites({ onBack }) {
       {favourites.length === 0 ? (
         <div style={{ textAlign:'center', padding:'40px 0' }}>
           <div style={{ fontSize:48, marginBottom:12 }}>❤️</div>
-          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:C.text, marginBottom:8 }}>{t.noFavourites||'No favourites yet'}</div>
+          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:C.text, marginBottom:8 }}>{t.noFavourites||'No favourites yet'||t.noFavourites||'No favourites yet'}</div>
           <div style={{ fontSize:14, color:C.muted }}>Tap the heart on any product to save it here</div>
         </div>
       ) : favourites.map(p => (
@@ -213,7 +213,7 @@ function MyAddresses({ onBack }) {
         <button onClick={onBack} style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:20, padding:0 }}>←</button>
         <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>My Addresses</div>
       </div>
-      <div style={{ fontSize:13, color:C.muted, marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>Addresses from your previous orders</div>
+      <div style={{ fontSize:13, color:C.muted, marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>{t.addressesFromPrev||'Addresses from your previous orders'}</div>
       {loading && <div style={{ textAlign:'center', padding:30, color:C.muted }}>{'Loading...'||'Loading...'}</div>}
       {!loading && addresses.length === 0 && (
         <div style={{ textAlign:'center', padding:'30px 0' }}>
@@ -291,9 +291,9 @@ function MyCredit({ onBack }) {
 
       {/* Balance card */}
       <div style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.3),rgba(43,122,139,0.3))', border:`0.5px solid rgba(196,104,58,0.3)`, borderRadius:16, padding:24, marginBottom:20, textAlign:'center' }}>
-        <div style={{ fontSize:12, color:C.muted, textTransform:'uppercase', letterSpacing:'1px', marginBottom:8 }}>Available Credit</div>
+        <div style={{ fontSize:12, color:C.muted, textTransform:'uppercase', letterSpacing:'1px', marginBottom:8 }}>{t.availableCredit||'Available Credit'}</div>
         <div style={{ fontFamily:'DM Serif Display,serif', fontSize:48, color:C.text, marginBottom:4 }}>€{loading?'—':credit.toFixed(2)}</div>
-        <div style={{ fontSize:12, color:C.muted }}>Applied automatically at checkout</div>
+        <div style={{ fontSize:12, color:C.muted }}>{t.appliedAtCheckout||'Applied automatically at checkout'}</div>
       </div>
 
       {/* How it works */}
@@ -314,7 +314,7 @@ function MyCredit({ onBack }) {
       {/* Transactions */}
       {transactions.length > 0 && (
         <>
-          <div style={{ fontSize:11, color:C.muted, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:10, fontFamily:'DM Sans,sans-serif' }}>{t.transactionHistory||'Transaction History'}</div>
+          <div style={{ fontSize:11, color:C.muted, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:10, fontFamily:'DM Sans,sans-serif' }}>{t.transactionHistory||'Transaction History'||t.transactionHistory||'Transaction History'}</div>
           {transactions.map((t,i) => (
             <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`0.5px solid rgba(255,255,255,0.06)` }}>
               <div>
@@ -329,7 +329,7 @@ function MyCredit({ onBack }) {
         </>
       )}
       {!loading && transactions.length === 0 && (
-        <div style={{ textAlign:'center', padding:'20px 0', color:C.muted, fontSize:13 }}>{t.noCreditYet||'No credit transactions yet'}</div>
+        <div style={{ textAlign:'center', padding:'20px 0', color:C.muted, fontSize:13 }}>{'No credit transactions yet'||'No credit transactions yet'}</div>
       )}
     </div>
   )
@@ -341,7 +341,7 @@ function AboutIsla({ onBack }) {
     <div style={{ padding:'20px 16px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:24 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:20, padding:0 }}>←</button>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>About Isla Drop</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>{t.aboutIsla||'About Isla Drop'}</div>
       </div>
 
       <div style={{ textAlign:'center', marginBottom:28 }}>
@@ -520,7 +520,7 @@ export default function AccountView() {
             style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', background:'linear-gradient(135deg,rgba(139,96,32,0.2),rgba(196,104,58,0.1))', border:'0.5px solid rgba(139,96,32,0.3)', borderRadius:12, marginBottom:8, cursor:'pointer' }}>
             <span style={{ fontSize:18 }}>⭐</span>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:14, color:'white', fontFamily:'DM Sans,sans-serif' }}>Isla Rewards</div>
+              <div style={{ fontSize:14, color:'white', fontFamily:'DM Sans,sans-serif' }}>{t.loyaltyRewards||'Isla Rewards'}</div>
               <div style={{ fontSize:11, color:'rgba(196,104,58,0.8)', marginTop:1, fontFamily:'DM Sans,sans-serif' }}>Earn points · Tier rewards · Refer friends</div>
             </div>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>

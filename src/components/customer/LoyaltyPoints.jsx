@@ -10,7 +10,7 @@ const TIERS = [
 ]
 
 function getTier(points) {
-  return TIERS.find(t => points >= t.min && points <= t.max) || TIERS[0]
+  return TIERS.find(tier => points >= tier.min && points <= tier.max) || TIERS[0]
 }
 
 export default function LoyaltyPoints({ onBack }) {
@@ -72,7 +72,7 @@ export default function LoyaltyPoints({ onBack }) {
     <div style={{ padding:'0 16px 32px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', cursor:'pointer', fontSize:20, padding:0 }}>←</button>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white' }}>Isla Rewards</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white' }}>{t.loyaltyRewards||'Isla Rewards'}</div>
       </div>
 
       {/* Tier card */}
@@ -126,7 +126,7 @@ export default function LoyaltyPoints({ onBack }) {
       {/* History */}
       {history.length > 0 && (
         <>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:10 }}>Points history</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:10 }}>{t.pointsHistory||'Points history'}</div>
           {history.map((t, i) => (
             <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'9px 0', borderBottom:'0.5px solid rgba(255,255,255,0.07)' }}>
               <div>

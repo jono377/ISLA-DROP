@@ -1,6 +1,8 @@
+import { useT_ctx } from '../../i18n/TranslationContext'
 import { useState } from 'react'
 
 export default function ScheduleOrder({ onSchedule, onCancel, currentTotal }) {
+  const t = useT_ctx()
   const [date, setDate]   = useState('')
   const [time, setTime]   = useState('')
   const [error, setError] = useState('')
@@ -28,7 +30,7 @@ export default function ScheduleOrder({ onSchedule, onCancel, currentTotal }) {
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.8)', zIndex:300, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
       <div style={{ background:'linear-gradient(170deg,#0D3545,#1A5060)', borderRadius:'20px 20px 0 0', padding:24, width:'100%', maxWidth:480 }}>
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, margin:'0 auto 20px' }} />
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:6 }}>Schedule Your Order</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:6 }}>{t.scheduleYourOrder||'Schedule Your Order'}</div>
         <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:20 }}>Order in advance — we will deliver at your chosen time</div>
 
         <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>

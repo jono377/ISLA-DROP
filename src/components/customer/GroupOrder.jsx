@@ -1,3 +1,4 @@
+import { useT_ctx } from '../../i18n/TranslationContext'
 import { useState, useEffect } from 'react'
 import { PRODUCTS } from '../../lib/products'
 import { useCartStore, useAuthStore } from '../../lib/store'
@@ -8,6 +9,7 @@ function generateCode() {
 }
 
 export default function GroupOrder({ onBack, onJoinedOrder }) {
+  const t = useT_ctx()
   const { user, profile } = useAuthStore()
   const { addItem } = useCartStore()
   const [mode, setMode]         = useState(null) // null | 'create' | 'join'
@@ -98,14 +100,14 @@ export default function GroupOrder({ onBack, onJoinedOrder }) {
     <div style={{ padding:'0 16px 32px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.6)', cursor:'pointer', fontSize:20, padding:0 }}>←</button>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white' }}>Group Order</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white' }}>{t.groupOrder2||'Group Order'}</div>
       </div>
 
       {!mode && (
         <>
           <div style={{ textAlign:'center', padding:'20px 0 28px' }}>
             <div style={{ fontSize:48, marginBottom:12 }}>👥</div>
-            <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:8 }}>Order together</div>
+            <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:8 }}>{t.orderTogether||'Order together'}</div>
             <div style={{ fontSize:14, color:'rgba(255,255,255,0.5)', lineHeight:1.6 }}>Create a shared basket and invite your group to add their own items — then place one order together</div>
           </div>
           <button onClick={createGroup} disabled={loading}
