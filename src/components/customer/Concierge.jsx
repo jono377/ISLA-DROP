@@ -650,6 +650,7 @@ function DesignExperience({ onBook }) {
   const [result, setResult] = useState(null)
   const [prompt, setPrompt] = useState('')
   const [startTime, setStartTime] = useState('')
+  const [bookingItem, setBookingItem] = useState(null)
 
   const QUICK_DAY = ['Romantic couple day', 'Group of 8 friends', 'Family with children', 'Solo luxury escape', 'Birthday celebration day', 'Pool party day', 'Beach club day']
   const QUICK_NIGHT = ['VIP club night', 'Ladies night out', 'Boys night out', "Gentleman's evening", 'Birthday night out', 'Intimate dinner evening', 'Sunset to sunrise', 'Luxury couple evening']
