@@ -1,3 +1,4 @@
+import { useT_ctx } from '../../i18n/TranslationContext'
 import { useState } from 'react'
 import { PRODUCTS } from '../../lib/products'
 import { useCartStore } from '../../lib/store'
@@ -47,6 +48,7 @@ const ARRIVAL_PACKAGES = [
 ]
 
 export default function ArrivalPackage({ onBack }) {
+  const t = useT_ctx()
   const { addItem } = useCartStore()
   // t comes from prop or is hardcoded
   const [selected, setSelected] = useState(null)

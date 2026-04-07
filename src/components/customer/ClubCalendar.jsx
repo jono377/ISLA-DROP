@@ -1,3 +1,4 @@
+import { useT_ctx } from '../../i18n/TranslationContext'
 import { useState } from 'react'
 import { useCartStore } from '../../lib/store'
 import toast from 'react-hot-toast'
@@ -36,6 +37,7 @@ const PRE_DRINK_KITS = {
 }
 
 export default function ClubCalendar({ onBack }) {
+  const t = useT_ctx()
   const [selectedDay, setSelectedDay] = useState(DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1])
   const [expanded, setExpanded] = useState(null)
   const { addItem } = useCartStore()

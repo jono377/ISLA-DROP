@@ -1,3 +1,4 @@
+import { useT_ctx } from '../../i18n/TranslationContext'
 import { useState, useEffect } from 'react'
 import { useAuthStore, useCartStore } from '../../lib/store'
 import AuthScreen from '../shared/AuthScreen'
@@ -51,7 +52,7 @@ function MyOrders({ onBack }) {
     <div style={{ padding:'20px 16px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:20, padding:0 }}>←</button>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>My Orders</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>{t.myOrders||'My orders'}</div>
       </div>
       {loading && <div style={{ textAlign:'center', padding:40, color:C.muted }}>Loading orders...</div>}
       {!loading && orders.length === 0 && (
@@ -118,7 +119,7 @@ function MyFavourites({ onBack }) {
       {favourites.length === 0 ? (
         <div style={{ textAlign:'center', padding:'40px 0' }}>
           <div style={{ fontSize:48, marginBottom:12 }}>❤️</div>
-          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:C.text, marginBottom:8 }}>No favourites yet</div>
+          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:C.text, marginBottom:8 }}>{t.noFavourites||'No favourites yet'}</div>
           <div style={{ fontSize:14, color:C.muted }}>Tap the heart on any product to save it here</div>
         </div>
       ) : favourites.map(p => (
@@ -313,7 +314,7 @@ function MyCredit({ onBack }) {
       {/* Transactions */}
       {transactions.length > 0 && (
         <>
-          <div style={{ fontSize:11, color:C.muted, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:10, fontFamily:'DM Sans,sans-serif' }}>Transaction History</div>
+          <div style={{ fontSize:11, color:C.muted, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:10, fontFamily:'DM Sans,sans-serif' }}>{t.transactionHistory||'Transaction History'}</div>
           {transactions.map((t,i) => (
             <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`0.5px solid rgba(255,255,255,0.06)` }}>
               <div>
@@ -328,7 +329,7 @@ function MyCredit({ onBack }) {
         </>
       )}
       {!loading && transactions.length === 0 && (
-        <div style={{ textAlign:'center', padding:'20px 0', color:C.muted, fontSize:13 }}>No credit transactions yet</div>
+        <div style={{ textAlign:'center', padding:'20px 0', color:C.muted, fontSize:13 }}>{t.noCreditYet||'No credit transactions yet'}</div>
       )}
     </div>
   )
@@ -451,7 +452,8 @@ function SpendTracker({ onBack }) {
   )
 }
 
-export default function AccountView({ t }) {
+export default function AccountView() {
+  const t = useT_ctx()
   const { user, profile, clear } = useAuthStore()
   const [showAuth, setShowAuth]   = useState(false)
   const [screen, setScreen]       = useState(null) // null | 'orders' | 'favourites' | 'details' | 'addresses' | 'credit' | 'support' | 'about'
@@ -478,7 +480,7 @@ export default function AccountView({ t }) {
 
   return (
     <div style={{ padding:'20px 16px 32px' }}>
-      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:26, color:C.text, marginBottom:20 }}>Account</div>
+      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:26, color:C.text, marginBottom:20 }}>{t.account||'Account'}</div>
 
       {user ? (
         <>

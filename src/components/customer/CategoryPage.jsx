@@ -1,3 +1,4 @@
+import { useT_ctx } from '../../i18n/TranslationContext'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { PRODUCTS, CATEGORIES } from '../../lib/products'
@@ -69,6 +70,7 @@ export function AllProductsPage({ title, products, onBack }) {
 
 // ── Category page ─────────────────────────────────────────────
 export default function CategoryPage({ categoryKey, onBack }) {
+  const t = useT_ctx()
   const getProductName = (_id, name) => name || ""
   const getCategoryLabel = (_key, label) => label || ""
   const [activeSub, setActiveSub] = useState(null)
@@ -108,7 +110,7 @@ export default function CategoryPage({ categoryKey, onBack }) {
         {products.map(p=><ProductCard key={p.id} product={p}/>)}
       </div>
       {products.length===0 && (
-        <div style={{ textAlign:'center',padding:'60px 20px',color:C.muted,fontSize:14 }}>No products in this selection.</div>
+        <div style={{ textAlign:'center',padding:'60px 20px',color:C.muted,fontSize:14 }}>{t.noProducts||'No products in this selection.'}</div>
       )}
     </div>
   )

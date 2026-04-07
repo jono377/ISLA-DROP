@@ -1,3 +1,4 @@
+import { useT_ctx } from '../../i18n/TranslationContext'
 import { useState, useRef, useEffect } from 'react'
 import { useCartStore } from '../../lib/store'
 import toast from 'react-hot-toast'
@@ -488,7 +489,7 @@ function BookingModal({ service, onClose, onBook }) {
             <span>included</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 500, color: 'white', fontFamily: 'DM Sans,sans-serif', borderTop: '0.5px solid rgba(255,255,255,0.1)', paddingTop: 8 }}>
-            <span>Total</span>
+            <span>{t.total||'Total'}</span>
             <span style={{ color: '#E8A070' }}>€{total.toLocaleString()}</span>
           </div>
         </div>
@@ -546,7 +547,7 @@ function ServiceCard({ service, onBook, onDirections }) {
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: 'DM Sans,sans-serif' }}>{service.subtitle}</div>
         </div>
         {service.popular && (
-          <div style={{ background: '#C4683A', borderRadius: 20, padding: '3px 9px', fontSize: 10, color: 'white', fontWeight: 500, flexShrink: 0 }}>Popular</div>
+          <div style={{ background: '#C4683A', borderRadius: 20, padding: '3px 9px', fontSize: 10, color: 'white', fontWeight: 500, flexShrink: 0 }}>{t.popular||'Popular'}</div>
         )}
       </div>
 
@@ -647,7 +648,7 @@ function DesignExperience({ onBook }) {
 
   if (!mode) return (
     <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
-      <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 20, color: 'white', marginBottom: 6 }}>Design Your Experience</div>
+      <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 20, color: 'white', marginBottom: 6 }}>{t.designExperience||'Design Your Experience'}</div>
       <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16, fontFamily: 'DM Sans,sans-serif' }}>Let Isla AI curate the perfect itinerary for you</div>
       <div style={{ display: 'flex', gap: 10 }}>
         <button onClick={() => setMode('day')} style={{ flex: 1, padding: '14px', background: 'rgba(245,201,122,0.15)', border: '0.5px solid rgba(245,201,122,0.3)', borderRadius: 12, cursor: 'pointer', textAlign: 'center' }}>
@@ -746,6 +747,7 @@ function DesignExperience({ onBook }) {
 
 // ── Main Concierge Page ───────────────────────────────────────
 export default function Concierge({ onBack }) {
+  const t = useT_ctx()
   // t comes from prop or is hardcoded
   const [activeCategory, setActiveCategory] = useState('all')
   const [bookingService, setBookingService] = useState(null)

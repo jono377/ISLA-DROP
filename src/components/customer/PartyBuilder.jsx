@@ -1,3 +1,4 @@
+import { useT_ctx } from '../../i18n/TranslationContext'
 import { useState, useRef } from 'react'
 import { PRODUCTS } from '../../lib/products'
 import { useCartStore } from '../../lib/store'
@@ -499,6 +500,7 @@ function PackageTypeSelector({ onSelect }) {
 
 // ── Main PartyBuilder ─────────────────────────────────────────
 export default function PartyBuilder({ onBack, initialType }) {
+  const t = useT_ctx()
   const [step, setStep]       = useState(initialType ? 'form' : 'select')
   const [packageType, setPkgType] = useState(initialType || null)
   const [pkg, setPkg]         = useState(null)

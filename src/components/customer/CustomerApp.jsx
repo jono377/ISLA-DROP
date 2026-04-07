@@ -4,6 +4,7 @@ import { useCartStore, useAuthStore } from '../../lib/store'
 import { PRODUCTS, CATEGORIES, BEST_SELLERS, NEW_IN } from '../../lib/products'
 import { calculateETA, shouldShowDriverOnMap, formatETA, isLate } from '../../lib/eta'
 import { LANGUAGES, useT } from '../../i18n/translations'
+import { TranslationContext } from '../../i18n/TranslationContext'
 import AgeVerification from './AgeVerification'
 import StripeCheckout from './StripeCheckout'
 import DeliveryMap from './DeliveryMap'
@@ -1027,6 +1028,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
         </div>
       )}
     </div>
+    </TranslationContext.Provider>
   )
 }
 
@@ -1370,6 +1372,7 @@ export default function CustomerApp() {
 
   // ── MAIN SHELL — tab bar lives here only ──────────────────
   return (
+    <TranslationContext.Provider value={t}>
     <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
       {translating && (
         <div style={{ position:'fixed', top:0, left:'50%', transform:'translateX(-50%)', zIndex:999, background:'rgba(196,104,58,0.95)', color:'white', fontSize:12, padding:'6px 16px', fontFamily:'DM Sans,sans-serif', borderRadius:'0 0 10px 10px', display:'flex', alignItems:'center', gap:6 }}>
@@ -1385,7 +1388,7 @@ export default function CustomerApp() {
       {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>navigate(VIEWS.ASSIST)} onBest={()=>navigate(VIEWS.BEST)} onNewIn={()=>navigate(VIEWS.NEWIN)} onParty={(type)=>{ setPartyType(type); navigate(VIEWS.PARTY) }} onArrival={()=>navigate(VIEWS.ARRIVAL)} />}
       {view===VIEWS.SEARCH   && <SearchView t={t} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onGroupOrder={()=>navigate(VIEWS.GROUP)} onSchedule={()=>setShowSchedule(true)} />}
-      {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
+      {view===VIEWS.ACCOUNT  && <AccountView />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.PARTY     && <PartyBuilder initialType={partyType} onBack={goBack} />}
       {view===VIEWS.GROUP     && <GroupOrder onBack={goBack} />}
