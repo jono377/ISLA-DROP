@@ -587,14 +587,15 @@ function ServiceCard({ service, onBook, onDirections }) {
 }
 
 // ── AI Design My Day/Night ────────────────────────────────────
-async function designExperience(prompt, type, userBookings) {
-  const serviceList = SERVICES.map(s => s.id + '|' + s.name + '|' + s.category + '|€' + s.price + ' ' + s.unit).join('\n')
-  const today = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' })
-  const bookingsContext = userBookings && userBookings.length > 0
-    ? 'Client has booked with us: ' + userBookings.map(b => b.service_name + ' on ' + b.booking_date).join(', ')
-    : 'No prior bookings with us — do NOT assume accommodation type or other bookings'
+async function designExperience(userPrompt, type) {
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('No API key configured')
 
-  const system = 'You are Isla — the most plugged-in, creative and indispensable Ibiza concierge. You live and breathe this island. You know which DJ is on at which club tonight, when restaurants hit their stride, when the beach clubs peak. You are warm, specific, and genuinely excited about making this experience unforgettable.\n\nCRITICAL RULES:\n- NEVER suggest a villa or private accommodation option unless the client has booked one with us\n- DO suggest restaurants, beach clubs, boats, experiences based on their vibe\n- For club nights: suggest arrival 45-90 mins after the headliner starts (clubs are dead when they open)\n- For restaurants: suggest prime booking times (8:30-9:30pm for most Ibiza restaurants, not 7pm which is tourist hour)\n- For beach clubs: arrive by 1pm to get beds, peak vibe is 3-5pm\n- For sunsets: San Antonio lighthouse area or Cafe del Mar, arrive 30 mins before sunset\n- Be CREATIVE and SPECIFIC with timing\n- Today is: ' + today + '\n\nCLIENT CONTEXT:\n' + bookingsContext + '\n\nOUR SERVICES (id|name|category|price):\n' + serviceList + '\n\nReturn JSON only: { "title": "string", "intro": "string", "timeline": [{ "time": "string", "activity": "string", "detail": "string", "service_id": "optional" }], "isla_insight": "string", "services": ["id1"], "vibe_tags": ["tag1"] }'
+  const serviceList = SERVICES.map(s => s.id + '|' + s.name + '|€' + s.price + ' ' + s.unit).join('\n')
+
+  const systemPrompt = 'You are Isla, the most knowledgeable Ibiza concierge. Design a perfect ' + type + ' experience. Be specific with times, venues and insider tips. Always respond with valid JSON only in this format: {"title":"string","intro":"string","timeline":[{"time":"HH:MM","venue":"string","tip":"string","service_id":"optional id from catalogue"}],"isla_insight":"string","vibe_tags":["tag1","tag2"]}'
+
+  const userMessage = 'Design a perfect Ibiza ' + type + ' for: ' + userPrompt + '\n\nAvailable services to reference (use service_id when relevant):\n' + serviceList
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -602,28 +603,30 @@ async function designExperience(prompt, type, userBookings) {
       'Content-Type': 'application/json',
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
-      'x-api-key': impor.meta.env.VITE_ANTHROPIC_API_KEY || '',
+      'x-api-key': apiKey,
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 1200,
-      system,
-      messages: [{ role: 'user', content: 'Design a ' + type + ' experience for: ' + prompt }],
-    }),
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }]
+    })
   })
 
-  if (!resp.ok) throw new Error('API error: ' + resp.status)
+  if (!resp.ok) {
+    const errText = await resp.text()
+    throw new Error('API ' + resp.status + ': ' + errText.slice(0, 100))
+  }
+
   const data = await resp.json()
-  if (!resp.ok) throw new Error('API error ' + resp.status)
   const raw = data.content?.[0]?.text || ''
-  if (!raw) throw new Error('Empty response')
-  // Try to parse as JSON, or wrap plain text as a result object
+  if (!raw) throw new Error('Empty response from API')
+
   try {
-    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
-    return parsed
+    return JSON.parse(raw.replace(/```json|```/g, '').trim())
   } catch {
-    // Return plain text response as structured result
-    return { title: type === 'night' ? 'Your Perfect Night' : 'Your Perfect Day', text: raw, services: [], isla_insight: '' }
+    // Claude returned plain text - wrap it
+    return { title: 'Your Perfect ' + (type === 'night' ? 'Night' : 'Day'), intro: raw, timeline: [], isla_insight: '', vibe_tags: [] }
   }
 }
 
@@ -653,7 +656,15 @@ function DesignExperience({ onBook }) {
       setResult(r)
     } catch(err) {
       console.error('Design experience error:', err)
-      setResult({ title: '', text: 'Isla is thinking... please try again in a moment. Make sure your request is detailed — mention group size, vibe, budget or time of day for best results.', services: [], isla_insight: '' })
+      const msg = err.message || 'Unknown error'
+      const isKeyMissing = msg.includes('No API key')
+      setResult({
+        title: '',
+        text: isKeyMissing
+          ? 'AI features require the Anthropic API key to be set in Vercel environment variables.'
+          : 'Could not generate right now (' + msg + '). Please try again.',
+        timeline: [], isla_insight: '', vibe_tags: []
+      })
     }
     setLoading(false)
   }
@@ -717,9 +728,9 @@ function DesignExperience({ onBook }) {
             </div>
           )}
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px 16px', marginBottom: 14, fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, fontFamily: 'DM Sans,sans-serif', whiteSpace: 'pre-wrap' }}>
-            {result?.intro || result?.text}
+            {result?.intro || result?.text || result?.description || ""}
           </div>
-          {result?.timeline && result?.timeline.map((item, i) => (
+          {result?.timeline && result.timeline.length > 0 && result.timeline.map((item, i) => (
             <div key={i} style={{ display:'flex', gap:12, marginBottom:12, background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'10px 12px' }}>
               <div style={{ flexShrink:0, textAlign:'right', minWidth:52 }}>
                 <div style={{ fontSize:12, fontWeight:500, color:'#E8A070', fontFamily:'DM Sans,sans-serif' }}>{item.time}</div>
