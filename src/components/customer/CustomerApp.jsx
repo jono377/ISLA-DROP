@@ -709,8 +709,8 @@ const PAIRINGS = {
   'wn-021': ['ic-001'],                             // Rose -> Ice
 }
 
-function DrinkPairingToast({
-  const t = useT_ctx() productId, onAdd, onDismiss }) {
+function DrinkPairingToast({ productId, onAdd, onDismiss }) {
+  const t = useT_ctx()
   const pairIds = PAIRINGS[productId] || []
   const pairs = pairIds.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
   if (pairs.length === 0) return null
