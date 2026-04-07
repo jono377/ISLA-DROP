@@ -761,14 +761,26 @@ function DesignExperience({ onBook }) {
             {result?.intro || result?.text || result?.description || ""}
           </div>
           {result?.timeline && result.timeline.length > 0 && result.timeline.map((item, i) => (
-            <div key={i} style={{ display:'flex', gap:12, marginBottom:12, background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'10px 12px' }}>
+            <div key={i}
+              onClick={() => {
+                const svc = item.service_id ? SERVICES.find(s => s.id === item.service_id) : null
+                if (svc) {
+                  setBookingItem({ service: svc, suggestedTime: item.time })
+                } else {
+                  // No bookable service - show the time as selected for general enquiry
+                  setBookingItem({ suggestedTime: item.time, label: item.venue || item.activity })
+                }
+              }}
+              style={{ display:'flex', gap:12, marginBottom:12, background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'10px 12px', cursor:'pointer', border:'0.5px solid rgba(255,255,255,0.08)', transition:'background 0.15s' }}>
               <div style={{ flexShrink:0, textAlign:'right', minWidth:52 }}>
-                <div style={{ fontSize:12, fontWeight:500, color:'#E8A070', fontFamily:'DM Sans,sans-serif' }}>{item.time}</div>
+                <div style={{ fontSize:12, fontWeight:600, color:'#E8A070', fontFamily:'DM Sans,sans-serif' }}>{item.time}</div>
+                <div style={{ fontSize:10, color:'rgba(196,104,58,0.6)', marginTop:2 }}>tap</div>
               </div>
-              <div>
-                <div style={{ fontSize:13, fontWeight:500, color:'white', fontFamily:'DM Sans,sans-serif', marginBottom:3 }}>{item.activity}</div>
-                <div style={{ fontSize:12, color:'rgba(255,255,255,0.55)', lineHeight:1.5, fontFamily:'DM Sans,sans-serif' }}>{item.detail}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13, fontWeight:500, color:'white', fontFamily:'DM Sans,sans-serif', marginBottom:3 }}>{item.venue || item.activity}</div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,0.55)', lineHeight:1.5, fontFamily:'DM Sans,sans-serif' }}>{item.tip || item.detail}</div>
               </div>
+              <div style={{ fontSize:16, opacity:0.4, alignSelf:'center' }}>›</div>
             </div>
           ))}
           {result?.isla_insight && (
@@ -789,7 +801,22 @@ function DesignExperience({ onBook }) {
               </>
             )
           })()}
-          <button onClick={() => { setResult(null); setPrompt('') }} style={{ width: '100%', padding: '11px', background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', marginTop: 8 }}>
+          {bookingItem && bookingItem.service && (
+            <BookingModal
+              service={bookingItem.service}
+              onClose={() => setBookingItem(null)}
+              onBook={(booking) => { onBook({ ...booking, time: bookingItem.suggestedTime || booking.time }); setBookingItem(null) }}
+            />
+          )}
+          {bookingItem && !bookingItem.service && (
+            <div style={{ background:'rgba(43,122,139,0.15)', border:'0.5px solid rgba(43,122,139,0.3)', borderRadius:12, padding:'16px', marginBottom:12 }}>
+              <div style={{ fontSize:14, color:'white', fontFamily:'DM Sans,sans-serif', marginBottom:8 }}>📅 {bookingItem.label}</div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)', fontFamily:'DM Sans,sans-serif', marginBottom:12 }}>Suggested time: <strong style={{ color:'#E8A070' }}>{bookingItem.suggestedTime}</strong></div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', fontFamily:'DM Sans,sans-serif', marginBottom:12 }}>This experience can be arranged through Isla. Send us a message and we will take care of everything.</div>
+              <button onClick={() => setBookingItem(null)} style={{ padding:'8px 16px', background:'none', border:'0.5px solid rgba(255,255,255,0.2)', borderRadius:8, color:'rgba(255,255,255,0.5)', fontSize:12, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>Close</button>
+            </div>
+          )}
+          <button onClick={() => { setResult(null); setPrompt(''); setBookingItem(null) }} style={{ width: '100%', padding: '11px', background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', marginTop: 8 }}>
             Generate another experience
           </button>
         </>
