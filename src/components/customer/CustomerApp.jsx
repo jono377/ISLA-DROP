@@ -1028,7 +1028,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
         </div>
       )}
     </div>
-    </TranslationContext.Provider>
   )
 }
 
@@ -1453,5 +1452,6 @@ export default function CustomerApp() {
 
       <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}'}</style>
     </div>
+    </TranslationContext.Provider>
   )
 }
