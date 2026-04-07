@@ -766,7 +766,7 @@ function SmartReorderSection() {
   return (
     <div style={{ marginBottom:20 }}>
       <div style={{ padding:'0 16px', marginBottom:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }>{t.orderAgain||'Order again'}</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>{t.orderAgain||'Order again'}</div>
       </div>
       <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
         {lastOrders.map(o => {
