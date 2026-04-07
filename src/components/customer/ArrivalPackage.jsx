@@ -60,7 +60,7 @@ export default function ArrivalPackage({ onBack }) {
       if (p) { addItem(p); count++ }
     })
     await new Promise(r => setTimeout(r, 400))
-    toas'success'('Welcome to Ibiza! ' + count + ' items added 🌴', { duration: 3000 })
+    toast.success('Welcome to Ibiza! ' + count + ' items added 🌴', { duration: 3000 })
     setAdding(null)
     onBack()
   }

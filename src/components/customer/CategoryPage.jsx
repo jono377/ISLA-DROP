@@ -17,29 +17,29 @@ const C = {
 }
 
 function ProductCard({ product }) {
-  const qty = useCartStore(s => s.items.find(i => i.produc'id' === produc'id')?.quantity ?? 0)
+  const qty = useCartStore(s => s.items.find(i => i.product.id === product.id)?.quantity ?? 0)
   const { addItem, updateQuantity } = useCartStore()
 
   return (
     <div style={{ background:C.card, border:'0.5px solid ' + C.border, borderRadius:14, overflow:'hidden', position:'relative' }}>
       <div style={{ position:'relative' }}>
-        <ProductImage productId={produc'id'} emoji={produc'emoji'} category={produc'category'} alt={produc'name'} size="card" style={{ height:120 }} />
+        <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="card" style={{ height:120 }} />
         {qty === 0
-          ? <button onClick={()=>{ addItem(product); toas'success'(produc'emoji'+' Added!',{duration:900}) }}
+          ? <button onClick={()=>{ addItem(product); toast.success(product.emoji+' Added!',{duration:900}) }}
               style={{ position:'absolute',top:8,right:8,width:30,height:30,background:C.accent,border:'2px solid rgba(255,255,255,0.7)',borderRadius:'50%',color:'white',fontSize:19,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,0.2)',lineHeight:1 }}>+</button>
           : <div style={{ position:'absolute',top:8,right:8,display:'flex',alignItems:'center',gap:4,background:'rgba(0,0,0,0.65)',borderRadius:20,padding:'3px 8px',boxShadow:'0 2px 8px rgba(0,0,0,0.15)' }}>
-              <button onClick={()=>updateQuantity(produc'id',qty-1)} style={{ width:20,height:20,background:'rgba(255,255,255,0.15)',border:'none',borderRadius:'50%',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',color:'white' }}>−</button>
+              <button onClick={()=>updateQuantity(product.id,qty-1)} style={{ width:20,height:20,background:'rgba(255,255,255,0.15)',border:'none',borderRadius:'50%',cursor:'pointer',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',color:'white' }}>−</button>
               <span style={{ fontSize:12,fontWeight:500,color:'white',minWidth:12,textAlign:'center' }}>{qty}</span>
-              <button onClick={()=>updateQuantity(produc'id',qty+1)} style={{ width:20,height:20,background:C.accent,border:'none',borderRadius:'50%',cursor:'pointer',fontSize:13,color:'white',display:'flex',alignItems:'center',justifyContent:'center' }}>+</button>
+              <button onClick={()=>updateQuantity(product.id,qty+1)} style={{ width:20,height:20,background:C.accent,border:'none',borderRadius:'50%',cursor:'pointer',fontSize:13,color:'white',display:'flex',alignItems:'center',justifyContent:'center' }}>+</button>
             </div>
         }
-        {produc'age_restricted' && (
+        {product.age_restricted && (
           <div style={{ position:'absolute',top:8,left:8,background:'rgba(0,0,0,0.55)',borderRadius:8,padding:'2px 7px',fontSize:10,color:'white',fontFamily:'DM Sans,sans-serif' }}>18+</div>
         )}
       </div>
       <div style={{ padding:'10px 12px 12px' }}>
-        <div style={{ fontSize:12,fontWeight:500,color:C.text,lineHeight:1.3,marginBottom:4,minHeight:30 }}>{getProductName(produc'id', produc'name')}</div>
-        <div style={{ fontSize:14,fontWeight:500,color:C.accentAlt }}>€{produc'price'.toFixed(2)}</div>
+        <div style={{ fontSize:12,fontWeight:500,color:C.text,lineHeight:1.3,marginBottom:4,minHeight:30 }}>{getProductName(product.id, product.name)}</div>
+        <div style={{ fontSize:14,fontWeight:500,color:C.accentAlt }}>€{product.price.toFixed(2)}</div>
       </div>
     </div>
   )

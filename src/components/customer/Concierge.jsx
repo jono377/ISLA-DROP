@@ -431,7 +431,7 @@ function BookingModal({ service, onClose, onBook }) {
   const [date, setDate] = useState('')
   const [guests, setGuests] = useState(service.minGuests)
   const [notes, setNotes] = useState('')
-  const total = service.price * (service.uni'includes'('person') ? guests : 1)
+  const total = service.price * (service.unit.includes('person') ? guests : 1)
 
   const minDate = new Date()
   minDate.setDate(minDate.getDate() + 1)
@@ -458,9 +458,9 @@ function BookingModal({ service, onClose, onBook }) {
         </div>
 
         <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>{'Select date'||'Select date'}</div>
-        <input type="date" value={date} min={minDateStr} onChange={e => setDate(e.targe'value')} style={{ ...inp, colorScheme: 'dark' }} />
+        <input type="date" value={date} min={minDateStr} onChange={e => setDate(e.target.value)} style={{ ...inp, colorScheme: 'dark' }} />
 
-        {service.uni'includes'('person') && service.maxGuests > 1 && (
+        {service.unit.includes('person') && service.maxGuests > 1 && (
           <>
             <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>{'Number of guests'||'Number of guests'}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
@@ -475,13 +475,13 @@ function BookingModal({ service, onClose, onBook }) {
         )}
 
         <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>Special requests (optional)</div>
-        <textarea value={notes} onChange={e => setNotes(e.targe'value')} placeholder="Any special requirements, dietary needs, occasion details..." rows={3}
+        <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any special requirements, dietary needs, occasion details..." rows={3}
           style={{ ...inp, resize: 'none', lineHeight: 1.5 }} />
 
         <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: 12, padding: '12px 14px', marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>
             <span>{service.name}</span>
-            <span>€{service.price.toLocaleString()} {service.uni'includes'('person') ? 'x ' + guests : ''}</span>
+            <span>€{service.price.toLocaleString()} {service.unit.includes('person') ? 'x ' + guests : ''}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8, fontFamily: 'DM Sans,sans-serif' }}>
             <span>Isla Drop concierge (10%)</span>
@@ -493,7 +493,7 @@ function BookingModal({ service, onClose, onBook }) {
           </div>
         </div>
 
-        <button onClick={() => { if (!date) { toas'error'('Please select a date'); return } onBook({ service, date, guests, notes, total }) }}
+        <button onClick={() => { if (!date) { toast.error('Please select a date'); return } onBook({ service, date, guests, notes, total }) }}
           style={{ width: '100%', padding: '15px', background: '#C4683A', color: 'white', border: 'none', borderRadius: 12, fontFamily: 'DM Sans,sans-serif', fontSize: 15, fontWeight: 500, cursor: 'pointer', marginBottom: 10 }}>
           Request Booking
         </button>
@@ -599,7 +599,7 @@ async function designExperience(prompt, type, userBookings) {
       'Content-Type': 'application/json',
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
-      'x-api-key': impor'meta'.env.VITE_ANTHROPIC_API_KEY || '',
+      'x-api-key': impor.meta.env.VITE_ANTHROPIC_API_KEY || '',
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
@@ -679,8 +679,8 @@ function DesignExperience({ onBook }) {
             ))}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <input value={prompt} onChange={e => setPrompt(e.targe'value')} onKeyDown={e => e.key === 'Enter' && generate()} placeholder="Describe your group, occasion or vibe..." style={{ flex: 1, padding: '11px 14px', background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: 24, fontFamily: 'DM Sans,sans-serif', fontSize: 13, color: 'white', outline: 'none' }} />
-            <button onClick={() => generate()} disabled={!promp'trim'()} style={{ width: 42, height: 42, background: promp'trim'() ? '#C4683A' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <input value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && generate()} placeholder="Describe your group, occasion or vibe..." style={{ flex: 1, padding: '11px 14px', background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.14)', borderRadius: 24, fontFamily: 'DM Sans,sans-serif', fontSize: 13, color: 'white', outline: 'none' }} />
+            <button onClick={() => generate()} disabled={!promp.trim()} style={{ width: 42, height: 42, background: promp.trim() ? '#C4683A' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
             </button>
           </div>
@@ -697,16 +697,16 @@ function DesignExperience({ onBook }) {
       {result && (
         <>
           {/* Handle both old {text} and new {title,intro,timeline} formats */}
-          {resul'title' && (
+          {resul.title && (
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:4 }}>{resul'title'}</div>
-              {resul'vibe_tags' && <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>{resul'vibe_tags'.map((t,i) => <span key={i} style={{ fontSize:11, background:'rgba(255,255,255,0.1)', borderRadius:20, padding:'3px 9px', color:'rgba(255,255,255,0.6)' }}>{t}</span>)}</div>}
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:4 }}>{resul.title}</div>
+              {resul.vibe_tags && <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>{resul.vibe_tags.map((t,i) => <span key={i} style={{ fontSize:11, background:'rgba(255,255,255,0.1)', borderRadius:20, padding:'3px 9px', color:'rgba(255,255,255,0.6)' }}>{t}</span>)}</div>}
             </div>
           )}
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px 16px', marginBottom: 14, fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, fontFamily: 'DM Sans,sans-serif', whiteSpace: 'pre-wrap' }}>
-            {resul'intro' || resul'text'}
+            {resul.intro || resul.text}
           </div>
-          {resul'timeline' && resul'timeline'.map((item, i) => (
+          {resul.timeline && resul.timeline.map((item, i) => (
             <div key={i} style={{ display:'flex', gap:12, marginBottom:12, background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'10px 12px' }}>
               <div style={{ flexShrink:0, textAlign:'right', minWidth:52 }}>
                 <div style={{ fontSize:12, fontWeight:500, color:'#E8A070', fontFamily:'DM Sans,sans-serif' }}>{item.time}</div>
@@ -717,14 +717,14 @@ function DesignExperience({ onBook }) {
               </div>
             </div>
           ))}
-          {resul'isla_insight' && (
+          {resul.isla_insight && (
             <div style={{ background:'rgba(196,104,58,0.15)', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:10, padding:'10px 12px', marginBottom:14, fontSize:12, color:'#E8A070', lineHeight:1.5, fontFamily:'DM Sans,sans-serif' }}>
-              <span style={{ fontWeight:500 }}>Isla insider: </span>{resul'isla_insight'}
+              <span style={{ fontWeight:500 }}>Isla insider: </span>{resul.isla_insight}
             </div>
           )}
-          {resul'services' && resul'services'.length > 0 && (() => {
+          {resul.services && resul.services.length > 0 && (() => {
             // AI returns array of IDs (strings) — look up full service objects
-            const resolvedServices = resul'services'
+            const resolvedServices = resul.services
               .map(s => typeof s === 'string' ? SERVICES.find(sv => sv.id === s) : s)
               .filter(Boolean)
             if (resolvedServices.length === 0) return null
@@ -776,8 +776,8 @@ export default function Concierge({ onBack }) {
       } catch {}
 
       // Call the edge function
-      const supabaseUrl = impor'meta'.env.VITE_SUPABASE_URL
-      const supabaseKey = impor'meta'.env.VITE_SUPABASE_ANON_KEY
+      const supabaseUrl = impor.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = impor.meta.env.VITE_SUPABASE_ANON_KEY
       const res = await fetch(supabaseUrl + '/functions/v1/process-concierge-booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + supabaseKey },
@@ -803,24 +803,24 @@ export default function Concierge({ onBack }) {
         })
       })
       const result = await res.json()
-      if (!resul'success') throw new Error(resul'error' || 'Booking failed')
-      toas'dismiss'('booking')
-      if (resul'instantly_confirmed') {
-        toas'success'('Booking instantly confirmed! Check your email.', { duration: 6000 })
+      if (!resul.success) throw new Error(resul.error || 'Booking failed')
+      toas.dismiss('booking')
+      if (resul.instantly_confirmed) {
+        toast.success('Booking instantly confirmed! Check your email.', { duration: 6000 })
       } else {
-        toas'success'('Request sent — we will confirm within 2 hours.', { duration: 5000 })
+        toast.success('Request sent — we will confirm within 2 hours.', { duration: 5000 })
       }
       setBookingConfirmed({
         service, date, guests, notes, total,
-        bookingRef: resul'booking_ref',
-        instantlyConfirmed: resul'instantly_confirmed',
-        method: resul'method',
-        confirmationCode: resul'confirmation_code',
+        bookingRef: resul.booking_ref,
+        instantlyConfirmed: resul.instantly_confirmed,
+        method: resul.method,
+        confirmationCode: resul.confirmation_code,
       })
     } catch (err) {
-      toas'dismiss'('booking')
+      toas.dismiss('booking')
       // Fallback — still show confirmation screen, email might not have sent
-      toas'success'('Request received! We will confirm within 2 hours.', { duration: 4000 })
+      toast.success('Request received! We will confirm within 2 hours.', { duration: 4000 })
       setBookingConfirmed({ service, date, guests, notes, total, bookingRef: 'CB-' + Date.now().toString(36).toUpperCase() })
     }
   }
@@ -863,9 +863,9 @@ export default function Concierge({ onBack }) {
         </div>
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', scrollbarWidth: 'none' }}>
           {CATEGORIES.map(cat => (
-            <button key={ca'key'} onClick={() => setActiveCategory(ca'key')}
-              style={{ padding: '7px 14px', borderRadius: 20, fontSize: 12, background: activeCategory === ca'key' ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.1)', color: activeCategory === ca'key' ? '#0D3B4A' : 'white', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: activeCategory === ca'key' ? 500 : 400, whiteSpace: 'nowrap', flexShrink: 0 }}>
-              {ca'emoji'} {ca'label'}
+            <button key={ca.key} onClick={() => setActiveCategory(ca.key)}
+              style={{ padding: '7px 14px', borderRadius: 20, fontSize: 12, background: activeCategory === ca.key ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.1)', color: activeCategory === ca.key ? '#0D3B4A' : 'white', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: activeCategory === ca.key ? 500 : 400, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {ca.emoji} {ca.label}
             </button>
           ))}
         </div>
