@@ -1036,7 +1036,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 }
 
 // ── Root App ──────────────────────────────────────────────────
-export default function CustomerAppInner() {
+function CustomerAppInner() {
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [viewHistory, setViewHistory] = useState([])
   const [lang, setLangState]           = useState(() => {
