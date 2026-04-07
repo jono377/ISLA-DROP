@@ -732,6 +732,7 @@ function DrinkPairingToast({ productId, onAdd, onDismiss }) {
 
 // ── Smart Reorder ─────────────────────────────────────────────
 function SmartReorderSection() {
+  const t = useT_ctx()
   const [lastOrders, setLastOrders] = useState([])
   const { addItem } = useCartStore()
   const { user } = useAuthStore()
@@ -765,7 +766,7 @@ function SmartReorderSection() {
   return (
     <div style={{ marginBottom:20 }}>
       <div style={{ padding:'0 16px', marginBottom:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }}>{'Order again'||'Order again'}</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:18, color:'white' }>{t.orderAgain||'Order again'}</div>
       </div>
       <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
         {lastOrders.map(o => {
@@ -948,7 +949,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
         <div style={{ paddingBottom:20 }}>
           {prevItems.length>0 && (
             <div style={{ paddingTop:20,marginBottom:22 }}>
-              <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,padding:'0 16px',marginBottom:12,color:'white' }}>🔄 {'Order again'}</div>
+              <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,padding:'0 16px',marginBottom:12,color:'white' }}>🔄 {t.orderAgain||'Order again'}</div>
               <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{prevItems.slice(0,8).map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
             </div>
           )}

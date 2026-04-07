@@ -538,6 +538,7 @@ function DirectionsModal({ service, onClose }) {
 
 // ── Service Card ─────────────────────────────────────────────
 function ServiceCard({ service, onBook, onDirections }) {
+  const t = useT_ctx()
   return (
     <div style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 16, overflow: 'hidden', marginBottom: 12 }}>
       {/* Header */}
