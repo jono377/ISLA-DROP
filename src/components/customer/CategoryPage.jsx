@@ -18,6 +18,7 @@ const C = {
 }
 
 function ProductCard({ product }) {
+  const getProductName = (id, name) => name || ""
   const qty = useCartStore(s => s.items.find(i => i.product.id === product.id)?.quantity ?? 0)
   const { addItem, updateQuantity } = useCartStore()
 

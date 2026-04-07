@@ -1,3 +1,4 @@
+import { useT_ctx } from '../../i18n/TranslationContext'
 import { useState, useRef, useEffect } from 'react'
 import { PRODUCTS, CATEGORIES } from '../../lib/products'
 import { useCartStore } from '../../lib/store'
@@ -125,6 +126,7 @@ function BotProductCard({ product }) {
 
 // ── Main Isla AI ──────────────────────────────────────────────
 export default function AssistBot({ onClose }) {
+  const t = useT_ctx()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
