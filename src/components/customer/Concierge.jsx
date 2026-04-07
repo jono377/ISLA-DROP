@@ -431,6 +431,7 @@ const CATEGORIES = [
 function BookingModal({ service, onClose, onBook }) {
   const t = useT_ctx()
   const [date, setDate] = useState('')
+  const [time, setTime] = useState('18:00')
   const [guests, setGuests] = useState(service.minGuests)
   const [notes, setNotes] = useState('')
   const total = service.price * (service.unit.includes('person') ? guests : 1)
@@ -461,6 +462,9 @@ function BookingModal({ service, onClose, onBook }) {
 
         <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif' }}>{'Select date'||'Select date'}</div>
         <input type="date" value={date} min={minDateStr} onChange={e => setDate(e.target.value)} style={{ ...inp, colorScheme: 'dark' }} />
+
+        <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 6, fontFamily: 'DM Sans,sans-serif', marginTop: 12 }}>Preferred time</div>
+        <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ ...inp, colorScheme: 'dark' }} />
 
         {service.unit.includes('person') && service.maxGuests > 1 && (
           <>
@@ -495,7 +499,7 @@ function BookingModal({ service, onClose, onBook }) {
           </div>
         </div>
 
-        <button onClick={() => { if (!date) { toast.error('Please select a date'); return } onBook({ service, date, guests, notes, total }) }}
+        <button onClick={() => { if (!date) { toast.error('Please select a date'); return } onBook({ service, date, time, guests, notes, total }) }}
           style={{ width: '100%', padding: '15px', background: '#C4683A', color: 'white', border: 'none', borderRadius: 12, fontFamily: 'DM Sans,sans-serif', fontSize: 15, fontWeight: 500, cursor: 'pointer', marginBottom: 10 }}>
           Request Booking
         </button>
