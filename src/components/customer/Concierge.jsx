@@ -758,7 +758,7 @@ export default function Concierge({ onBack }) {
 
   const handleConfirmBooking = async ({ service, date, guests, notes, total }) => {
     setBookingService(null)
-    toas'Loading...'('Processing your booking...', { id: 'booking' })
+    toast.loading('Processing your booking...', { id: 'booking' })
     try {
       // Get user details from Supabase if logged in
       let customerEmail = 'guest@isladrop.net'
