@@ -54,7 +54,7 @@ function SplashScreen({ onEnter }) {
         <div style={{ fontSize:12, color:'rgba(255,255,255,0.68)', letterSpacing:'3.5px', textTransform:'uppercase', marginBottom:5 }}>24/7 Delivery · Ibiza</div>
         <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:40 }}>Drinks · Snacks · Tobacco</div>
         <button onClick={onEnter} style={{ width:'100%', padding:'18px', background:'#C4683A', color:'white', border:'none', borderRadius:16, fontFamily:'DM Sans,sans-serif', fontSize:17, fontWeight:500, cursor:'pointer', boxShadow:'0 8px 32px rgba(196,104,58,0.55)', marginBottom:14 }}>{'Order Now'||'Order Now'}</button>
-        <div style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.3)' }}>{t.anytime||'Anytime. Anywhere. Ibiza.'}</div>
+        <div style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.3)' }}>{'Anytime. Anywhere. Ibiza.'}</div>
       </div>
     </div>
   )

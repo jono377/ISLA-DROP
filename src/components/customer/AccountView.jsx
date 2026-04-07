@@ -57,7 +57,7 @@ function MyOrders({ onBack }) {
       {!loading && orders.length === 0 && (
         <div style={{ textAlign:'center', padding:'40px 0' }}>
           <div style={{ fontSize:48, marginBottom:12 }}>📦</div>
-          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:C.text, marginBottom:8 }}>{t.noOrdersYet||'No orders yet'}</div>
+          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:C.text, marginBottom:8 }}>{'No orders yet'||'No orders yet'}</div>
           <div style={{ fontSize:14, color:C.muted }}>Your order history will appear here</div>
         </div>
       )}
@@ -162,7 +162,7 @@ function MyDetails({ onBack }) {
     <div style={{ padding:'20px 16px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:20, padding:0 }}>←</button>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>{t.myDetails||'My Details'}</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>{'My Details'||'My Details'}</div>
       </div>
       <input value={name} onChange={e=>setName(e.target.value)} placeholder="Full name" style={inp} />
       <input value={user?.email||''} disabled placeholder="Email" style={{ ...inp, opacity:0.5, cursor:'not-allowed' }} />
@@ -213,7 +213,7 @@ function MyAddresses({ onBack }) {
         <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>My Addresses</div>
       </div>
       <div style={{ fontSize:13, color:C.muted, marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>Addresses from your previous orders</div>
-      {loading && <div style={{ textAlign:'center', padding:30, color:C.muted }}>{t.loading||'Loading...'}</div>}
+      {loading && <div style={{ textAlign:'center', padding:30, color:C.muted }}>{'Loading...'||'Loading...'}</div>}
       {!loading && addresses.length === 0 && (
         <div style={{ textAlign:'center', padding:'30px 0' }}>
           <div style={{ fontSize:40, marginBottom:12 }}>📍</div>
@@ -285,7 +285,7 @@ function MyCredit({ onBack }) {
     <div style={{ padding:'20px 16px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
         <button onClick={onBack} style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:20, padding:0 }}>←</button>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>{t.myCredit||'My Credit'}</div>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text }}>{'My Credit'||'My Credit'}</div>
       </div>
 
       {/* Balance card */}
@@ -297,7 +297,7 @@ function MyCredit({ onBack }) {
 
       {/* How it works */}
       <div style={{ background:'rgba(255,255,255,0.04)', borderRadius:12, padding:'14px 16px', marginBottom:16 }}>
-        <div style={{ fontSize:13, fontWeight:500, color:C.text, marginBottom:8, fontFamily:'DM Sans,sans-serif' }}>{t.howCreditWorks||'How credit works'}</div>
+        <div style={{ fontSize:13, fontWeight:500, color:C.text, marginBottom:8, fontFamily:'DM Sans,sans-serif' }}>{'How credit works'||'How credit works'}</div>
         <div style={{ fontSize:12, color:C.muted, lineHeight:1.7, fontFamily:'DM Sans,sans-serif' }}>
           When you are due a refund, you can choose to receive it as Isla Drop credit instead of waiting 3-5 business days for a bank transfer. Credit is applied instantly and automatically deducted from your next order. You can also request a cash refund at any time using the button below.
         </div>
@@ -434,7 +434,7 @@ function SpendTracker({ onBack }) {
         ))}
       </div>
 
-      {loading ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)' }}>{t.loading||'Loading...'}</div> : (
+      {loading ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)' }}>{'Loading...'||'Loading...'}</div> : (
         orders.length === 0
           ? <div style={{ textAlign:'center', padding:30, color:'rgba(255,255,255,0.4)', fontSize:13 }}>No orders in this period</div>
           : orders.map((o, i) => (
@@ -505,7 +505,7 @@ export default function AccountView({ t }) {
             style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', background:'rgba(196,104,58,0.12)', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:12, marginBottom:8, cursor:'pointer' }}>
             <span style={{ fontSize:18 }}>💳</span>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:14, color:C.text, fontFamily:'DM Sans,sans-serif' }}>{t.myCredit||'My Credit'}</div>
+              <div style={{ fontSize:14, color:C.text, fontFamily:'DM Sans,sans-serif' }}>{'My Credit'||'My Credit'}</div>
               <div style={{ fontSize:11, color:'rgba(196,104,58,0.8)', marginTop:1, fontFamily:'DM Sans,sans-serif' }}>Refund credit · Instant to use at checkout</div>
             </div>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
@@ -537,7 +537,7 @@ export default function AccountView({ t }) {
           <div onClick={signOut}
             style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', background:'rgba(196,104,58,0.08)', border:'0.5px solid rgba(196,104,58,0.2)', borderRadius:12, cursor:'pointer' }}>
             <span style={{ fontSize:18 }}>🚪</span>
-            <span style={{ fontSize:14, color:'#E8A070', fontFamily:'DM Sans,sans-serif' }}>{t.signOut||'Sign out'}</span>
+            <span style={{ fontSize:14, color:'#E8A070', fontFamily:'DM Sans,sans-serif' }}>{'Sign out'||'Sign out'}</span>
           </div>
         </>
       ) : (
@@ -549,7 +549,7 @@ export default function AccountView({ t }) {
             : <>
                 <div style={{ textAlign:'center', padding:'30px 0 20px' }}>
                   <div style={{ fontSize:48, marginBottom:14 }}>👤</div>
-                  <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text, marginBottom:8 }}>{t.myAccount||'Your account'}</div>
+                  <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:C.text, marginBottom:8 }}>{'My account'||'Your account'}</div>
                   <div style={{ fontSize:14, color:C.muted, marginBottom:24 }}>Sign in to track orders, save addresses and more</div>
                 </div>
                 <button onClick={() => setShowAuth(true)}
