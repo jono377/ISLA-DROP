@@ -701,16 +701,16 @@ function DesignExperience({ onBook }) {
       {result && (
         <>
           {/* Handle both old {text} and new {title,intro,timeline} formats */}
-          {resul.title && (
+          {result.title && (
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:4 }}>{resul.title}</div>
-              {resul.vibe_tags && <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>{resul.vibe_tags.map((t,i) => <span key={i} style={{ fontSize:11, background:'rgba(255,255,255,0.1)', borderRadius:20, padding:'3px 9px', color:'rgba(255,255,255,0.6)' }}>{t}</span>)}</div>}
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:4 }}>{result.title}</div>
+              {result.vibe_tags && <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>{result.vibe_tags.map((t,i) => <span key={i} style={{ fontSize:11, background:'rgba(255,255,255,0.1)', borderRadius:20, padding:'3px 9px', color:'rgba(255,255,255,0.6)' }}>{t}</span>)}</div>}
             </div>
           )}
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px 16px', marginBottom: 14, fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, fontFamily: 'DM Sans,sans-serif', whiteSpace: 'pre-wrap' }}>
-            {resul.intro || resul.text}
+            {result.intro || result.text}
           </div>
-          {resul.timeline && resul.timeline.map((item, i) => (
+          {result.timeline && result.timeline.map((item, i) => (
             <div key={i} style={{ display:'flex', gap:12, marginBottom:12, background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'10px 12px' }}>
               <div style={{ flexShrink:0, textAlign:'right', minWidth:52 }}>
                 <div style={{ fontSize:12, fontWeight:500, color:'#E8A070', fontFamily:'DM Sans,sans-serif' }}>{item.time}</div>
@@ -721,14 +721,14 @@ function DesignExperience({ onBook }) {
               </div>
             </div>
           ))}
-          {resul.isla_insight && (
+          {result.isla_insight && (
             <div style={{ background:'rgba(196,104,58,0.15)', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:10, padding:'10px 12px', marginBottom:14, fontSize:12, color:'#E8A070', lineHeight:1.5, fontFamily:'DM Sans,sans-serif' }}>
-              <span style={{ fontWeight:500 }}>Isla insider: </span>{resul.isla_insight}
+              <span style={{ fontWeight:500 }}>Isla insider: </span>{result.isla_insight}
             </div>
           )}
-          {resul.services && resul.services.length > 0 && (() => {
+          {result.services && result.services.length > 0 && (() => {
             // AI returns array of IDs (strings) — look up full service objects
-            const resolvedServices = resul.services
+            const resolvedServices = result.services
               .map(s => typeof s === 'string' ? SERVICES.find(sv => sv.id === s) : s)
               .filter(Boolean)
             if (resolvedServices.length === 0) return null
@@ -808,19 +808,19 @@ export default function Concierge({ onBack }) {
         })
       })
       const result = await res.json()
-      if (!resul.success) throw new Error(resul.error || 'Booking failed')
+      if (!result.success) throw new Error(result.error || 'Booking failed')
       toas.dismiss('booking')
-      if (resul.instantly_confirmed) {
+      if (result.instantly_confirmed) {
         toast.success('Booking instantly confirmed! Check your email.', { duration: 6000 })
       } else {
         toast.success('Request sent — we will confirm within 2 hours.', { duration: 5000 })
       }
       setBookingConfirmed({
         service, date, guests, notes, total,
-        bookingRef: resul.booking_ref,
-        instantlyConfirmed: resul.instantly_confirmed,
-        method: resul.method,
-        confirmationCode: resul.confirmation_code,
+        bookingRef: result.booking_ref,
+        instantlyConfirmed: result.instantly_confirmed,
+        method: result.method,
+        confirmationCode: result.confirmation_code,
       })
     } catch (err) {
       toas.dismiss('booking')
