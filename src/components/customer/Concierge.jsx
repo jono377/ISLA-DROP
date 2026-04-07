@@ -865,9 +865,9 @@ export default function Concierge({ onBack }) {
         </div>
         <div style={{ display: 'flex', gap: 7, overflowX: 'auto', scrollbarWidth: 'none' }}>
           {CATEGORIES.map(cat => (
-            <button key={ca.key} onClick={() => setActiveCategory(ca.key)}
-              style={{ padding: '7px 14px', borderRadius: 20, fontSize: 12, background: activeCategory === ca.key ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.1)', color: activeCategory === ca.key ? '#0D3B4A' : 'white', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: activeCategory === ca.key ? 500 : 400, whiteSpace: 'nowrap', flexShrink: 0 }}>
-              {ca.emoji} {ca.label}
+            <button key={cat.key} onClick={() => setActiveCategory(cat.key)}
+              style={{ padding: '7px 14px', borderRadius: 20, fontSize: 12, background: activeCategory === cat.key ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.1)', color: activeCategory === cat.key ? '#0D3B4A' : 'white', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: activeCategory === cat.key ? 500 : 400, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {cat.emoji} {cat.label}
             </button>
           ))}
         </div>

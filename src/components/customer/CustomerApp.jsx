@@ -217,7 +217,7 @@ function CheckoutSuggestions({ cartItems }) {
 function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
   const getProductName = (_id, name) => name || ""
   const cart = useCartStore()
-  const { updateQuantity } = useCartStore()
+  const { updateQuantity, clearCart } = useCartStore()
   if (cart.getItemCount()===0) return (
     <div style={{ display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:40,minHeight:'60vh' }}>
       <div style={{ fontSize:52,marginBottom:14 }}>🛒</div>
@@ -288,6 +288,10 @@ function BasketView({ t, onCheckout, onGroupOrder, onSchedule }) {
           {'🕐 ' + (t.scheduleOrder || 'Schedule for later')}
         </button>
       </div>
+      <button onClick={() => { if (window.confirm('Empty your basket?')) clearCart() }}
+        style={{ width:'100%', padding:'10px', background:'none', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:10, color:'rgba(255,255,255,0.5)', fontSize:13, cursor:'pointer', fontFamily:'DM Sans,sans-serif', marginBottom:8 }}>
+        🗑️ {t.clearBasket||'Empty basket'}
+      </button>
       <button onClick={onCheckout} style={{ width:'100%',padding:'16px',background:'#C4683A',color:'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:'pointer',boxShadow:'0 4px 20px rgba(196,104,58,0.4)' }}>
         {t.checkout || 'Order now'} →
       </button>
@@ -1032,7 +1036,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 }
 
 // ── Root App ──────────────────────────────────────────────────
-export default function CustomerApp() {
+export default function CustomerAppInner() {
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [viewHistory, setViewHistory] = useState([])
   const [lang, setLangState]           = useState(() => {
@@ -1199,24 +1203,27 @@ export default function CustomerApp() {
 
   // ── SPLASH — absolutely no tab bar ───────────────────────
   if (view===VIEWS.SPLASH) {
-    return <SplashScreen onEnter={()=>setView(VIEWS.HOME)} />
+    return <TranslationContext.Provider value={t}><SplashScreen onEnter={()=>setView(VIEWS.HOME)} /></TranslationContext.Provider>
   }
 
   // ── AGE VERIFY ────────────────────────────────────────────
   if (view===VIEWS.AGE_VERIFY) {
     return (
+      <TranslationContext.Provider value={t}>
       <div style={{ position:'fixed',inset:0,background:'rgba(10,25,35,0.75)',zIndex:200,display:'flex',alignItems:'flex-end',justifyContent:'center' }} onClick={()=>setView(VIEWS.BASKET)}>
         <div style={{ background:'#FEFCF9',borderRadius:'24px 24px 0 0',padding:'28px 24px 40px',width:'100%',maxWidth:480 }} onClick={e=>e.stopPropagation()}>
           <div style={{ width:36,height:4,background:'rgba(42,35,24,0.15)',borderRadius:2,margin:'0 auto 20px' }}/>
           <AgeVerification onVerified={()=>setView(VIEWS.CHECKOUT)} onClose={()=>setView(VIEWS.BASKET)} />
         </div>
       </div>
+      </TranslationContext.Provider>
     )
   }
 
   // ── CHECKOUT ──────────────────────────────────────────────
   if (view===VIEWS.CHECKOUT) {
     return (
+      <TranslationContext.Provider value={t}>
       <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:60 }}>
         <div style={{ padding:'16px 16px 20px' }}>
           <button onClick={()=>setView(VIEWS.BASKET)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:14,cursor:'pointer',fontFamily:'DM Sans,sans-serif',marginBottom:12 }}>← Back to basket</button>
@@ -1248,6 +1255,7 @@ export default function CustomerApp() {
           <StripeCheckout onSuccess={handlePaymentSuccess} onCancel={()=>setView(VIEWS.BASKET)} />
         </div>
       </div>
+      </TranslationContext.Provider>
     )
   }
 
@@ -1257,6 +1265,7 @@ export default function CustomerApp() {
     const LABELS={confirmed:'Confirmed',preparing:'Preparing',assigned:'Driver assigned',picked_up:'Picked up',en_route:'On the way',delivered:'Delivered!'}
     const idx=STEPS.indexOf(activeOrder.status)
     return (
+      <TranslationContext.Provider value={t}>
       <div style={{ background:C.bg, minHeight:'100vh', padding:'24px 16px 100px' }}>
         <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:4 }}>{activeOrder.status==='delivered'?'Delivered! 🎉':'On its way 🛵'}</div>
         <div style={{ fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20 }}>#{activeOrder.order_number}</div>
@@ -1366,12 +1375,12 @@ export default function CustomerApp() {
         ) : null}
         <button onClick={()=>setView(VIEWS.HOME)} style={{ width:'100%',padding:15,background:'#C4683A',color:'white',border:'none',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:15,cursor:'pointer' }}>{t.placeAnotherOrder||'Place another order'}</button>
       </div>
+      </TranslationContext.Provider>
     )
   }
 
   // ── MAIN SHELL — tab bar lives here only ──────────────────
   return (
-    <TranslationContext.Provider value={t}>
     <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
       {translating && (
         <div style={{ position:'fixed', top:0, left:'50%', transform:'translateX(-50%)', zIndex:999, background:'rgba(196,104,58,0.95)', color:'white', fontSize:12, padding:'6px 16px', fontFamily:'DM Sans,sans-serif', borderRadius:'0 0 10px 10px', display:'flex', alignItems:'center', gap:6 }}>
@@ -1452,6 +1461,10 @@ export default function CustomerApp() {
 
       <style>{'@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}'}</style>
     </div>
-    </TranslationContext.Provider>
   )
+}
+
+
+export default function CustomerApp() {
+  return <CustomerAppInner />
 }
