@@ -1036,7 +1036,7 @@ export default function CustomerApp() {
   const [viewHistory, setViewHistory] = useState([])
   const [lang, setLang]               = useState("en")
   const t                              = useT(lang)
-  // t available from parent scope
+  const translating                    = false
   const [categoryKey, setCategoryKey] = useState(null)
   const [prevCategoryKey, setPrevCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
