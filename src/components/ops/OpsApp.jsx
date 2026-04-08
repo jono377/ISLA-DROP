@@ -3,7 +3,7 @@ import {
   getOpsStats, subscribeToAllOrders, subscribeToDriverLocation
 } from '../../lib/supabase'
 import { supabase } from '../../lib/supabase'
-import { useOpsStore } from '../../lib/store'
+import { useOpsStore, useAuthStore } from '../../lib/store'
 import { formatDistanceToNow } from 'date-fns'
 import Analytics from './Analytics'
 import DemandForecast from './DemandForecast'
@@ -391,6 +391,15 @@ function DriverApprovals() {
 }
 
 export default function OpsApp() {
+  const { clear } = useAuthStore()
+  const handleSignOut = async () => {
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      await supabase.auth.signOut()
+    } catch {}
+    clear()
+  }
+
   const [tab, setTab] = useState('overview')
   const { stats, liveOrders, drivers, alerts, setStats, setLiveOrders, setDrivers, addAlert } = useOpsStore()
   const [clock, setClock] = useState(new Date())
@@ -550,7 +559,7 @@ export default function OpsApp() {
                 {activeOrders.length} active {activeOrders.length === 1 ? 'order' : 'orders'}
               </div>
             )}
-            <button onClick={() => { const { clear } = useAuthStore.getState(); clear(); }}
+            <button onClick={handleSignOut}
               style={{ padding: '7px 14px', background: '#F5F0E8', border: '0.5px solid rgba(42,35,24,0.15)', borderRadius: 8, fontSize: 12, cursor: 'pointer', color: '#7A6E60', fontFamily: 'DM Sans, sans-serif' }}>
               Sign out
             </button>
