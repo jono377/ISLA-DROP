@@ -1,215 +1,184 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
-import DriverMap from './DriverMap'
 import {
   getAvailableOrders, acceptOrder, updateOrderStatus,
   updateDriverLocation, setDriverOnlineStatus,
   subscribeToAvailableOrders
 } from '../../lib/supabase'
 import { useAuthStore, useDriverStore } from '../../lib/store'
+import { useLeafletMap, PIN_ICON, SCOOTER_ICON } from '../../lib/useLeafletMap'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const C = {
+  bg:      'linear-gradient(170deg,#0A2A38,#0D3545)',
+  card:    'rgba(255,255,255,0.07)',
+  border:  'rgba(255,255,255,0.12)',
+  accent:  '#C4683A',
+  green:   '#7EE8A2',
+  teal:    '#2B7A8B',
+  text:    'white',
+  muted:   'rgba(255,255,255,0.5)',
+  dim:     'rgba(255,255,255,0.25)',
+}
 
-// Status flow:
-// assigned -> warehouse_confirmed (driver confirms picked up from warehouse)
-// warehouse_confirmed -> en_route (driver leaves for delivery)
-// en_route -> delivered (PIN verified by customer)
+const WAREHOUSE = [38.9090, 1.4340]
+
+const STATUS_CONFIG = {
+  assigned:            { label: 'Go to warehouse',    color: '#7ECFE0', next: 'warehouse_confirmed', nextLabel: '✅ Collected from warehouse' },
+  warehouse_confirmed: { label: 'Head to customer',   color: '#C4683A', next: 'en_route',            nextLabel: '🛵 On my way' },
+  en_route:            { label: 'At delivery address', color: '#7EE8A2', next: null,                  nextLabel: null },
+  delivered:           { label: 'Delivered',           color: '#7EE8A2', next: null,                  nextLabel: null },
+}
 
 function orderItems(order) {
-  if (!order.order_items?.length) return 'Order items'
-  const items = order.order_items.slice(0, 3).map(i => i.quantity + 'x ' + (i.product?.name || ''))
+  if (!order.order_items?.length) return 'No items'
+  const items = order.order_items.slice(0, 3).map(i => i.quantity + 'x ' + (i.product?.name || i.products?.name || 'Item'))
   const extra = order.order_items.length > 3 ? ' +' + (order.order_items.length - 3) + ' more' : ''
   return items.join(', ') + extra
 }
 
-function openNavigation(order) {
-  const dest = order.delivery_lat && order.delivery_lng
-    ? order.delivery_lat + ',' + order.delivery_lng
-    : encodeURIComponent(order.delivery_address || '')
-  const ua = navigator.userAgent
-  if (/iPhone|iPad/i.test(ua)) window.open('maps://maps.apple.com/?daddr=' + dest)
-  else window.open('https://www.google.com/maps/dir/?api=1&destination=' + dest)
-}
-
-// ── Warehouse Stock Panel ─────────────────────────────────────
-function WarehouseStock() {
-  const [stock, setStock]   = useState([])
-  const [alerts, setAlerts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('low') // 'low' | 'all'
+// ── Delivery Map ──────────────────────────────────────────────
+function DeliveryMap({ order, driverPos, onClose }) {
+  const containerRef = useRef(null)
+  const { mapRef, setMarker, fitBounds, flyTo } = useLeafletMap(containerRef, {
+    center: order?.delivery_lat ? [order.delivery_lat, order.delivery_lng] : WAREHOUSE,
+    zoom: 14,
+    darkStyle: true,
+  })
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const { supabase } = await import('../../lib/supabase')
-        const [{ data: s }, { data: a }] = await Promise.all([
-          supabase.from('stock').select('product_id,product_name,category,current_qty,max_qty,alert_threshold,velocity').order('category').order('product_name'),
-          supabase.from('stock_alerts').select('*').eq('resolved', false).order('created_at', { ascending: false }).limit(20),
-        ])
-        if (s) setStock(s)
-        if (a) setAlerts(a)
-      } catch (err) { console.error(err) }
-      setLoading(false)
-    }
-    load()
-  }, [])
+    const timer = setInterval(() => {
+      if (!mapRef.current) return
+      clearInterval(timer)
 
-  const NEARBY_STORES = [
-    { name: 'Mercadona Ibiza Town', distance: '5 min', items: ['water','soft_drinks','snacks','ice'] },
-    { name: 'Mercadona San Antonio', distance: '12 min', items: ['water','soft_drinks','snacks','beer','ice'] },
-    { name: 'Cash & Carry (Airport area)', distance: '8 min', items: ['tobacco','spirits','beer','champagne','wine'] },
-    { name: 'Eroski Santa Eulalia', distance: '18 min', items: ['water','snacks','soft_drinks','wine'] },
-    { name: 'Lidl San Antonio', distance: '14 min', items: ['water','snacks','beer','soft_drinks'] },
-  ]
+      // Warehouse pin
+      setMarker('warehouse', WAREHOUSE[0], WAREHOUSE[1],
+        '<div style="font-size:24px">🏪</div>',
+        '<b>Warehouse</b><br>Isla Drop dispatch'
+      )
 
-  const lowStock = stock.filter(s => s.max_qty > 0 && (s.current_qty / s.max_qty) <= (s.alert_threshold || 0.25))
-  const displayed = filter === 'low' ? lowStock : stock
+      // Destination pin
+      if (order?.delivery_lat) {
+        setMarker('dest', order.delivery_lat, order.delivery_lng,
+          PIN_ICON('#C4683A'),
+          '<b>Drop-off</b><br>' + (order.delivery_address || '') + (order.what3words ? '<br>/// ' + order.what3words : '')
+        )
+      }
 
-  function pct(s) { return s.max_qty > 0 ? Math.round((s.current_qty / s.max_qty) * 100) : 0 }
-  function pctColor(p) {
-    if (p <= 0)  return '#C4683A'
-    if (p <= 15) return '#C4683A'
-    if (p <= 30) return '#E8A070'
-    if (p <= 50) return '#F5C97A'
-    return '#7EE8A2'
+      // Driver position
+      if (driverPos) {
+        setMarker('driver', driverPos[0], driverPos[1],
+          '<div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))">🛵</div>',
+          '<b>You</b>'
+        )
+        if (order?.delivery_lat) {
+          fitBounds([[driverPos[0], driverPos[1]], [order.delivery_lat, order.delivery_lng]])
+        }
+      }
+    }, 600)
+    return () => clearInterval(timer)
+  }, [order, driverPos])
+
+  const openNav = () => {
+    if (!order?.delivery_lat) return
+    const dest = order.delivery_lat + ',' + order.delivery_lng
+    const ua = navigator.userAgent
+    if (/iPhone|iPad/i.test(ua)) window.open('maps://maps.apple.com/?daddr=' + dest)
+    else window.open('https://www.google.com/maps/dir/?api=1&destination=' + dest + '&travelmode=driving')
   }
 
-  if (loading) return <div style={{ padding:20, textAlign:'center', color:'rgba(255,255,255,0.5)', fontSize:13 }}>Loading stock levels...</div>
-
   return (
-    <div style={{ padding:'0 16px 16px' }}>
-      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white', marginBottom:4 }}>Warehouse Stock</div>
-      <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', marginBottom:14 }}>Live inventory at base · {new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
-
-      {/* Low stock alerts for driver */}
-      {alerts.length > 0 && (
-        <div style={{ background:'rgba(196,104,58,0.15)', border:'0.5px solid rgba(196,104,58,0.35)', borderRadius:12, padding:14, marginBottom:14 }}>
-          <div style={{ fontSize:12, fontWeight:500, color:'#E8A070', marginBottom:10 }}>⚠️ Stock Alerts — Ops team notified</div>
-          {alerts.slice(0,5).map(a => (
-            <div key={a.id} style={{ fontSize:12, color:'rgba(255,255,255,0.7)', marginBottom:6, paddingBottom:6, borderBottom:'0.5px solid rgba(255,255,255,0.06)' }}>
-              <span style={{ fontWeight:500 }}>{a.product_name}</span> — {a.alert_type === 'out_of_stock' ? '🚨 OUT OF STOCK' : Math.round(a.pct_at_alert || 0) + '% remaining'}
-              {a.message && <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:2 }}>{a.message}</div>}
-            </div>
-          ))}
+    <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: '#0A2A38', display: 'flex', flexDirection: 'column' }}>
+      {/* Map header */}
+      <div style={{ background: 'rgba(10,26,35,0.95)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, zIndex: 10 }}>
+        <button onClick={onClose}
+          style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 10, width: 36, height: 36, color: 'white', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          ←
+        </button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>Order #{order?.order_number}</div>
+          <div style={{ fontSize: 12, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            📍 {order?.delivery_address || 'Address not set'}
+          </div>
         </div>
-      )}
-
-      {/* Nearby stores */}
-      {lowStock.length > 0 && (
-        <div style={{ background:'rgba(43,122,139,0.15)', border:'0.5px solid rgba(43,122,139,0.3)', borderRadius:12, padding:14, marginBottom:14 }}>
-          <div style={{ fontSize:12, fontWeight:500, color:'#7ECFE0', marginBottom:10 }}>🏪 Nearby stores for low stock items</div>
-          {NEARBY_STORES.filter(store =>
-            lowStock.some(ls => store.items.includes(ls.category))
-          ).slice(0,3).map(store => {
-            const relevantItems = lowStock.filter(ls => store.items.includes(ls.category))
-            return (
-              <div key={store.name} style={{ marginBottom:10, paddingBottom:10, borderBottom:'0.5px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
-                  <span style={{ fontSize:12, fontWeight:500, color:'white' }}>{store.name}</span>
-                  <span style={{ fontSize:11, color:'rgba(255,255,255,0.45)', background:'rgba(255,255,255,0.08)', padding:'2px 7px', borderRadius:10 }}>🛵 {store.distance}</span>
-                </div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>
-                  Can restock: {relevantItems.slice(0,3).map(i => i.product_name).join(', ')}
-                  {relevantItems.length > 3 ? ' +' + (relevantItems.length-3) + ' more' : ''}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Filter toggle */}
-      <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-        {['low','all'].map(f => (
-          <button key={f} onClick={() => setFilter(f)}
-            style={{ padding:'6px 14px', borderRadius:20, fontSize:12, background: filter===f?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.1)', color: filter===f?'#0D3B4A':'rgba(255,255,255,0.7)', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
-            {f === 'low' ? '⚠️ Low stock (' + lowStock.length + ')' : 'All (' + stock.length + ')'}
-          </button>
-        ))}
+        <button onClick={openNav}
+          style={{ background: C.accent, border: 'none', borderRadius: 10, padding: '8px 14px', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+          🗺 Navigate
+        </button>
       </div>
 
-      {/* Stock list */}
-      {displayed.length === 0 && filter === 'low' && (
-        <div style={{ textAlign:'center', padding:'20px', color:'rgba(255,255,255,0.4)', fontSize:13 }}>
-          ✅ All stock levels are healthy
+      {/* Map */}
+      <div ref={containerRef} style={{ flex: 1 }} />
+
+      {/* Bottom info */}
+      {order?.what3words && (
+        <div style={{ background: 'rgba(10,26,35,0.95)', padding: '10px 16px', fontSize: 13, color: '#7EE8A2', fontFamily: 'DM Sans,sans-serif' }}>
+          /// {order.what3words}
         </div>
       )}
-      {displayed.map(s => {
-        const p = pct(s)
-        const color = pctColor(p)
-        return (
-          <div key={s.product_id} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 0', borderBottom:'0.5px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:13, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.product_name}</div>
-              <div style={{ fontSize:10, color:'rgba(255,255,255,0.35)', marginTop:1 }}>{s.category}</div>
-            </div>
-            <div style={{ width:60, textAlign:'center' }}>
-              <div style={{ height:5, background:'rgba(255,255,255,0.1)', borderRadius:3, overflow:'hidden', marginBottom:2 }}>
-                <div style={{ height:'100%', width:Math.min(100,p) + '%', background:color, borderRadius:3 }} />
-              </div>
-              <div style={{ fontSize:11, fontWeight:600, color }}>{p}%</div>
-            </div>
-            <div style={{ fontSize:13, fontWeight:500, color:'white', minWidth:30, textAlign:'right' }}>{s.current_qty}</div>
-          </div>
-        )
-      })}
+      {order?.delivery_notes && (
+        <div style={{ background: 'rgba(10,26,35,0.95)', padding: '8px 16px', fontSize: 12, color: C.muted, fontFamily: 'DM Sans,sans-serif', borderTop: '0.5px solid rgba(255,255,255,0.08)' }}>
+          📝 {order.delivery_notes}
+        </div>
+      )}
     </div>
   )
 }
 
-// ── PIN Entry for delivery confirmation ───────────────────────
-function PinEntry({ expectedPin, onSuccess, onCancel }) {
-  const [entered, setEntered] = useState('')
-  const [error, setError] = useState(false)
+// ── PIN Entry overlay ─────────────────────────────────────────
+function PinEntry({ order, onSuccess, onCancel }) {
+  const [pin, setPin] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const tap = (digit) => {
-    if (entered.length >= 4) return
-    const next = entered + digit
-    setEntered(next)
-    setError(false)
-    if (next.length === 4) {
-      setTimeout(() => {
-        if (next === String(expectedPin)) {
-          onSuccess()
-        } else {
-          setError(true)
-          setEntered('')
-        }
-      }, 200)
-    }
+  const verify = async () => {
+    if (pin.length < 4) { setError('Enter the 4-digit PIN'); return }
+    setLoading(true)
+    try {
+      if (pin !== String(order.delivery_pin)) { setError('Incorrect PIN — ask the customer again'); setLoading(false); return }
+      await updateOrderStatus(order.id, 'delivered', { delivered_at: new Date().toISOString() })
+      toast.success('Order delivered! 🎉')
+      onSuccess()
+    } catch { setError('Could not verify — try again') }
+    setLoading(false)
   }
 
-  const del = () => setEntered(prev => prev.slice(0, -1))
-
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
-      <div style={{ background:'linear-gradient(170deg,#0D3545,#1A5060)', borderRadius:20, padding:32, width:'100%', maxWidth:360, textAlign:'center' }}>
-        <div style={{ fontSize:48, marginBottom:12 }}>🔐</div>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:6 }}>Delivery Confirmation</div>
-        <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:28 }}>Ask the customer for their 4-digit delivery code</div>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 600, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-end' }}>
+      <div style={{ width: '100%', background: 'linear-gradient(170deg,#0D3545,#1A5060)', borderRadius: '20px 20px 0 0', padding: '24px 20px 36px' }}>
+        <div style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, margin: '0 auto 20px' }} />
+        <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 22, color: 'white', marginBottom: 6, textAlign: 'center' }}>Customer PIN</div>
+        <div style={{ fontSize: 13, color: C.muted, textAlign: 'center', marginBottom: 24 }}>Ask the customer for their 4-digit delivery code</div>
 
-        {/* PIN dots */}
-        <div style={{ display:'flex', justifyContent:'center', gap:14, marginBottom:28 }}>
+        {/* PIN display */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 20 }}>
           {[0,1,2,3].map(i => (
-            <div key={i} style={{ width:16, height:16, borderRadius:'50%', background: entered.length > i ? (error ? '#C4683A' : '#7EE8A2') : 'rgba(255,255,255,0.2)', transition:'background 0.2s' }} />
+            <div key={i} style={{ width: 52, height: 60, background: 'rgba(255,255,255,0.08)', borderRadius: 12, border: '0.5px solid ' + (pin[i] ? C.accent : C.border), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: 'white' }}>
+              {pin[i] || ''}
+            </div>
           ))}
         </div>
 
-        {error && <div style={{ color:'#E8A070', fontSize:13, marginBottom:16 }}>Incorrect code — try again</div>}
+        {error && <div style={{ color: '#FF6B6B', textAlign: 'center', fontSize: 13, marginBottom: 12 }}>{error}</div>}
 
         {/* Numpad */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
-          {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((d,i) => (
-            <button key={i} onClick={() => d === '⌫' ? del() : d ? tap(d) : null}
-              disabled={!d && d !== '0'}
-              style={{ padding:'16px', background: d ? 'rgba(255,255,255,0.1)' : 'transparent', border:'none', borderRadius:12, fontSize:20, fontWeight:500, color:'white', cursor: d ? 'pointer' : 'default', fontFamily:'DM Sans,sans-serif', opacity: !d ? 0 : 1 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
+          {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((d, i) => (
+            <button key={i} onClick={() => {
+              setError('')
+              if (d === '⌫') setPin(p => p.slice(0,-1))
+              else if (d !== '' && pin.length < 4) setPin(p => p + d)
+            }}
+              style={{ padding: '16px', background: d === '⌫' ? 'rgba(196,104,58,0.15)' : 'rgba(255,255,255,0.08)', border: '0.5px solid ' + C.border, borderRadius: 12, fontSize: 20, color: 'white', cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500 }}>
               {d}
             </button>
           ))}
         </div>
 
-        <button onClick={onCancel} style={{ width:'100%', padding:'12px', background:'none', border:'0.5px solid rgba(255,255,255,0.2)', borderRadius:12, color:'rgba(255,255,255,0.5)', fontSize:13, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+        <button onClick={verify} disabled={pin.length < 4 || loading}
+          style={{ width: '100%', padding: '15px', background: pin.length === 4 ? C.accent : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 14, color: 'white', fontSize: 16, fontWeight: 600, cursor: pin.length === 4 ? 'pointer' : 'default', fontFamily: 'DM Sans,sans-serif', marginBottom: 10 }}>
+          {loading ? 'Verifying...' : 'Confirm Delivery'}
+        </button>
+        <button onClick={onCancel} style={{ width: '100%', padding: '12px', background: 'none', border: 'none', color: C.muted, fontSize: 14, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
           Cancel
         </button>
       </div>
@@ -217,751 +186,366 @@ function PinEntry({ expectedPin, onSuccess, onCancel }) {
   )
 }
 
-// ── Pickup Confirmation ───────────────────────────────────────
-function PickupConfirmation({ order, onConfirm, onCancel }) {
-  const [checked, setChecked] = useState({})
-  const items = order.order_items || []
-  const allChecked = items.length > 0 && items.every((_,i) => checked[i])
-
+// ── Available Order Card ──────────────────────────────────────
+function AvailableOrderCard({ order, onAccept, loading }) {
+  const dist = order.distance_km ? order.distance_km.toFixed(1) + ' km' : ''
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:200, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-      <div style={{ background:'linear-gradient(170deg,#0D3545,#1A5060)', borderRadius:'20px 20px 0 0', padding:24, width:'100%', maxWidth:480, maxHeight:'80vh', overflowY:'auto' }}>
-        <div style={{ width:36, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, margin:'0 auto 20px' }} />
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:4 }}>Warehouse Pickup</div>
-        <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:20 }}>Check off each item as you pick it up</div>
-
-        <div style={{ marginBottom:20 }}>
-          {items.map((item, i) => (
-            <div key={i} onClick={() => setChecked(prev => ({ ...prev, [i]: !prev[i] }))}
-              style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'0.5px solid rgba(255,255,255,0.08)', cursor:'pointer' }}>
-              <div style={{ width:24, height:24, borderRadius:6, background: checked[i] ? '#7EE8A2' : 'rgba(255,255,255,0.1)', border: checked[i] ? 'none' : '1.5px solid rgba(255,255,255,0.3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'all 0.2s' }}>
-                {checked[i] && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0D3B4A" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
-              </div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, color:'white', fontFamily:'DM Sans,sans-serif' }}>{item.product?.name || 'Item'}</div>
-                <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', marginTop:1 }}>Qty: {item.quantity}</div>
-              </div>
-            </div>
-          ))}
+    <div style={{ background: C.card, border: '0.5px solid ' + C.border, borderRadius: 16, padding: 16, marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: 'white', marginBottom: 2 }}>Order #{order.order_number}</div>
+          <div style={{ fontSize: 12, color: C.muted }}>{new Date(order.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
         </div>
-
-        {!allChecked && items.length > 0 && (
-          <div style={{ padding:'10px 14px', background:'rgba(245,201,122,0.15)', border:'0.5px solid rgba(245,201,122,0.3)', borderRadius:10, fontSize:12, color:'#F5C97A', marginBottom:16, fontFamily:'DM Sans,sans-serif' }}>
-            Tick all items to confirm pickup
-          </div>
-        )}
-
-        <button onClick={onConfirm} disabled={!allChecked}
-          style={{ width:'100%', padding:'15px', background: allChecked ? '#5A6B3A' : 'rgba(255,255,255,0.1)', color:'white', border:'none', borderRadius:12, fontFamily:'DM Sans,sans-serif', fontSize:15, fontWeight:500, cursor: allChecked ? 'pointer' : 'default', marginBottom:10, opacity: allChecked ? 1 : 0.5, transition:'all 0.2s' }}>
-          Confirm Pickup — All Items Checked
-        </button>
-        <button onClick={onCancel} style={{ width:'100%', padding:'12px', background:'none', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:12, color:'rgba(255,255,255,0.5)', fontSize:13, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
-          Cancel
-        </button>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: C.green }}>€{(order.delivery_fee || 3.5).toFixed(2)}</div>
+          {dist && <div style={{ fontSize: 11, color: C.muted }}>{dist}</div>}
+        </div>
       </div>
-    </div>
-  )
-}
 
-
-
-// ── Driver Onboarding Checklist ──────────────────────────────
-function DriverOnboarding({ onComplete }) {
-  const STEPS = [
-    { id:'profile', label:'Complete your profile', desc:'Add photo, full name and contact details', icon:'👤' },
-    { id:'licence', label:'Upload driving licence', desc:'Front and back of your licence', icon:'🪪' },
-    { id:'insurance', label:'Upload vehicle insurance', desc:'Current insurance certificate', icon:'📄' },
-    { id:'vehicle', label:'Confirm vehicle details', desc:'Plate number, make and model', icon:'🛵' },
-    { id:'warehouse', label:'Visit the warehouse', desc:'Collect your Isla Drop bag and briefing', icon:'📦' },
-    { id:'test', label:'Complete test delivery', desc:'Your first run with ops supervision', icon:'✅' },
-  ]
-  const [done, setDone] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('driver_onboarding') || '[]') } catch { return [] }
-  })
-
-  const toggle = (id) => {
-    const next = done.includes(id) ? done.filter(d => d !== id) : [...done, id]
-    setDone(next)
-    localStorage.setItem('driver_onboarding', JSON.stringify(next))
-  }
-  const pct = Math.round((done.length / STEPS.length) * 100)
-  const allDone = done.length === STEPS.length
-
-  return (
-    <div style={{ padding:'0 16px 24px' }}>
-      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:4 }}>Getting Started</div>
-      <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)', marginBottom:16 }}>Complete these steps before your first delivery</div>
-      <div style={{ background:'rgba(255,255,255,0.08)', borderRadius:20, height:8, marginBottom:16 }}>
-        <div style={{ height:'100%', width:pct+'%', background: allDone?'#7EE8A2':'#C4683A', borderRadius:20, transition:'width 0.4s' }} />
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+        <span>📍</span><span style={{ flex: 1 }}>{order.delivery_address || 'Address pending'}</span>
       </div>
-      {STEPS.map(step => (
-        <div key={step.id} onClick={() => toggle(step.id)}
-          style={{ display:'flex', gap:12, padding:'12px 0', borderBottom:'0.5px solid rgba(255,255,255,0.07)', cursor:'pointer', alignItems:'flex-start' }}>
-          <div style={{ width:28, height:28, borderRadius:'50%', background: done.includes(step.id)?'rgba(90,107,58,0.4)':'rgba(255,255,255,0.1)', border:'0.5px solid ' + (done.includes(step.id)?'rgba(90,107,58,0.6)':'rgba(255,255,255,0.2)'), display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0, marginTop:2 }}>
-            {done.includes(step.id) ? '✓' : step.icon}
-          </div>
-          <div>
-            <div style={{ fontSize:14, color: done.includes(step.id)?'rgba(255,255,255,0.4)':'white', textDecoration: done.includes(step.id)?'line-through':'none' }}>{step.label}</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,0.35)', marginTop:2 }}>{step.desc}</div>
-          </div>
-        </div>
-      ))}
-      {allDone && (
-        <div style={{ marginTop:16, background:'rgba(90,107,58,0.2)', border:'0.5px solid rgba(90,107,58,0.4)', borderRadius:12, padding:'12px 14px', textAlign:'center' }}>
-          <div style={{ fontSize:24, marginBottom:6 }}>🎉</div>
-          <div style={{ fontSize:14, color:'#7EE8A2', fontWeight:500 }}>All done! You're ready to deliver.</div>
-        </div>
+      {order.what3words && (
+        <div style={{ fontSize: 12, color: '#7EE8A2', marginBottom: 6 }}>/// {order.what3words}</div>
       )}
+      <div style={{ fontSize: 12, color: C.muted, marginBottom: 14 }}>📦 {orderItems(order)}</div>
+
+      <button onClick={() => onAccept(order)} disabled={loading}
+        style={{ width: '100%', padding: '14px', background: C.accent, border: 'none', borderRadius: 12, color: 'white', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', opacity: loading ? 0.7 : 1 }}>
+        {loading ? 'Accepting...' : '✓ Accept order'}
+      </button>
     </div>
   )
 }
 
-// ── SOS Emergency Button ──────────────────────────────────────
-function SOSButton() {
-  const [pressed, setPressed] = useState(false)
-  const [sent, setSent] = useState(false)
-
-  const sendSOS = async () => {
-    setSent(true)
-    try {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async pos => {
-          const { supabase } = await import('../../lib/supabase')
-          const { data: { user } } = await supabase.auth.getUser()
-          await supabase.from('ops_activity_log').insert({
-            actor_id: user?.id,
-            action: 'driver_sos',
-            entity_type: 'driver',
-            details: { lat: pos.coords.latitude, lng: pos.coords.longitude, message: 'EMERGENCY - Driver needs immediate assistance' }
-          })
-        })
-      }
-    } catch {}
-    setTimeout(() => { setPressed(false); setSent(false) }, 5000)
-  }
-
-  return (
-    <div style={{ padding:'0 16px 16px' }}>
-      {!pressed ? (
-        <button onClick={() => setPressed(true)}
-          style={{ width:'100%', padding:'14px', background:'rgba(196,58,58,0.15)', border:'1.5px solid rgba(196,58,58,0.4)', borderRadius:12, color:'#E87070', fontSize:14, fontWeight:500, cursor:'pointer', fontFamily:'DM Sans,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-          🆘 Emergency — Send SOS to Ops
-        </button>
-      ) : sent ? (
-        <div style={{ background:'rgba(196,58,58,0.2)', border:'1px solid rgba(196,58,58,0.5)', borderRadius:12, padding:'14px', textAlign:'center' }}>
-          <div style={{ fontSize:20, marginBottom:4 }}>🆘</div>
-          <div style={{ color:'#E87070', fontSize:14, fontWeight:500 }}>SOS sent with your location!</div>
-          <div style={{ color:'rgba(255,255,255,0.5)', fontSize:12, marginTop:4 }}>Ops team has been alerted</div>
-        </div>
-      ) : (
-        <div style={{ background:'rgba(196,58,58,0.2)', border:'1px solid rgba(196,58,58,0.5)', borderRadius:12, padding:14 }}>
-          <div style={{ fontSize:14, color:'#E87070', fontWeight:500, marginBottom:10 }}>Confirm emergency?</div>
-          <div style={{ display:'flex', gap:8 }}>
-            <button onClick={sendSOS} style={{ flex:1, padding:'11px', background:'rgba(196,58,58,0.4)', border:'none', borderRadius:8, color:'white', fontSize:13, cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontWeight:500 }}>Yes — Send SOS</button>
-            <button onClick={() => setPressed(false)} style={{ flex:1, padding:'11px', background:'rgba(255,255,255,0.1)', border:'none', borderRadius:8, color:'rgba(255,255,255,0.6)', fontSize:13, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>Cancel</button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-
-// ── Delivery History Tab ──────────────────────────────────────
-function DeliveryHistoryTab() {
-  const { user } = useAuthStore()
-  const [deliveries, setDeliveries] = useState([])
-  const [loading, setLoading]       = useState(true)
-
+// ── Earnings Tab ──────────────────────────────────────────────
+function EarningsTab({ stats }) {
+  const [history, setHistory] = useState([])
   useEffect(() => {
     const load = async () => {
       try {
         const { supabase } = await import('../../lib/supabase')
-        const { data } = await supabase
-          .from('orders')
-          .select('id, order_number, total, status, created_at, delivery_address, order_ratings(driver_rating, tip)')
-          .eq('driver_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(50)
-        if (data) setDeliveries(data)
+        const { useAuthStore } = await import('../../lib/store')
+        const user = useAuthStore.getState().user
+        if (!user) return
+        const { data } = await supabase.from('driver_earnings')
+          .select('*').eq('driver_id', user.id).order('created_at', { ascending: false }).limit(20)
+        if (data) setHistory(data)
       } catch {}
-      setLoading(false)
     }
     load()
   }, [])
 
-  const totalTips = deliveries.reduce((s, d) => s + ((d.order_ratings?.[0]?.tip) || 0), 0)
-  const avgRating = (() => {
-    const rated = deliveries.filter(d => d.order_ratings?.[0]?.driver_rating)
-    if (!rated.length) return null
-    return (rated.reduce((s,d) => s + d.order_ratings[0].driver_rating, 0) / rated.length).toFixed(1)
-  })()
-
   return (
-    <div style={{ padding:'0 16px 24px' }}>
-      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:4 }}>Delivery History</div>
-
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:16, marginTop:8 }}>
+    <div style={{ padding: '16px' }}>
+      {/* Today summary */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
         {[
-          { v: deliveries.length, l:'Total deliveries' },
-          { v: avgRating ? '⭐ ' + avgRating : '—', l:'Avg rating' },
-          { v: '€' + totalTips.toFixed(2), l:'Total tips' },
+          { label: "Today's earnings", value: '€' + (stats?.earnings || 0).toFixed(2), color: C.green, icon: '💰' },
+          { label: 'Deliveries today', value: stats?.deliveries || 0, color: '#7ECFE0', icon: '📦' },
         ].map(s => (
-          <div key={s.l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:12, padding:'12px 10px', textAlign:'center' }}>
-            <div style={{ fontSize:18, fontWeight:500, color:'white' }}>{s.v}</div>
-            <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', marginTop:2 }}>{s.l}</div>
+          <div key={s.label} style={{ background: C.card, border: '0.5px solid ' + C.border, borderRadius: 14, padding: '14px', textAlign: 'center' }}>
+            <div style={{ fontSize: 24, marginBottom: 4 }}>{s.icon}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: s.color, fontFamily: 'DM Sans,sans-serif' }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{s.label}</div>
           </div>
         ))}
       </div>
 
-      {loading ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)' }}>Loading...</div> :
-        deliveries.map(d => (
-          <div key={d.id} style={{ display:'flex', gap:10, padding:'10px 0', borderBottom:'0.5px solid rgba(255,255,255,0.07)', alignItems:'flex-start' }}>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:13, color:'white' }}>
-                {d.delivery_address?.split(',')[0] || 'Delivery'}
-              </div>
-              <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:2 }}>
-                {new Date(d.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}
-              </div>
-            </div>
-            <div style={{ textAlign:'right' }}>
-              <div style={{ fontSize:13, fontWeight:500, color:'#E8A070' }}>€{(d.total||0).toFixed(2)}</div>
-              {d.order_ratings?.[0]?.driver_rating && (
-                <div style={{ fontSize:11, color:'#F5C97A' }}>{'⭐'.repeat(d.order_ratings[0].driver_rating)}</div>
-              )}
-              {d.order_ratings?.[0]?.tip > 0 && (
-                <div style={{ fontSize:11, color:'#7EE8A2' }}>+€{d.order_ratings[0].tip} tip</div>
-              )}
-            </div>
-          </div>
-        ))
-      }
-    </div>
-  )
-}
-
-// ── Availability / Shift Tab ──────────────────────────────────
-function AvailabilityTab() {
-  const { user } = useAuthStore()
-  const [shifts, setShifts]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [adding, setAdding]   = useState(false)
-  const [form, setForm]       = useState({ shift_date:'', start_time:'', end_time:'', notes:'' })
-
-  const today = new Date().toISOString().slice(0,10)
-
-  const load = async () => {
-    try {
-      const { supabase } = await import('../../lib/supabase')
-      const { data } = await supabase
-        .from('driver_shifts')
-        .select('*')
-        .eq('driver_id', user.id)
-        .gte('shift_date', today)
-        .order('shift_date').order('start_time')
-      if (data) setShifts(data)
-    } catch {}
-    setLoading(false)
-  }
-
-  useEffect(() => { load() }, [])
-
-  const saveShift = async () => {
-    if (!form.shift_date || !form.start_time || !form.end_time) {
-      toast.error('Please fill in date and times'); return
-    }
-    setAdding(true)
-    try {
-      const { supabase } = await import('../../lib/supabase')
-      await supabase.from('driver_shifts').insert({ ...form, driver_id: user.id, status:'scheduled' })
-      toast.success('Shift added!')
-      setForm({ shift_date:'', start_time:'', end_time:'', notes:'' })
-      load()
-    } catch { toast.error('Failed to save') }
-    setAdding(false)
-  }
-
-  const removeShift = async (id) => {
-    const { supabase } = await import('../../lib/supabase')
-    await supabase.from('driver_shifts').delete().eq('id', id)
-    load()
-  }
-
-  const inp = { width:'100%', padding:'10px 12px', background:'rgba(255,255,255,0.08)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, color:'white', outline:'none', boxSizing:'border-box' }
-
-  return (
-    <div style={{ padding:'0 16px 24px' }}>
-      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:4 }}>My Shifts</div>
-      <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', marginBottom:16 }}>Set your availability so ops can plan coverage</div>
-
-      <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:14, padding:14, marginBottom:16 }}>
-        <div style={{ fontSize:13, color:'rgba(255,255,255,0.7)', marginBottom:10 }}>Add availability</div>
-        <input type="date" value={form.shift_date} min={today}
-          onChange={e => setForm(prev => ({ ...prev, shift_date:e.target.value }))}
-          style={{ ...inp, marginBottom:8 }} />
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
-          <input type="time" value={form.start_time}
-            onChange={e => setForm(prev => ({ ...prev, start_time:e.target.value }))}
-            style={inp} placeholder="Start time" />
-          <input type="time" value={form.end_time}
-            onChange={e => setForm(prev => ({ ...prev, end_time:e.target.value }))}
-            style={inp} placeholder="End time" />
+      <div style={{ fontSize: 13, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12 }}>Recent deliveries</div>
+      {history.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '32px 0', color: C.muted, fontSize: 14 }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>💸</div>
+          No earnings recorded yet
         </div>
-        <button onClick={saveShift} disabled={adding}
-          style={{ width:'100%', padding:'11px', background:'#C4683A', border:'none', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, color:'white', cursor:'pointer', fontWeight:500 }}>
-          {adding ? 'Saving...' : 'Add shift'}
-        </button>
-      </div>
-
-      {loading ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)' }}>Loading...</div> :
-        shifts.length === 0
-          ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)', fontSize:13 }}>No upcoming shifts added</div>
-          : shifts.map(s => (
-            <div key={s.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 0', borderBottom:'0.5px solid rgba(255,255,255,0.07)' }}>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:13, color:'white' }}>
-                  {new Date(s.shift_date).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}
-                </div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2 }}>
-                  {s.start_time?.slice(0,5)} – {s.end_time?.slice(0,5)}
-                </div>
-              </div>
-              <span style={{ fontSize:10, padding:'2px 8px', borderRadius:20, background:'rgba(90,107,58,0.2)', color:'#7EE8A2' }}>{s.status}</span>
-              <button onClick={() => removeShift(s.id)}
-                style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', cursor:'pointer', fontSize:16 }}>✕</button>
-            </div>
-          ))
-      }
-    </div>
-  )
-}
-
-// ── Driver Earnings Tab ───────────────────────────────────────
-function DriverEarningsTab() {
-  const { user } = useAuthStore()
-  const [earnings, setEarnings] = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [period, setPeriod]     = useState('week')
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const { supabase } = await import('../../lib/supabase')
-        const since = period === 'today'
-          ? new Date().toISOString().slice(0, 10)
-          : period === 'week'
-            ? new Date(Date.now() - 7 * 86400000).toISOString()
-            : new Date(Date.now() - 30 * 86400000).toISOString()
-        const { data } = await supabase
-          .from('driver_earnings')
-          .select('*')
-          .eq('driver_id', user.id)
-          .gte('created_at', since)
-          .order('created_at', { ascending: false })
-        if (data) setEarnings(data)
-      } catch {}
-      setLoading(false)
-    }
-    load()
-  }, [period, user])
-
-  const totalEarned  = earnings.reduce((s, e) => s + (e.total || 0), 0)
-  const totalTips    = earnings.reduce((s, e) => s + (e.tip || 0), 0)
-  const totalRuns    = earnings.length
-  const pending      = earnings.filter(e => e.status === 'pending').reduce((s, e) => s + (e.total || 0), 0)
-
-  return (
-    <div style={{ padding:'0 16px 24px' }}>
-      <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', marginBottom:4 }}>My Earnings</div>
-
-      <div style={{ display:'flex', gap:8, marginBottom:16, marginTop:8 }}>
-        {[['today','Today'],['week','This week'],['month','This month']].map(([v,l]) => (
-          <button key={v} onClick={() => { setPeriod(v); setLoading(true) }}
-            style={{ flex:1, padding:'7px', borderRadius:20, fontSize:11, background: period===v?'rgba(255,255,255,0.9)':'rgba(255,255,255,0.1)', color: period===v?'#0D3B4A':'rgba(255,255,255,0.7)', border:'none', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
-            {l}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
-        {[
-          { v:'€' + totalEarned.toFixed(2), l:'Total earned', color:'#7EE8A2' },
-          { v:'€' + pending.toFixed(2),     l:'Pending payout', color:'#F5C97A' },
-          { v:'€' + totalTips.toFixed(2),   l:'Tips received', color:'#E8A070' },
-          { v: totalRuns,                   l:'Runs completed', color:'white' },
-        ].map(({v,l,color}) => (
-          <div key={l} style={{ background:'rgba(255,255,255,0.08)', borderRadius:12, padding:'12px 14px' }}>
-            <div style={{ fontSize:22, fontWeight:500, color }}>{v}</div>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2 }}>{l}</div>
+      ) : history.map((e, i) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
+          <div>
+            <div style={{ fontSize: 13, color: 'white', fontWeight: 500 }}>Order #{e.order_number || e.order_id?.slice(0,6)}</div>
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{new Date(e.created_at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
           </div>
-        ))}
-      </div>
-
-      {loading ? <div style={{ textAlign:'center', padding:20, color:'rgba(255,255,255,0.4)' }}>Loading...</div> : (
-        earnings.length === 0
-          ? <div style={{ textAlign:'center', padding:30, color:'rgba(255,255,255,0.4)', fontSize:13 }}>No earnings in this period</div>
-          : earnings.map(e => (
-            <div key={e.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 0', borderBottom:'0.5px solid rgba(255,255,255,0.07)' }}>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:13, color:'white' }}>Delivery run</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:1 }}>
-                  {new Date(e.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}
-                </div>
-              </div>
-              {e.tip > 0 && <div style={{ fontSize:11, color:'#E8A070' }}>+€{e.tip.toFixed(2)} tip</div>}
-              <div style={{ fontSize:14, fontWeight:500, color: e.status === 'paid' ? '#7EE8A2' : '#F5C97A' }}>€{(e.total||0).toFixed(2)}</div>
-              <span style={{ fontSize:10, padding:'2px 7px', borderRadius:20, background: e.status==='paid'?'rgba(90,107,58,0.2)':'rgba(245,201,122,0.15)', color: e.status==='paid'?'#7EE8A2':'#F5C97A' }}>
-                {e.status}
-              </span>
-            </div>
-          ))
-      )}
+          <div style={{ fontSize: 15, fontWeight: 600, color: C.green }}>€{(e.amount || 0).toFixed(2)}</div>
+        </div>
+      ))}
     </div>
   )
 }
 
 // ── Main DriverApp ────────────────────────────────────────────
 export default function DriverApp() {
-  const { user, profile } = useAuthStore()
-  const { isOnline, setOnline, currentOrder, setCurrentOrder, availableOrders, setAvailableOrders, updateLocation } = useDriverStore()
-  const [stats, setStats]           = useState({ runs: 0, earnings: 0, avgTime: 0 })
-  const [loading, setLoading]       = useState(false)
-  const [showPickup, setShowPickup] = useState(false)
-  const [showPin, setShowPin]       = useState(false)
-  const [activeTab, setActiveTab]   = useState('orders') // 'orders' | 'stock'
+  const { user, profile, clear } = useAuthStore()
+  const { isOnline, currentOrder, availableOrders, stats,
+          setOnline, setCurrentOrder, setAvailableOrders, updateLocation } = useDriverStore()
+
+  const [activeTab, setActiveTab] = useState('home')
+  const [showPin, setShowPin] = useState(false)
+  const [showMap, setShowMap] = useState(false)
+  const [accepting, setAccepting] = useState(false)
+  const [driverPos, setDriverPos] = useState(null)
 
   const loadOrders = useCallback(async () => {
+    if (!isOnline || !user) return
     try {
       const orders = await getAvailableOrders()
-      setAvailableOrders(orders)
-    } catch (err) { console.error('Failed to load orders:', err) }
-  }, [setAvailableOrders])
+      setAvailableOrders(orders || [])
+    } catch {}
+  }, [isOnline, user])
 
-  useEffect(() => {
-    if (!isOnline) return
-    loadOrders()
-    const sub = subscribeToAvailableOrders(loadOrders)
-    return () => sub.unsubscribe()
-  }, [isOnline, loadOrders])
+  // Go online/offline
+  const toggleOnline = async () => {
+    const next = !isOnline
+    setOnline(next)
+    if (user) await setDriverOnlineStatus(user.id, next).catch(() => {})
+    if (next) { loadOrders(); toast.success('You are now online 🟢') }
+    else toast('You are now offline 🔴', { icon: '⚫' })
+  }
 
+  // Accept order
+  const handleAccept = async (order) => {
+    setAccepting(true)
+    try {
+      await acceptOrder(order.id, user.id)
+      setCurrentOrder({ ...order, status: 'assigned' })
+      setAvailableOrders([])
+      setActiveTab('home')
+      toast.success('Order accepted! Head to warehouse 🏪')
+    } catch (err) {
+      toast.error('Could not accept — ' + (err.message || 'try again'))
+    }
+    setAccepting(false)
+  }
+
+  // Advance order status
+  const handleAdvanceStatus = async () => {
+    if (!currentOrder) return
+    const cfg = STATUS_CONFIG[currentOrder.status]
+    if (!cfg?.next) return
+    if (cfg.next === 'delivered') { setShowPin(true); return }
+    try {
+      await updateOrderStatus(currentOrder.id, cfg.next)
+      setCurrentOrder({ ...currentOrder, status: cfg.next })
+      if (cfg.next === 'en_route') toast.success('On your way! 🛵')
+    } catch { toast.error('Status update failed') }
+  }
+
+  // Subscribe to new orders
   useEffect(() => {
     if (!isOnline || !user) return
-
-    const pushLocation = async (lat, lng) => {
-      updateLocation(lat, lng)
-      updateDriverLocation(user.id, lat, lng).catch(console.error)
-
-      // Also push to active order for live customer ETA
-      if (currentOrder && ['warehouse_confirmed','en_route'].includes(currentOrder.status)) {
-        try {
-          const { supabase } = await import('../../lib/supabase')
-          const { calculateETA, shouldShowDriverOnMap } = await import('../../lib/eta')
-          const eta = calculateETA({
-            driverLat: lat, driverLng: lng,
-            orderStatus: currentOrder.status,
-            deliveryLat: currentOrder.delivery_lat,
-            deliveryLng: currentOrder.delivery_lng,
-          })
-          await supabase.from('orders').update({
-            driver_lat: lat,
-            driver_lng: lng,
-            eta_minutes: eta?.totalMins || null,
-            eta_calculated_at: new Date().toISOString(),
-          }).eq('id', currentOrder.id)
-        } catch (err) { console.warn('ETA push failed:', err) }
+    loadOrders()
+    const sub = subscribeToAvailableOrders((order) => {
+      if (!currentOrder) {
+        setAvailableOrders(prev => {
+          if (prev.find(o => o.id === order.id)) return prev
+          toast('New order available! 📦', { icon: '🛵' })
+          return [order, ...prev]
+        })
       }
-    }
+    })
+    const interval = setInterval(loadOrders, 30000)
+    return () => { sub?.unsubscribe?.(); clearInterval(interval) }
+  }, [isOnline, user, currentOrder])
 
+  // GPS tracking
+  useEffect(() => {
+    if (!isOnline || !user) return
     const watchId = navigator.geolocation?.watchPosition(
-      (pos) => pushLocation(pos.coords.latitude, pos.coords.longitude),
-      (err) => console.warn('GPS error:', err),
-      { enableHighAccuracy: true, maximumAge: 8000, timeout: 5000 }
+      async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords
+        setDriverPos([lat, lng])
+        updateLocation(lat, lng)
+        updateDriverLocation(user.id, lat, lng).catch(() => {})
+        // Push ETA to active order
+        if (currentOrder && ['warehouse_confirmed', 'en_route'].includes(currentOrder.status)) {
+          try {
+            const { supabase } = await import('../../lib/supabase')
+            const { calculateETA } = await import('../../lib/eta')
+            const eta = calculateETA({ driverLat: lat, driverLng: lng, orderStatus: currentOrder.status, deliveryLat: currentOrder.delivery_lat, deliveryLng: currentOrder.delivery_lng })
+            await supabase.from('orders').update({ driver_lat: lat, driver_lng: lng, eta_minutes: eta?.totalMins || null }).eq('id', currentOrder.id)
+          } catch {}
+        }
+      },
+      null,
+      { enableHighAccuracy: true, maximumAge: 8000, timeout: 10000 }
     )
     return () => { if (watchId) navigator.geolocation?.clearWatch(watchId) }
   }, [isOnline, user, currentOrder])
 
-  const toggleOnline = async () => {
-    const next = !isOnline
-    setOnline(next)
-    if (user) await setDriverOnlineStatus(user.id, next).catch(console.error)
-    toast(next ? '🟢 You are now online' : '🔴 You are offline')
-  }
-
-  const handleAccept = async (order) => {
-    setLoading(true)
-    try {
-      const accepted = await acceptOrder(order.id, user.id)
-      setCurrentOrder(accepted)
-      setAvailableOrders(prev => prev.filter(o => o.id !== order.id))
-      toast.success('Order accepted! Head to warehouse for pickup.')
-    } catch { toast.error('Order already taken'); loadOrders() }
-    setLoading(false)
-  }
-
-  // Step 1: Driver arrives at warehouse, confirms each item is picked up
-  const handleWarehousePickup = () => setShowPickup(true)
-
-  const confirmPickup = async () => {
-    setShowPickup(false)
-    setLoading(true)
-    try {
-      await updateOrderStatus(currentOrder.id, 'warehouse_confirmed')
-      setCurrentOrder(prev => ({ ...prev, status: 'warehouse_confirmed' }))
-      toast.success('Pickup confirmed! Head to the customer.')
-    } catch { toast.error('Update failed') }
-    setLoading(false)
-  }
-
-  // Step 2: Driver arrives, starts delivery
-  const handleStartDelivery = async () => {
-    setLoading(true)
-    try {
-      await updateOrderStatus(currentOrder.id, 'en_route')
-      setCurrentOrder(prev => ({ ...prev, status: 'en_route' }))
-      toast.success('En route!')
-    } catch { toast.error('Update failed') }
-    setLoading(false)
-  }
-
-  // Step 3: Driver at door — enter PIN to confirm delivery
-  const handleDeliveryAtDoor = () => setShowPin(true)
-
-  const confirmDelivery = async () => {
-    setShowPin(false)
-    setLoading(true)
-    try {
-      await updateOrderStatus(currentOrder.id, 'delivered')
-
-      // Deduct stock NOW (only on confirmed delivery)
-      if (currentOrder.order_items?.length) {
-        await fetch(SUPABASE_URL + '/functions/v1/stock-manager', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
-          body: JSON.stringify({
-            type: 'order_placed',
-            order_items: currentOrder.order_items.map(i => ({
-              product_id: i.product_id || i.product?.id,
-              product_name: i.product?.name || 'Unknown',
-              quantity: i.quantity,
-            })),
-          }),
-        }).catch(err => console.error('Stock deduction failed:', err))
-      }
-
-      setCurrentOrder(null)
-      setStats(prev => ({ ...prev, runs: prev.runs + 1, earnings: prev.earnings + (currentOrder.total || 0) }))
-      toast.success('Delivery confirmed! Great work 🌴')
-    } catch { toast.error('Update failed') }
-    setLoading(false)
-  }
-
-  // Status steps
-  const STATUS_STEPS = {
-    assigned:             { label: 'Confirm Warehouse Pickup', icon: '📦', color:'#5A6B3A', action: handleWarehousePickup, desc: 'Head to warehouse · Collect all items' },
-    warehouse_confirmed:  { label: 'Start Delivery',           icon: '🛵', color:'#2B7A8B', action: handleStartDelivery,  desc: 'All items collected · Navigate to customer' },
-    en_route:             { label: 'Confirm Delivery',         icon: '🔐', color:'#C4683A', action: handleDeliveryAtDoor, desc: 'At the door · Enter customer PIN' },
-  }
+  const cfg = currentOrder ? STATUS_CONFIG[currentOrder.status] : null
+  const name = profile?.full_name?.split(' ')[0] || 'Driver'
 
   return (
-    <div style={{ minHeight:'100vh', background:'linear-gradient(170deg,#0A2A38,#0D3545)', color:'white', fontFamily:'DM Sans,sans-serif', paddingBottom:20 }}>
+    <div style={{ minHeight: '100vh', background: C.bg, color: 'white', fontFamily: 'DM Sans,sans-serif', paddingBottom: 80 }}>
 
-      {/* Header */}
-      <div style={{ background:'linear-gradient(135deg,#0D3B4A,#1A5263)', padding:'16px 16px 14px' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-          <div>
-            <div style={{ fontFamily:'DM Serif Display,serif', fontSize:22, color:'white', lineHeight:1 }}>Isla Drop Driver</div>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2 }}>{profile?.full_name || user?.email}</div>
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            {isOnline && (
-              <button onClick={togglePause}
-                style={{ padding:'5px 12px', background: isPaused?'rgba(245,201,122,0.2)':'rgba(255,255,255,0.1)', border:'0.5px solid ' + (isPaused?'rgba(245,201,122,0.5)':'rgba(255,255,255,0.2)'), borderRadius:20, fontSize:11, color: isPaused?'#F5C97A':'rgba(255,255,255,0.6)', cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
-                {isPaused ? '▶️ Resume' : '⏸ Pause'}
-              </button>
-            )}
-            <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer' }}>
-            <div style={{ fontSize:12, color: isOnline?'#7EE8A2':'rgba(255,255,255,0.4)' }}>{isOnline ? 'Online' : 'Offline'}</div>
-            <div style={{ position:'relative', width:44, height:24 }}>
-              <input type="checkbox" checked={isOnline} onChange={toggleOnline} style={{ opacity:0, width:0, height:0, position:'absolute' }} />
-              <div style={{ position:'absolute', inset:0, borderRadius:12, background: isOnline?'#5A6B3A':'rgba(255,255,255,0.15)', transition:'0.3s' }}>
-                <div style={{ position:'absolute', top:2, left: isOnline?'calc(100% - 22px)':2, width:20, height:20, borderRadius:'50%', background:'white', transition:'left 0.3s' }} />
-              </div>
-            </div>
-          </label>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-          {[
-            { val: stats.runs,                label:"Today's runs"  },
-            { val: '€' + stats.earnings.toFixed(0), label:'Earnings'  },
-            { val: (stats.avgTime||'—') + 'm',  label:'Avg time'     },
-          ].map(({ val, label }) => (
-            <div key={label} style={{ background:'rgba(255,255,255,0.1)', borderRadius:10, padding:'10px 12px' }}>
-              <div style={{ fontSize:20, fontWeight:500 }}>{val}</div>
-              <div style={{ fontSize:10, opacity:0.65, marginTop:2 }}>{label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display:'flex', borderBottom:'0.5px solid rgba(255,255,255,0.1)', background:'rgba(0,0,0,0.2)' }}>
-        {[{id:'orders',label:'📦 Orders'},{id:'stock',label:'🏪 Warehouse Stock'},{id:'earnings',label:'💰 Earnings'},{id:'start',label:'🚀 Getting Started'}].map(t => (
-          <button key={t.id} onClick={()=>setActiveTab(t.id)}
-            style={{ flex:1, padding:'12px 8px', border:'none', background:'none', color: activeTab===t.id?'white':'rgba(255,255,255,0.45)', fontSize:13, fontWeight: activeTab===t.id?500:400, cursor:'pointer', borderBottom: activeTab===t.id?'2px solid #C4683A':'2px solid transparent', fontFamily:'DM Sans,sans-serif', transition:'all 0.15s' }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Stock tab */}
-      {activeTab === 'stock' && <WarehouseStock />}
-      {activeTab === 'earnings' && <DriverEarningsTab />}
-      {activeTab === 'start' && <DriverOnboarding />}
-      {/* SOS always visible */}
-      <SOSButton />
-
-      {/* Orders tab */}
-      {activeTab === 'orders' && (
-        <div style={{ padding:'16px 16px 0' }}>
-
-          {/* Active order */}
-          {currentOrder && STATUS_STEPS[currentOrder.status] && (
-            <div style={{ background:'rgba(255,255,255,0.07)', border:'1.5px solid ' + STATUS_STEPS[currentOrder.status].color, borderRadius:14, padding:16, marginBottom:20 }}>
-
-              {/* Progress bar */}
-              <div style={{ display:'flex', gap:6, marginBottom:14 }}>
-                {['assigned','warehouse_confirmed','en_route','delivered'].map((step, i) => {
-                  const steps = ['assigned','warehouse_confirmed','en_route','delivered']
-                  const currentIdx = steps.indexOf(currentOrder.status)
-                  const done = i <= currentIdx
-                  return (
-                    <div key={step} style={{ flex:1, height:4, borderRadius:2, background: done ? STATUS_STEPS[currentOrder.status]?.color || '#5A6B3A' : 'rgba(255,255,255,0.15)', transition:'background 0.3s' }} />
-                  )
-                })}
-              </div>
-
-              <div style={{ fontSize:10, fontWeight:500, color:'rgba(255,255,255,0.5)', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:6 }}>
-                {STATUS_STEPS[currentOrder.status]?.desc}
-              </div>
-
-              <div style={{ fontSize:16, fontWeight:500, color:'white', marginBottom:2 }}>#{currentOrder.order_number}</div>
-              <div style={{ fontSize:14, color:'rgba(255,255,255,0.7)', marginBottom:2 }}>{currentOrder.delivery_address}</div>
-              {currentOrder.what3words && <div style={{ fontSize:12, color:'#5A6B3A', marginBottom:4 }}>/// {currentOrder.what3words}</div>}
-              {currentOrder.delivery_notes && <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:8 }}>📝 {currentOrder.delivery_notes}</div>}
-              <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:14 }}>{orderItems(currentOrder)}</div>
-
-              {/* Items checklist preview */}
-              {currentOrder.order_items?.length > 0 && currentOrder.status === 'assigned' && (
-                <div style={{ background:'rgba(255,255,255,0.05)', borderRadius:8, padding:'8px 12px', marginBottom:12 }}>
-                  <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginBottom:6 }}>ITEMS TO COLLECT:</div>
-                  {currentOrder.order_items.slice(0,5).map((item,i) => (
-                    <div key={i} style={{ fontSize:12, color:'rgba(255,255,255,0.7)', marginBottom:3 }}>
-                      · {item.quantity}x {item.product?.name || 'Item'}
-                    </div>
-                  ))}
-                  {currentOrder.order_items.length > 5 && <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)' }}>+{currentOrder.order_items.length-5} more items</div>}
-                </div>
-              )}
-
-              {/* Customer PIN reminder at delivery */}
-              {currentOrder.status === 'en_route' && (
-                <div style={{ background:'rgba(196,104,58,0.15)', border:'0.5px solid rgba(196,104,58,0.35)', borderRadius:8, padding:'10px 12px', marginBottom:12, fontSize:12, color:'#E8A070' }}>
-                  🔐 Ask the customer for their 4-digit delivery code to confirm handover
-                </div>
-              )}
-
-              <div style={{ display:'flex', gap:8 }}>
-                <button onClick={STATUS_STEPS[currentOrder.status]?.action} disabled={loading}
-                  style={{ flex:2, padding:'13px', background: STATUS_STEPS[currentOrder.status]?.color, color:'white', border:'none', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:14, fontWeight:500, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-                  <span>{STATUS_STEPS[currentOrder.status]?.icon}</span>
-                  {loading ? '...' : STATUS_STEPS[currentOrder.status]?.label}
-                </button>
-                <button onClick={() => openNavigation(currentOrder)}
-                  style={{ flex:1, padding:'13px', background:'rgba(255,255,255,0.1)', color:'white', border:'none', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, cursor:'pointer' }}>
-                  🗺 Nav
-                </button>
-              </div>
-
-              <div style={{ marginTop:12 }}>
-                <DriverMap order={currentOrder} isVisible={true} />
-              </div>
-
-              <div style={{ marginTop:10, padding:'8px 12px', background:'rgba(196,104,58,0.1)', borderRadius:8, fontSize:11, color:'#E8A070', display:'flex', gap:6 }}>
-                <span>🆔</span>
-                <span>Check photo ID for age-restricted items. Refuse if under 18.</span>
-              </div>
-            </div>
-          )}
-
-          {/* Available orders */}
-          {isOnline ? (
-            <>
-              {!currentOrder && (
-                <div style={{ fontSize:11, fontWeight:500, color:'rgba(255,255,255,0.5)', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12 }}>
-                  {availableOrders.length > 0 ? availableOrders.length + ' new request' + (availableOrders.length !== 1 ? 's' : '') : 'Waiting for orders…'}
-                </div>
-              )}
-
-              {availableOrders.length === 0 && !currentOrder && (
-                <div style={{ textAlign:'center', padding:'40px 20px', color:'rgba(255,255,255,0.4)', fontSize:14 }}>
-                  <div style={{ fontSize:40, marginBottom:12 }}>🛵</div>
-                  <div>No orders right now.</div>
-                  <div style={{ fontSize:12, marginTop:4 }}>Stay online — new orders will appear here.</div>
-                </div>
-              )}
-
-              {availableOrders.map(order => (
-                <div key={order.id} style={{ background:'rgba(255,255,255,0.07)', border: order.total > 100 ? '1.5px solid rgba(196,104,58,0.4)' : '0.5px solid rgba(255,255,255,0.1)', borderRadius:14, padding:16, marginBottom:12 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
-                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>#{order.order_number}</div>
-                    <span style={{ fontSize:10, padding:'3px 8px', borderRadius:12, fontWeight:500, background: order.total>100?'rgba(196,104,58,0.2)':'rgba(90,107,58,0.2)', color: order.total>100?'#E8A070':'#7EE8A2' }}>
-                      {order.total > 100 ? 'High value' : 'Standard'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize:14, fontWeight:500, color:'white', marginBottom:2 }}>{order.delivery_address}</div>
-                  {order.what3words && <div style={{ fontSize:12, color:'#5A6B3A', marginBottom:2 }}>/// {order.what3words}</div>}
-                  <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:12 }}>{orderItems(order)} · <strong style={{ color:'white' }}>€{order.total?.toFixed(2)}</strong></div>
-                  <div style={{ display:'flex', gap:8 }}>
-                    <button onClick={() => handleAccept(order)} disabled={loading || !!currentOrder}
-                      style={{ flex:1, padding:'10px', background: currentOrder?'rgba(255,255,255,0.08)':'#3D4F22', color:'white', border:'none', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, fontWeight:500, cursor: currentOrder?'default':'pointer', opacity: currentOrder?0.5:1 }}>
-                      {currentOrder ? 'Finish current run' : 'Accept run'}
-                    </button>
-                    <button onClick={() => openNavigation(order)} style={{ padding:'10px 14px', background:'rgba(255,255,255,0.1)', color:'white', border:'none', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, cursor:'pointer' }}>🗺</button>
-                  </div>
-                </div>
-              ))}
-            </>
-          ) : (
-            <div style={{ textAlign:'center', padding:'60px 20px', color:'rgba(255,255,255,0.4)' }}>
-              <div style={{ fontSize:48, marginBottom:12 }}>😴</div>
-              <div style={{ fontSize:16, fontWeight:500, marginBottom:6 }}>You are offline</div>
-              <div style={{ fontSize:14 }}>Toggle online above to start receiving orders.</div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Pickup confirmation overlay */}
-      {showPickup && currentOrder && (
-        <PickupConfirmation
-          order={currentOrder}
-          onConfirm={confirmPickup}
-          onCancel={() => setShowPickup(false)}
-        />
+      {/* Delivery Map (full screen overlay) */}
+      {showMap && currentOrder && (
+        <DeliveryMap order={currentOrder} driverPos={driverPos} onClose={() => setShowMap(false)} />
       )}
 
       {/* PIN entry overlay */}
       {showPin && currentOrder && (
         <PinEntry
-          expectedPin={currentOrder.delivery_pin || currentOrder.pin}
-          onSuccess={confirmDelivery}
+          order={currentOrder}
+          onSuccess={() => { setShowPin(false); setCurrentOrder(null); setActiveTab('home') }}
           onCancel={() => setShowPin(false)}
         />
       )}
+
+      {/* Header */}
+      <div style={{ background: 'rgba(0,0,0,0.25)', padding: '16px 16px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 20, color: 'white' }}>Hey, {name} 👋</div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+            {isOnline ? '🟢 Online · receiving orders' : '⚫ Offline'}
+          </div>
+        </div>
+        {/* Online toggle */}
+        <button onClick={toggleOnline}
+          style={{ background: isOnline ? 'rgba(126,232,162,0.15)' : 'rgba(255,255,255,0.08)', border: '0.5px solid ' + (isOnline ? 'rgba(126,232,162,0.4)' : C.border), borderRadius: 20, padding: '8px 16px', color: isOnline ? C.green : C.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+          {isOnline ? 'Go offline' : 'Go online'}
+        </button>
+      </div>
+
+      {/* Stats bar */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 0, background: 'rgba(0,0,0,0.2)', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
+        {[
+          { icon: '💰', val: '€' + (stats?.earnings || 0).toFixed(0), label: 'Today' },
+          { icon: '📦', val: stats?.deliveries || 0,                   label: 'Deliveries' },
+          { icon: '⭐', val: (stats?.rating || 5.0).toFixed(1),        label: 'Rating' },
+        ].map(s => (
+          <div key={s.label} style={{ padding: '10px 8px', textAlign: 'center', borderRight: '0.5px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ fontSize: 14 }}>{s.icon}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'white' }}>{s.val}</div>
+            <div style={{ fontSize: 10, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── HOME TAB ── */}
+      {activeTab === 'home' && (
+        <div style={{ padding: '16px' }}>
+
+          {/* Active order */}
+          {currentOrder && cfg && (
+            <div style={{ background: C.card, border: '0.5px solid rgba(196,104,58,0.4)', borderRadius: 18, padding: 16, marginBottom: 16 }}>
+              {/* Status badge */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ background: cfg.color + '22', border: '0.5px solid ' + cfg.color + '66', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: cfg.color }}>
+                  {cfg.label}
+                </div>
+                <div style={{ fontSize: 13, color: C.muted }}>#{currentOrder.order_number}</div>
+              </div>
+
+              {/* Progress */}
+              <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
+                {['assigned', 'warehouse_confirmed', 'en_route', 'delivered'].map((step, i) => {
+                  const steps = ['assigned', 'warehouse_confirmed', 'en_route', 'delivered']
+                  const curr = steps.indexOf(currentOrder.status)
+                  const done = i <= curr
+                  return <div key={step} style={{ flex: 1, height: 4, borderRadius: 2, background: done ? cfg.color : 'rgba(255,255,255,0.12)', transition: 'background 0.3s' }} />
+                })}
+              </div>
+
+              {/* Address */}
+              <div style={{ fontSize: 15, fontWeight: 600, color: 'white', marginBottom: 4 }}>
+                📍 {currentOrder.delivery_address || 'Delivery address'}
+              </div>
+              {currentOrder.what3words && (
+                <div style={{ fontSize: 12, color: C.green, marginBottom: 4 }}>/// {currentOrder.what3words}</div>
+              )}
+              {currentOrder.delivery_notes && (
+                <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>📝 {currentOrder.delivery_notes}</div>
+              )}
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 14 }}>{orderItems(currentOrder)}</div>
+
+              {/* PIN reminder */}
+              {currentOrder.status === 'en_route' && currentOrder.delivery_pin && (
+                <div style={{ background: 'rgba(196,104,58,0.12)', border: '0.5px solid rgba(196,104,58,0.3)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 20 }}>🔐</span>
+                  <div>
+                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>Customer PIN</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'white', letterSpacing: 4 }}>{currentOrder.delivery_pin}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setShowMap(true)}
+                  style={{ flex: 1, padding: '12px', background: 'rgba(43,122,139,0.2)', border: '0.5px solid rgba(43,122,139,0.4)', borderRadius: 12, color: '#7ECFE0', fontSize: 14, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif', fontWeight: 500 }}>
+                  🗺 Map
+                </button>
+                {cfg.next && (
+                  <button onClick={handleAdvanceStatus}
+                    style={{ flex: 2, padding: '12px', background: cfg.color, border: 'none', borderRadius: 12, color: '#0A2A38', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                    {cfg.nextLabel}
+                  </button>
+                )}
+                {currentOrder.status === 'en_route' && (
+                  <button onClick={() => setShowPin(true)}
+                    style={{ flex: 2, padding: '12px', background: C.green, border: 'none', borderRadius: 12, color: '#0A2A38', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                    🔐 Enter PIN
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* No active order */}
+          {!currentOrder && (
+            <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🛵</div>
+              <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 22, color: 'white', marginBottom: 6 }}>
+                {isOnline ? 'Ready for deliveries' : 'You are offline'}
+              </div>
+              <div style={{ fontSize: 14, color: C.muted, marginBottom: 24 }}>
+                {isOnline ? 'New orders will appear here automatically' : 'Go online to start receiving orders'}
+              </div>
+              {!isOnline && (
+                <button onClick={toggleOnline}
+                  style={{ padding: '14px 32px', background: C.accent, border: 'none', borderRadius: 14, color: 'white', fontSize: 16, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
+                  Go online
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Available orders */}
+          {isOnline && !currentOrder && availableOrders.length > 0 && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12 }}>
+                {availableOrders.length} order{availableOrders.length !== 1 ? 's' : ''} available
+              </div>
+              {availableOrders.map(order => (
+                <AvailableOrderCard key={order.id} order={order} onAccept={handleAccept} loading={accepting} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── EARNINGS TAB ── */}
+      {activeTab === 'earnings' && <EarningsTab stats={stats} />}
+
+      {/* ── Bottom tab bar ── */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(10,26,35,0.97)', borderTop: '0.5px solid rgba(255,255,255,0.1)', display: 'flex', backdropFilter: 'blur(12px)', zIndex: 100 }}>
+        {[
+          { id: 'home',     icon: '🏠', label: 'Home' },
+          { id: 'earnings', icon: '💰', label: 'Earnings' },
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            style={{ flex: 1, padding: '12px 0 10px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            <span style={{ fontSize: 22 }}>{tab.icon}</span>
+            <span style={{ fontSize: 10, color: activeTab === tab.id ? C.accent : C.muted, fontFamily: 'DM Sans,sans-serif', fontWeight: activeTab === tab.id ? 600 : 400 }}>
+              {tab.label}
+            </span>
+          </button>
+        ))}
+        <button onClick={clear}
+          style={{ flex: 1, padding: '12px 0 10px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <span style={{ fontSize: 22 }}>🚪</span>
+          <span style={{ fontSize: 10, color: C.muted, fontFamily: 'DM Sans,sans-serif' }}>Sign out</span>
+        </button>
+      </div>
     </div>
   )
 }
