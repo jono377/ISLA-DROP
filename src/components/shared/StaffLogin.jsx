@@ -47,7 +47,8 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
     setLoading(true)
     try {
       const { supabase, getProfile } = await import('../../lib/supabase')
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+      const { data, error } = await supabase.auth.signInWithPassword({
+ password })
       if (error) throw error
       let profile = await getProfile(data.user.id).catch(() => null)
       
@@ -59,10 +60,8 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
           .from('profiles')
           .upsert({
             id: data.user.id,
-            email: data.user.email,
             full_name: meta.full_name || data.user.email.split('@')[0],
-            role: role || 'customer',
-            status: role === 'ops' || role === 'driver' ? 'pending' : 'active',
+            role: role || 'ops',
           }, { onConflict: 'id' })
           .select()
           .single()
@@ -75,16 +74,11 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
         // Role mismatch - offer to fix it
         if (profile.role === 'customer' && role === 'ops') {
           // Auto-upgrade to ops if signing into ops portal
-          await supabase.from('profiles').update({ role: 'ops', status: 'pending' }).eq('id', data.user.id)
+          await supabase.from('profiles').update({ role: 'ops' }).eq('id', data.user.id)
           profile.role = 'ops'
-          profile.status = 'pending'
         } else {
           throw new Error('You do not have ' + role + ' access. Contact your administrator.')
         }
-      }
-
-      if (profile.status === 'pending' && role === 'ops') {
-        toast('Your account is pending approval by an admin.', { icon: '⏳', duration: 4000 })
       }
 
       setUser(data.user)
@@ -134,19 +128,15 @@ function CreateAccountForm({ role, onSuccess, onSignIn }) {
     try {
       const { supabase } = await import('../../lib/supabase')
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
         password,
         options: { data: { full_name: name.trim() } }
       })
       if (error) throw error
       if (data.user) {
-        const status = role === 'customer' ? 'active' : 'pending'
         const profileData = {
           id: data.user.id,
           full_name: name.trim(),
-          email: email.trim(),
-          role: role || 'customer',
-          status,
+          role: role || 'ops',
         }
 
         // Retry profile creation up to 3 times
@@ -164,12 +154,8 @@ function CreateAccountForm({ role, onSuccess, onSignIn }) {
         if (data.session) {
           setUser(data.user)
           setProfile(profileData)
-          if (status === 'pending') {
-            toast.success('Account created! An admin will approve your access shortly.', { duration: 5000 })
-          } else {
-            toast.success('Account created! Welcome to Isla Drop 🌴')
-            onSuccess?.()
-          }
+          toast.success('Account created! Welcome to Isla Drop 🌴')
+          onSuccess?.()
         } else {
           toast.success('Account created! Check your email to confirm, then sign in here.', { duration: 6000 })
           onSignIn?.()
