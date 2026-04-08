@@ -5,6 +5,22 @@ import {
 import { supabase } from '../../lib/supabase'
 import { useOpsStore } from '../../lib/store'
 import { formatDistanceToNow } from 'date-fns'
+import Analytics from './Analytics'
+import DemandForecast from './DemandForecast'
+import CustomerProfiles from './CustomerProfiles'
+import StockManager from './StockManager'
+import SupplierManager from './SupplierManager'
+import SaleManager from './SaleManager'
+import DiscountManager from './DiscountManager'
+import PromoBannerManager from './PromoBannerManager'
+import WinBackManager from './WinBackManager'
+import ConciergePipeline from './ConciergePipeline'
+import DriverEarnings from './DriverEarnings'
+import ActivityLog from './ActivityLog'
+import ImageManager from './ImageManager'
+import PartnerManager from './PartnerManager'
+import FleetMap from './FleetMap'
+
 
 
 const ORDER_STATUS_LABELS = {
@@ -400,65 +416,170 @@ export default function OpsApp() {
   const activeOrders = liveOrders.filter(o => !['delivered', 'cancelled'].includes(o.status))
   const recentDelivered = liveOrders.filter(o => o.status === 'delivered').slice(0, 5)
 
+  const NAV = [
+    { group: 'Live', items: [
+      { id: 'overview',  icon: '🏠', label: 'Overview' },
+      { id: 'orders',    icon: '📦', label: 'Orders' },
+      { id: 'fleet',     icon: '🛵', label: 'Fleet' },
+      { id: 'map',       icon: '🗺️', label: 'Live Map' },
+    ]},
+    { group: 'Business', items: [
+      { id: 'analytics', icon: '📊', label: 'Analytics' },
+      { id: 'forecast',  icon: '🔮', label: 'Forecast' },
+      { id: 'customers', icon: '👥', label: 'Customers' },
+      { id: 'earnings',  icon: '💰', label: 'Earnings' },
+    ]},
+    { group: 'Catalogue', items: [
+      { id: 'stock',     icon: '📋', label: 'Stock' },
+      { id: 'suppliers', icon: '🚚', label: 'Suppliers' },
+      { id: 'sale',      icon: '🏷️', label: 'Sale' },
+      { id: 'images',    icon: '🖼️', label: 'Images' },
+    ]},
+    { group: 'Marketing', items: [
+      { id: 'discounts', icon: '🎟️', label: 'Discounts' },
+      { id: 'banners',   icon: '📣', label: 'Banners' },
+      { id: 'winback',   icon: '💌', label: 'Win-back' },
+    ]},
+    { group: 'Concierge', items: [
+      { id: 'concierge', icon: '🌟', label: 'Bookings' },
+      { id: 'pipeline',  icon: '🔄', label: 'Pipeline' },
+      { id: 'partners',  icon: '🤝', label: 'Partners' },
+    ]},
+    { group: 'Team', items: [
+      { id: 'drivers',   icon: '👤', label: 'Drivers' },
+      { id: 'activity',  icon: '📝', label: 'Activity' },
+    ]},
+  ]
+
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 900)
+
   return (
-    <div style={{ paddingBottom: 80 }}>
-      {/* Header */}
-      <div style={{ background: '#1E1810', padding: '20px 20px 16px', color: 'white' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-          <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 22 }}>Ops Dashboard</div>
-          <div style={{ fontSize: 11, opacity: 0.45, textAlign: 'right' }}>
-            <div>{clock.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
-            <div>Ibiza · Live</div>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#F5F0E8', fontFamily: 'DM Sans, sans-serif' }}>
+
+      {/* Sidebar */}
+      <div style={{
+        width: sidebarOpen ? 220 : 60, flexShrink: 0, background: '#1A1208',
+        display: 'flex', flexDirection: 'column', transition: 'width 0.2s',
+        position: 'sticky', top: 0, height: '100vh', overflowY: 'auto', overflowX: 'hidden',
+        zIndex: 100,
+      }}>
+        {/* Logo */}
+        <div style={{ padding: sidebarOpen ? '20px 16px 16px' : '20px 8px 16px', borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: sidebarOpen ? 'space-between' : 'center' }}>
+            {sidebarOpen && <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 18, color: 'white' }}>Isla Drop</div>}
+            <button onClick={() => setSidebarOpen(o => !o)}
+              style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', color: 'white', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {sidebarOpen ? '◀' : '▶'}
+            </button>
+          </div>
+          {sidebarOpen && (
+            <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+              <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'white' }}>{stats.activeOrders || 0}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>ACTIVE</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#7EE8A2' }}>{stats.onlineDrivers || 0}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>DRIVERS</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#E8A070' }}>{stats.avgEta ? stats.avgEta + 'm' : '—'}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>AVG ETA</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Nav groups */}
+        <div style={{ flex: 1, padding: '8px 0', overflowY: 'auto' }}>
+          {NAV.map(group => (
+            <div key={group.group} style={{ marginBottom: 4 }}>
+              {sidebarOpen && (
+                <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.25)', letterSpacing: '1.2px', padding: '8px 16px 4px', textTransform: 'uppercase' }}>
+                  {group.group}
+                </div>
+              )}
+              {group.items.map(item => (
+                <button key={item.id} onClick={() => setTab(item.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    width: '100%', padding: sidebarOpen ? '9px 16px' : '9px 0',
+                    justifyContent: sidebarOpen ? 'flex-start' : 'center',
+                    background: tab === item.id ? 'rgba(196,104,58,0.2)' : 'none',
+                    border: 'none',
+                    borderLeft: tab === item.id ? '3px solid #C4683A' : '3px solid transparent',
+                    cursor: 'pointer', color: tab === item.id ? '#E8A070' : 'rgba(255,255,255,0.55)',
+                    fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+                    fontWeight: tab === item.id ? 600 : 400,
+                    transition: 'all 0.1s',
+                  }}>
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
+                  {sidebarOpen && item.label}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        {sidebarOpen && (
+          <div style={{ padding: '12px 16px', borderTop: '0.5px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
+              {clock.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} · Ibiza Live
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main content */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+
+        {/* Top bar */}
+        <div style={{ background: 'white', borderBottom: '0.5px solid rgba(42,35,24,0.1)', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 }}>
+          <div>
+            <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 20, color: '#1A1208' }}>
+              {NAV.flatMap(g => g.items).find(i => i.id === tab)?.icon} {NAV.flatMap(g => g.items).find(i => i.id === tab)?.label || 'Dashboard'}
+            </div>
+            <div style={{ fontSize: 11, color: '#9A8E80', marginTop: 2 }}>
+              Isla Drop Management · {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {activeOrders.length > 0 && (
+              <div style={{ background: '#C4683A', color: 'white', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>
+                {activeOrders.length} active {activeOrders.length === 1 ? 'order' : 'orders'}
+              </div>
+            )}
+            <button onClick={() => { const { clear } = useAuthStore.getState(); clear(); }}
+              style={{ padding: '7px 14px', background: '#F5F0E8', border: '0.5px solid rgba(42,35,24,0.15)', borderRadius: 8, fontSize: 12, cursor: 'pointer', color: '#7A6E60', fontFamily: 'DM Sans, sans-serif' }}>
+              Sign out
+            </button>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-          <KPI val={stats.activeOrders} label="Active orders" delta="Live" />
-          <KPI val={stats.onlineDrivers} label="Drivers online" delta={drivers.filter(d => d.is_online && !d.current_order_id).length + ' idle'} />
-          <KPI val={stats.avgEta ? stats.avgEta + 'm' : '—'} label="Avg ETA" delta="Today" />
+        {/* Tab content */}
+        <div style={{ flex: 1, padding: 24, maxWidth: 1400 }}>
+          {tab === 'overview'  && <OverviewTab activeOrders={activeOrders} drivers={drivers} alerts={alerts} stats={stats} />}
+          {tab === 'orders'    && <OrdersTab orders={liveOrders} />}
+          {tab === 'fleet'     && <FleetTab drivers={drivers} />}
+          {tab === 'map'       && <MapTab drivers={drivers} orders={activeOrders} />}
+          {tab === 'analytics' && <Analytics />}
+          {tab === 'forecast'  && <DemandForecast />}
+          {tab === 'customers' && <CustomerProfiles />}
+          {tab === 'earnings'  && <DriverEarnings />}
+          {tab === 'stock'     && <StockManager />}
+          {tab === 'suppliers' && <SupplierManager />}
+          {tab === 'sale'      && <SaleManager />}
+          {tab === 'images'    && <ImageManager />}
+          {tab === 'discounts' && <DiscountManager />}
+          {tab === 'banners'   && <PromoBannerManager />}
+          {tab === 'winback'   && <WinBackManager />}
+          {tab === 'concierge' && <ConciergeBookings />}
+          {tab === 'pipeline'  && <ConciergePipeline />}
+          {tab === 'partners'  && <PartnerManager />}
+          {tab === 'drivers'   && <DriverApprovals />}
+          {tab === 'activity'  && <ActivityLog />}
         </div>
-      </div>
-
-      {/* Sub-tabs */}
-      <div style={{ display: 'flex', background: '#F5F0E8', borderBottom: '0.5px solid rgba(42,35,24,0.12)' }}>
-        {['analytics', 'forecast', 'overview', 'orders', 'customers', 'fleet', 'map', 'stock', 'suppliers', 'sale', 'discounts', 'banners', 'winback', 'pipeline', 'partners', 'concierge', 'drivers', 'earnings', 'activity', 'images'].map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              flex: 1, padding: '12px 4px', border: 'none', background: 'none', cursor: 'pointer',
-              fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: tab === t ? 500 : 400,
-              color: tab === t ? '#C4683A' : '#7A6E60',
-              borderBottom: tab === t ? '2px solid #C4683A' : '2px solid transparent',
-              textTransform: 'capitalize',
-            }}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ padding: '16px 16px 0' }}>
-        {tab === 'overview' && <OverviewTab activeOrders={activeOrders} drivers={drivers} alerts={alerts} />}
-        {tab === 'orders' && <OrdersTab orders={liveOrders} />}
-        {tab === 'fleet' && <FleetTab drivers={drivers} />}
-        {tab === 'map' && <MapTab drivers={drivers} orders={activeOrders} />}
-        {tab === 'images' && <div style={{ margin:'0 -16px' }}><ImageManager /></div>}
-        {tab === 'stock' && <StockManager />}
-        {tab === 'sale' && <SaleManager />}
-        {tab === 'analytics' && <Analytics />}
-        {tab === 'customers' && <CustomerProfiles />}
-        {tab === 'forecast' && <DemandForecast />}
-        {tab === 'pipeline' && <ConciergePipeline />}
-        {tab === 'partners' && <PartnerManager />}
-        {tab === 'activity' && <ActivityLog />}
-        {tab === 'suppliers' && <SupplierManager />}
-        {tab === 'winback' && <WinBackManager />}
-        {tab === 'banners' && <PromoBannerManager />}
-        {tab === 'earnings' && <DriverEarnings />}
-        {tab === 'discounts' && <DiscountManager />}
-        {tab === 'concierge' && <ConciergeBookings />}
-        {tab === 'drivers' && <DriverApprovals />}
       </div>
     </div>
   )
