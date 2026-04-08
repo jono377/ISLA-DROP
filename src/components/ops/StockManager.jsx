@@ -32,23 +32,32 @@ function StockBar({ pct }) {
 // ── Seed stock from products catalogue ────────────────────────
 async function seedStockFromProducts(supabase) {
   const rows = PRODUCTS.map(p => ({
-    product_id:    p.id,
-    product_name:  p.name,
-    category:      p.category,
-    current_qty:   50,
-    min_qty:       5,
-    max_qty:       100,
-    reorder_point: 25,
+    product_id:      p.id,
+    product_name:    p.name,
+    category:        p.category,
+    current_qty:     50,
+    min_qty:         5,
+    max_qty:         100,
+    reorder_point:   25,
     alert_threshold: p.popular ? 0.35 : 0.25,
-    unit_cost:     p.price * 0.6,
-    velocity:      p.popular ? 'fast' : 'normal',
+    unit_cost:       p.price * 0.6,
+    velocity:        p.popular ? 'fast' : 'normal',
   }))
 
-  // Insert only rows that don't exist yet
-  const { error } = await supabase
-    .from('stock')
-    .upsert(rows, { onConflict: 'product_id', ignoreDuplicates: true })
-  return error
+  // Batch into chunks of 50 to avoid auth lock contention
+  const CHUNK = 50
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK)
+    const { error } = await supabase
+      .from('stock')
+      .upsert(chunk, { onConflict: 'product_id', ignoreDuplicates: true })
+    if (error) return error
+    // Small delay between batches to release the auth lock
+    if (i + CHUNK < rows.length) {
+      await new Promise(r => setTimeout(r, 300))
+    }
+  }
+  return null
 }
 
 export default function StockManager() {
