@@ -51,22 +51,18 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
       if (error) throw error
       let profile = await getProfile(data.user.id).catch(() => null)
       
-      // Profile missing - auto-create it (happens when email confirmation is off
-      // or profile insert failed during signup)
+      // Profile missing - try to create it, otherwise give clear instructions
       if (!profile) {
-        const meta = data.user.user_metadata || {}
-        const { data: newProfile, error: profileError } = await supabase
+        // Sign in first to get session, then insert profile
+        await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token })
+        const { data: np, error: pe } = await supabase
           .from('profiles')
-          .upsert({
-            id: data.user.id,
-            full_name: meta.full_name || data.user.email.split('@')[0],
-            role: role || 'ops',
-          }, { onConflict: 'id' })
-          .select()
-          .single()
-        
-        if (profileError) throw new Error('Profile setup failed. Please try again.')
-        profile = newProfile
+          .insert({ id: data.user.id, full_name: data.user.user_metadata?.full_name || data.user.email.split('@')[0], role: role || 'ops' })
+          .select().single()
+        if (pe || !np) {
+          throw new Error('Your account exists but has no profile. Please run the fix SQL in Supabase (check the ops setup docs) then sign in again.')
+        }
+        profile = np
       }
 
       if (role && profile.role !== role) {
