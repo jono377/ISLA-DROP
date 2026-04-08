@@ -47,8 +47,7 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
     setLoading(true)
     try {
       const { supabase, getProfile } = await import('../../lib/supabase')
-      const { data, error } = await supabase.auth.signInWithPassword({
- password })
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
       if (error) throw error
       let profile = await getProfile(data.user.id).catch(() => null)
       
