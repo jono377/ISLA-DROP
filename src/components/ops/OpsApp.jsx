@@ -731,6 +731,10 @@ function FleetTab({ drivers }) {
 
 
 
+function MapTab({ drivers, orders }) {
+  return <FleetMap drivers={drivers} orders={orders} />
+}
+
 function LiveOrderRow({ order }) {
   const statusColor = STATUS_COLORS[order.status] ?? '#E0D8CC'
   const itemsText = order.order_items?.map(i => i.quantity + '× ' + (i.products?.emoji ?? '')).join(' ') ?? ''
