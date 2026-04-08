@@ -49,9 +49,44 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
       const { supabase, getProfile } = await import('../../lib/supabase')
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
       if (error) throw error
-      const profile = await getProfile(data.user.id).catch(() => null)
-      if (!profile) throw new Error('Account not found. Please contact support.')
-      if (role && profile.role !== role) throw new Error('You do not have ' + role + ' access.')
+      let profile = await getProfile(data.user.id).catch(() => null)
+      
+      // Profile missing - auto-create it (happens when email confirmation is off
+      // or profile insert failed during signup)
+      if (!profile) {
+        const meta = data.user.user_metadata || {}
+        const { data: newProfile, error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            email: data.user.email,
+            full_name: meta.full_name || data.user.email.split('@')[0],
+            role: role || 'customer',
+            status: role === 'ops' || role === 'driver' ? 'pending' : 'active',
+          }, { onConflict: 'id' })
+          .select()
+          .single()
+        
+        if (profileError) throw new Error('Profile setup failed. Please try again.')
+        profile = newProfile
+      }
+
+      if (role && profile.role !== role) {
+        // Role mismatch - offer to fix it
+        if (profile.role === 'customer' && role === 'ops') {
+          // Auto-upgrade to ops if signing into ops portal
+          await supabase.from('profiles').update({ role: 'ops', status: 'pending' }).eq('id', data.user.id)
+          profile.role = 'ops'
+          profile.status = 'pending'
+        } else {
+          throw new Error('You do not have ' + role + ' access. Contact your administrator.')
+        }
+      }
+
+      if (profile.status === 'pending' && role === 'ops') {
+        toast('Your account is pending approval by an admin.', { icon: '⏳', duration: 4000 })
+      }
+
       setUser(data.user)
       setProfile(profile)
       toast.success('Welcome back!')
@@ -105,28 +140,38 @@ function CreateAccountForm({ role, onSuccess, onSignIn }) {
       })
       if (error) throw error
       if (data.user) {
-        // Create profile with the requested role (pending approval for drivers/ops)
         const status = role === 'customer' ? 'active' : 'pending'
-        await supabase.from('profiles').upsert({
+        const profileData = {
           id: data.user.id,
           full_name: name.trim(),
           email: email.trim(),
           role: role || 'customer',
           status,
-        }).then(() => {})
+        }
+
+        // Retry profile creation up to 3 times
+        let profileCreated = false
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const { error: pe } = await supabase.from('profiles').upsert(profileData, { onConflict: 'id' })
+          if (!pe) { profileCreated = true; break }
+          await new Promise(r => setTimeout(r, 500))
+        }
+
+        if (!profileCreated) {
+          console.warn('Profile creation failed but auth user exists - will be created on first sign in')
+        }
 
         if (data.session) {
-          // Auto-confirmed
           setUser(data.user)
-          setProfile({ id: data.user.id, full_name: name.trim(), role: role || 'customer', status })
+          setProfile(profileData)
           if (status === 'pending') {
-            toast.success('Account created! Your access is pending approval.')
+            toast.success('Account created! An admin will approve your access shortly.', { duration: 5000 })
           } else {
             toast.success('Account created! Welcome to Isla Drop 🌴')
             onSuccess?.()
           }
         } else {
-          toast.success('Check your email to confirm your account, then sign in.')
+          toast.success('Account created! Check your email to confirm, then sign in here.', { duration: 6000 })
           onSignIn?.()
         }
       }
