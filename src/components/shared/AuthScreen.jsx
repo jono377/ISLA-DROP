@@ -15,9 +15,10 @@ function Field({ label, type = 'text', value, onChange, placeholder }) {
   )
 }
 
-export default function AuthScreen() {
+export default function AuthScreen({ portalType = 'customer' }) {
   const [mode, setMode] = useState('signin')
-  const [form, setForm] = useState({ email: '', password: '', name: '', role: 'customer' })
+  const defaultRole = portalType === 'ops' ? 'ops' : portalType === 'driver' ? 'driver' : 'customer'
+  const [form, setForm] = useState({ email: '', password: '', name: '', role: defaultRole })
   const [loading, setLoading] = useState(false)
   const { setUser, setProfile } = useAuthStore()
 
@@ -133,7 +134,9 @@ export default function AuthScreen() {
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 36, color: '#2A2318', letterSpacing: '-0.5px' }}>Isla Drop</div>
-          <div style={{ fontSize: 14, color: '#7A6E60', marginTop: 4 }}>Ibiza · 24/7 Delivery</div>
+          <div style={{ fontSize: 14, color: '#7A6E60', marginTop: 4 }}>
+            {portalType === 'ops' ? '⚙️ Operations Dashboard' : portalType === 'driver' ? '🛵 Driver Portal' : 'Ibiza · 24/7 Delivery'}
+          </div>
         </div>
 
         {!isConfigured && (
@@ -143,7 +146,7 @@ export default function AuthScreen() {
         )}
         <div style={{ background: '#FEFCF9', borderRadius: 20, padding: 28, boxShadow: '0 4px 32px rgba(42,35,24,0.08)' }}>
           <div style={{ display: 'flex', gap: 4, background: '#F5F0E8', borderRadius: 10, padding: 4, marginBottom: 24 }}>
-            {['signin', 'signup'].map(m => (
+            {(portalType === 'customer' ? ['signin', 'signup'] : ['signin']).map(m => (
               <button key={m} onClick={() => setMode(m)}
                 style={{ flex: 1, padding: '9px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: mode === m ? 500 : 400, background: mode === m ? '#FEFCF9' : 'none', color: mode === m ? '#2A2318' : '#7A6E60', boxShadow: mode === m ? '0 1px 4px rgba(42,35,24,0.08)' : 'none' }}>
                 {m === 'signin' ? 'Sign in' : 'Sign up'}
@@ -155,14 +158,16 @@ export default function AuthScreen() {
             {mode === 'signup' && (
               <>
                 <Field label="Full name" value={form.name} onChange={handle('name')} placeholder="Your name" />
-                <div style={{ marginBottom: 14 }}>
-                  <label style={lbl}>Account type</label>
-                  <select value={form.role} onChange={handle('role')} style={inp}>
-                    <option value="customer">Customer</option>
-                    <option value="driver">Driver</option>
-                    <option value="ops">Operations</option>
-                  </select>
-                </div>
+                {portalType === 'customer' && (
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={lbl}>Account type</label>
+                    <select value={form.role} onChange={handle('role')} style={inp}>
+                      <option value="customer">Customer</option>
+                      <option value="driver">Driver</option>
+                      <option value="ops">Operations</option>
+                    </select>
+                  </div>
+                )}
               </>
             )}
             <Field label="Email" type="email" value={form.email} onChange={handle('email')} placeholder="you@example.com" />
