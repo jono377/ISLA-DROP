@@ -21,6 +21,22 @@ import ActivityLog from './ActivityLog'
 import ImageManager from './ImageManager'
 import PartnerManager from './PartnerManager'
 import FleetMap from './FleetMap'
+import {
+  DispatchBoard, SLAAlerts, OrderIntervention, DriverScorecards,
+  CustomerServiceTickets, RevenuePL, OrderHeatmap, PushNotificationCentre,
+  ZoneManager, ShiftScheduler, FinancialReconciliation, ProductPerformance,
+  OpsPlaybooks, DriverBroadcast
+} from './OpsModules'
+import {
+  AgeVerificationManager, StaffUserManager, ETAManager,
+  ComplianceLog, WebhooksManager
+} from './OpsModules2'
+import {
+  CustomerLTV, ReferralManager, DriverDocuments, InventoryForecasting
+} from './OpsModules3'
+import {
+  GlobalSearch, ExportManager, OpsSettings
+} from './OpsModules4'
 
 
 
@@ -402,6 +418,24 @@ export default function OpsApp() {
   }
 
   const [tab, setTab] = useState('overview')
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    let gPressed = false
+    const onKey = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (e.key === '/') { e.preventDefault(); setTab('search') }
+      if (e.key === 'r' || e.key === 'R') window.location.reload()
+      if (e.key === 'g' || e.key === 'G') { gPressed = true; setTimeout(()=>{ gPressed=false },1000); return }
+      if (gPressed) {
+        const map = { o:'overview', d:'dispatch', a:'analytics', c:'cs_tickets', s:'sla', f:'fleet', m:'map' }
+        if (map[e.key]) setTab(map[e.key])
+        gPressed = false
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const { stats, liveOrders, drivers, alerts, setStats, setLiveOrders, setDrivers, addAlert } = useOpsStore()
   const [clock, setClock] = useState(new Date())
 
@@ -459,6 +493,44 @@ export default function OpsApp() {
     { group: 'Team', items: [
       { id: 'drivers',   icon: '👤', label: 'Drivers' },
       { id: 'activity',  icon: '📝', label: 'Activity' },
+    ]},
+    { group: 'Dispatch', items: [
+      { id: 'dispatch',   icon: '🚦', label: 'Dispatch Board' },
+      { id: 'sla',        icon: '⏱️', label: 'SLA Alerts' },
+      { id: 'intervene',  icon: '🔧', label: 'Intervention' },
+      { id: 'broadcast',  icon: '📢', label: 'Driver Broadcast' },
+    ]},
+    { group: 'Performance', items: [
+      { id: 'scorecards',   icon: '🏆', label: 'Driver Scorecards' },
+      { id: 'cs_tickets',   icon: '🎫', label: 'Customer Service' },
+      { id: 'revenue_pl',   icon: '💹', label: 'Revenue & P&L' },
+      { id: 'product_perf', icon: '📦', label: 'Product Performance' },
+    ]},
+    { group: 'Operations', items: [
+      { id: 'heatmap',    icon: '🗺️', label: 'Order Heatmap' },
+      { id: 'push',       icon: '🔔', label: 'Push Notifications' },
+      { id: 'zones',      icon: '📍', label: 'Zone Manager' },
+      { id: 'shifts',     icon: '📅', label: 'Shift Scheduler' },
+      { id: 'reconcile',  icon: '🧾', label: 'Reconciliation' },
+      { id: 'playbooks',  icon: '⚡', label: 'Playbooks' },
+      { id: 'eta',        icon: '⏱️', label: 'ETA Manager' },
+      { id: 'webhooks',   icon: '🔗', label: 'Integrations' },
+    ]},
+    { group: 'Compliance', items: [
+      { id: 'age_verify',  icon: '🪪', label: 'Age Verification' },
+      { id: 'compliance',  icon: '⚖️', label: 'Compliance Log' },
+      { id: 'driver_docs', icon: '📄', label: 'Driver Documents' },
+      { id: 'staff',       icon: '👥', label: 'Staff Management' },
+    ]},
+    { group: 'Growth', items: [
+      { id: 'ltv',         icon: '💎', label: 'Customer LTV' },
+      { id: 'referrals',   icon: '🔗', label: 'Referral Manager' },
+      { id: 'inv_forecast',icon: '📈', label: 'Inv. Forecasting' },
+    ]},
+    { group: 'Tools', items: [
+      { id: 'search',      icon: '🔍', label: 'Global Search' },
+      { id: 'exports',     icon: '⬇️', label: 'Export Manager' },
+      { id: 'settings',    icon: '⚙️', label: 'Settings' },
     ]},
   ]
 
@@ -590,7 +662,33 @@ export default function OpsApp() {
           {tab === 'pipeline'  && <ConciergePipeline />}
           {tab === 'partners'  && <PartnerManager />}
           {tab === 'drivers'   && <DriverApprovals />}
-          {tab === 'activity'  && <ActivityLog />}
+          {tab === 'activity'    && <ActivityLog />}
+          {tab === 'dispatch'    && <DispatchBoard />}
+          {tab === 'sla'         && <SLAAlerts />}
+          {tab === 'intervene'   && <OrderIntervention />}
+          {tab === 'broadcast'   && <DriverBroadcast />}
+          {tab === 'scorecards'  && <DriverScorecards />}
+          {tab === 'cs_tickets'  && <CustomerServiceTickets />}
+          {tab === 'revenue_pl'  && <RevenuePL />}
+          {tab === 'product_perf'&& <ProductPerformance />}
+          {tab === 'heatmap'     && <OrderHeatmap />}
+          {tab === 'push'        && <PushNotificationCentre />}
+          {tab === 'zones'       && <ZoneManager />}
+          {tab === 'shifts'      && <ShiftScheduler />}
+          {tab === 'reconcile'   && <FinancialReconciliation />}
+          {tab === 'playbooks'   && <OpsPlaybooks />}
+          {tab === 'eta'         && <ETAManager />}
+          {tab === 'webhooks'    && <WebhooksManager />}
+          {tab === 'age_verify'  && <AgeVerificationManager />}
+          {tab === 'compliance'  && <ComplianceLog />}
+          {tab === 'driver_docs' && <DriverDocuments />}
+          {tab === 'staff'       && <StaffUserManager />}
+          {tab === 'ltv'         && <CustomerLTV />}
+          {tab === 'referrals'   && <ReferralManager />}
+          {tab === 'inv_forecast'&& <InventoryForecasting />}
+          {tab === 'search'      && <GlobalSearch onNavigate={(t)=>setTab(t)} />}
+          {tab === 'exports'     && <ExportManager />}
+          {tab === 'settings'    && <OpsSettings />}
         </div>
       </div>
     </div>
