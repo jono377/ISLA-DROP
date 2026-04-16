@@ -13,6 +13,21 @@ import {
   RouteHistory, AppLock, NotificationSetup, DispatchMessages,
   setupPushNotifications, sendPushNotification
 } from './DriverModules'
+import {
+  haptic, OrderCardSkeleton, EarningsRowSkeleton,
+  usePWAInstall, PWAInstallBanner,
+  useOfflineMode, OfflineBanner,
+  useCrashDetection, CrashAlert,
+  EarningsForecast,
+  CustomerFeedback,
+  RunningLateButton,
+  MultiOrderPanel,
+  VoiceMessage,
+  StreakBadge,
+  StatusBar,
+  useAppUpdate, UpdateBanner,
+  EmergencyCall,
+} from './DriverExtras'
 
 // ─────────────────────────────────────────────────────────────
 // DESIGN SYSTEM
@@ -813,7 +828,7 @@ function EarningsTab({ stats }) {
 // ─────────────────────────────────────────────────────────────
 // PERFORMANCE TAB
 // ─────────────────────────────────────────────────────────────
-function PerformanceTab({ stats }) {
+function PerformanceTab({ stats, onShowFeedback }) {
   const [leaderboard, setLeaderboard] = useState([])
   const deliveries = stats?.deliveries||0
   const rating = stats?.rating||5.0
@@ -892,6 +907,10 @@ function PerformanceTab({ stats }) {
       </div>
 
       {/* Leaderboard */}
+      <button onClick={onShowFeedback} style={{ width:'100%', padding:'14px', background:DS.yellowDim, border:'1px solid '+DS.yellowBdr, borderRadius:DS.r1, color:DS.yellow, fontSize:14, fontWeight:700, cursor:'pointer', marginBottom:20, fontFamily:DS.f, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+        ⭐ View customer feedback & reviews
+      </button>
+
       <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12, fontFamily:DS.f }}>🏆 Today's leaderboard</div>
       {leaderboard.length===0 ? (
         <div style={{ textAlign:'center', padding:'32px 0', color:DS.t3 }}>
@@ -1030,6 +1049,9 @@ export default function DriverApp() {
           setOnline, setCurrentOrder, setAvailableOrders, updateLocation } = useDriverStore()
 
   const [activeTab, setActiveTab]     = useState('home')
+  const { canInstall, install }         = usePWAInstall()
+  const { isOffline, getCachedOrder }   = useOfflineMode(currentOrder)
+  const { updateAvailable, refresh }    = useAppUpdate()
   const [showPin, setShowPin]         = useState(false)
   const [showMap, setShowMap]         = useState(false)
   const [showChat, setShowChat]       = useState(false)
@@ -1046,6 +1068,14 @@ export default function DriverApp() {
   const [showDispatch, setShowDispatch] = useState(false)
   const [appLocked, setAppLocked]     = useState(false)
   const [dispatchUnread, setDispatchUnread] = useState(0)
+  const [showFeedback, setShowFeedback]   = useState(false)
+  const [showVoice, setShowVoice]         = useState(false)
+  const [showEmergency, setShowEmergency] = useState(false)
+  const [showCrashAlert, setShowCrashAlert] = useState(false)
+  const [showPWABanner, setShowPWABanner] = useState(true)
+  const [gpsAccuracy, setGpsAccuracy]     = useState(null)
+  const [multiOrders, setMultiOrders]     = useState([])
+  const [activeOrderIdx, setActiveOrderIdx] = useState(0)
   const [showSOS, setShowSOS]         = useState(false)
   const [accepting, setAccepting]     = useState(false)
   const [driverPos, setDriverPos]     = useState(null)
@@ -1097,6 +1127,7 @@ export default function DriverApp() {
   }
 
   const handleAccept = async (order) => {
+    haptic.success()
     setAccepting(true); setNewOrder(null)
     try {
       await acceptOrder(order.id, user.id)
@@ -1109,6 +1140,7 @@ export default function DriverApp() {
   }
 
   const handleAdvance = async () => {
+    haptic.medium()
     if (!currentOrder) return
     const cfg = STATUS_CONFIG[currentOrder.status]
     if (!cfg?.next) return
@@ -1173,6 +1205,16 @@ export default function DriverApp() {
     return () => { if (wid) navigator.geolocation?.clearWatch(wid) }
   }, [isOnline, user, currentOrder])
 
+  // Crash detection
+  useCrashDetection({
+    enabled: isOnline,
+    driverPos,
+    onCrash: () => {
+      haptic.error()
+      setShowCrashAlert(true)
+    }
+  })
+
   const cfg = currentOrder ? STATUS_CONFIG[currentOrder.status] : null
   const name = profile?.full_name?.split(' ')[0] || 'Driver'
   const ageCheck = currentOrder ? hasAgeRestricted(currentOrder) : false
@@ -1203,8 +1245,15 @@ export default function DriverApp() {
       {showHistory    && <RouteHistory onClose={() => setShowHistory(false)} />}
       {showNotifSetup && <NotificationSetup onClose={() => setShowNotifSetup(false)} />}
       {showDispatch   && <DispatchMessages driverId={user?.id} onClose={() => { setShowDispatch(false); setDispatchUnread(0) }} />}
-      {appLocked      && <AppLock onUnlock={() => setAppLocked(false)} />}
+      {appLocked        && <AppLock onUnlock={() => setAppLocked(false)} />}
+      {showCrashAlert   && <CrashAlert driverPos={driverPos} onDismiss={() => { haptic.light(); setShowCrashAlert(false) }} onConfirmSOS={() => { setShowCrashAlert(false); setShowSOS(true) }} />}
+      {showFeedback     && <CustomerFeedback onClose={() => setShowFeedback(false)} />}
+      {showVoice && currentOrder && <VoiceMessage order={currentOrder} driverId={user?.id} onClose={() => setShowVoice(false)} />}
+      {showEmergency    && <EmergencyCall onClose={() => setShowEmergency(false)} />}
       {newOrder  && !currentOrder && <NewOrderAlert order={newOrder} onAccept={handleAccept} onDecline={() => setNewOrder(null)} loading={accepting} />}
+
+      {/* Status bar */}
+      <StatusBar gpsAccuracy={gpsAccuracy} isOffline={isOffline} />
 
       {/* ── HEADER ── */}
       <div style={{ background:DS.surface, borderBottom:'1px solid '+DS.border, padding:'14px 16px 0' }}>
@@ -1217,6 +1266,7 @@ export default function DriverApp() {
             </div>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <button onClick={() => setShowEmergency(true)} style={{ height:40, width:40, borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:18, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>🚑</button>
             <button onClick={() => setShowSOS(true)} style={{ height:40, padding:'0 14px', borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:13, fontWeight:700, cursor:'pointer' }}>🆘 SOS</button>
             <button onClick={toggleOnline} style={{ height:40, padding:'0 16px', borderRadius:99, background:isOnline?DS.greenDim:DS.accentDim, border:'1px solid '+(isOnline?DS.greenBdr:DS.accentBdr), color:isOnline?DS.green:DS.accent, fontSize:13, fontWeight:700, cursor:'pointer' }}>
               {isOnline?'● Online':'○ Go online'}
@@ -1264,6 +1314,24 @@ export default function DriverApp() {
               </button>
             ))}
           </div>
+
+          {/* PWA install banner */}
+          {canInstall && showPWABanner && <PWAInstallBanner onInstall={() => { install(); setShowPWABanner(false) }} onDismiss={() => setShowPWABanner(false)} />}
+
+          {/* Update banner */}
+          {updateAvailable && <UpdateBanner onUpdate={refresh} onDismiss={() => {}} />}
+
+          {/* Offline banner */}
+          {isOffline && <OfflineBanner />}
+
+          {/* Earnings forecast */}
+          {isOnline && (stats?.deliveries||0) > 0 && <EarningsForecast stats={stats} shiftSecs={shiftSecs} />}
+
+          {/* Streak badge */}
+          <StreakBadge />
+
+          {/* Multi-order panel */}
+          {multiOrders.length > 1 && <MultiOrderPanel orders={multiOrders} activeOrderIndex={activeOrderIdx} onSwitch={setActiveOrderIdx} onClose={() => setMultiOrders([])} />}
 
           {/* Active order card */}
           {currentOrder && cfg && (
@@ -1375,13 +1443,19 @@ export default function DriverApp() {
                   </button>
                 )}
 
-                {/* Report issue */}
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:0 }}>
+                {/* Running late */}
+                {currentOrder.status === 'en_route' && <RunningLateButton order={currentOrder} driverPos={driverPos} />}
+
+                {/* Report issue + voice */}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:0 }}>
                   <button onClick={() => setShowIssue(true)} style={{ padding:'10px', background:'transparent', border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t3, fontSize:12, cursor:'pointer' }}>
                     ⚠️ Report issue
                   </button>
                   <button onClick={() => setShowSignature(true)} style={{ padding:'10px', background:'transparent', border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t3, fontSize:12, cursor:'pointer' }}>
-                    ✍️ Get signature
+                    ✍️ Sign
+                  </button>
+                  <button onClick={() => setShowVoice(true)} style={{ padding:'10px', background:'transparent', border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t3, fontSize:12, cursor:'pointer' }}>
+                    🎤 Voice
                   </button>
                 </div>
               </div>
@@ -1436,7 +1510,7 @@ export default function DriverApp() {
       )}
 
       {activeTab==='earnings'    && <EarningsTab stats={stats} />}
-      {activeTab==='performance' && <PerformanceTab stats={stats} />}
+      {activeTab==='performance' && <PerformanceTab stats={stats} onShowFeedback={() => setShowFeedback(true)} />}
       {activeTab==='settings'    && <SettingsTab profile={profile} stats={stats} onSignOut={clear} />}
 
       {/* ── BOTTOM TAB BAR ── */}
