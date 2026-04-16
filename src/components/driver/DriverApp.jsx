@@ -1218,7 +1218,6 @@ export default function DriverApp() {
   const cfg = currentOrder ? STATUS_CONFIG[currentOrder.status] : null
   const name = profile?.full_name?.split(' ')[0] || 'Driver'
   const ageCheck = currentOrder ? hasAgeRestricted(currentOrder) : false
-]
 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768)
   useEffect(() => {
