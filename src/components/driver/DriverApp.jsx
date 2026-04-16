@@ -1282,6 +1282,7 @@ export default function DriverApp() {
       {showPin && currentOrder && <PinEntry order={currentOrder} onSuccess={() => { setShowPin(false); setCurrentOrder(null); setActiveTab('home') }} onCancel={() => setShowPin(false)} />}
       {showIssue && currentOrder && <IssueReport order={currentOrder} onClose={() => setShowIssue(false)} />}
       {showSOS      && <SosPanel driverPos={driverPos} onClose={() => setShowSOS(false)} />}
+      {showFeedback  && <CustomerFeedback onClose={() => setShowFeedback(false)} />}
       {showExpenses  && <ExpenseLogger onClose={() => setShowExpenses(false)} />}
       {showPayslip   && <PayslipGenerator profile={profile} onClose={() => setShowPayslip(false)} />}
       {showIncident  && <IncidentReport onClose={() => setShowIncident(false)} />}
@@ -1487,8 +1488,8 @@ export default function DriverApp() {
           </div>
         )}
 
-        {activeTab === 'earnings' && <EarningsTab stats={stats} isDesktop={false} />}
-        {activeTab === 'performance' && <PerformanceTab stats={stats} onShowFeedback={() => {}} isDesktop={false} />}
+        {activeTab === 'earnings' && <EarningsTab stats={stats} isDesktop={isWide} />}
+        {activeTab === 'performance' && <PerformanceTab stats={stats} onShowFeedback={() => setShowFeedback(true)} isDesktop={isWide} />}
         {activeTab === 'settings' && <SettingsTab profile={profile} stats={stats} onSignOut={clear} isDesktop={isWide} onExpenses={() => setShowExpenses(true)} onPayslip={() => setShowPayslip(true)} onIncident={() => setShowIncident(true)} onNotifs={() => setShowNotifSetup(true)} onLock={() => setAppLocked(true)} />}
       </div>
 
