@@ -7,6 +7,12 @@ import {
 } from '../../lib/supabase'
 import { useAuthStore, useDriverStore } from '../../lib/store'
 import { useLeafletMap, PIN_ICON } from '../../lib/useLeafletMap'
+import {
+  WeatherWidget, BarcodeScanner, SignaturePad, ExpenseLogger,
+  PayslipGenerator, IncidentReport, BonusTracker, ZoneHeatmap,
+  RouteHistory, AppLock, NotificationSetup, DispatchMessages,
+  setupPushNotifications, sendPushNotification
+} from './DriverModules'
 
 // ─────────────────────────────────────────────────────────────
 // DESIGN SYSTEM
@@ -999,6 +1005,15 @@ function SettingsTab({ profile, stats, onSignOut }) {
         </div>
       ))}
 
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', margin:'20px 0 10px', fontFamily:DS.f }}>Finance</div>
+      <Row icon="💰" label="Expenses & tips" sub="Log cash tips and fuel costs" style={{ cursor:'pointer' }} />
+      <Row icon="📄" label="Weekly payslip" sub="Download earnings statement" style={{ cursor:'pointer' }} />
+
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', margin:'20px 0 10px', fontFamily:DS.f }}>Safety</div>
+      <Row icon="🚨" label="Report incident" sub="Accidents, near misses, theft" style={{ cursor:'pointer' }} />
+      <Row icon="🔔" label="Push notifications" sub="Get order alerts in background" style={{ cursor:'pointer' }} />
+      <Row icon="🔒" label="App lock" sub="PIN protect the driver app" style={{ cursor:'pointer' }} />
+
       <button onClick={onSignOut} style={{ width:'100%', marginTop:12, padding:14, background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, color:DS.red, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:DS.f }}>
         🚪 Sign out
       </button>
@@ -1019,6 +1034,18 @@ export default function DriverApp() {
   const [showMap, setShowMap]         = useState(false)
   const [showChat, setShowChat]       = useState(false)
   const [showIssue, setShowIssue]     = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [showSignature, setShowSignature] = useState(false)
+  const [showExpenses, setShowExpenses] = useState(false)
+  const [showPayslip, setShowPayslip] = useState(false)
+  const [showIncident, setShowIncident] = useState(false)
+  const [showBonus, setShowBonus]     = useState(false)
+  const [showHeatmap, setShowHeatmap] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [showNotifSetup, setShowNotifSetup] = useState(false)
+  const [showDispatch, setShowDispatch] = useState(false)
+  const [appLocked, setAppLocked]     = useState(false)
+  const [dispatchUnread, setDispatchUnread] = useState(0)
   const [showSOS, setShowSOS]         = useState(false)
   const [accepting, setAccepting]     = useState(false)
   const [driverPos, setDriverPos]     = useState(null)
@@ -1061,8 +1088,12 @@ export default function DriverApp() {
     const next = !isOnline
     setOnline(next)
     if (user) await setDriverOnlineStatus(user.id, next).catch(()=>{})
-    if (next) { loadOrders(); toast.success('You are ONLINE',{duration:3000}) }
-    else toast('You are offline',{duration:3000})
+    if (next) {
+      loadOrders()
+      toast.success('You are ONLINE',{duration:3000})
+      // Setup push notifications on first go-online
+      if (Notification?.permission === 'default') setupPushNotifications()
+    } else toast('You are offline',{duration:3000})
   }
 
   const handleAccept = async (order) => {
@@ -1096,6 +1127,7 @@ export default function DriverApp() {
       if (!currentOrder) {
         setNewOrder(order)
         if (navigator.vibrate) navigator.vibrate([200,100,200,100,200])
+        sendPushNotification(order)
       }
     })
     const iv = setInterval(loadOrders, 20000)
@@ -1160,7 +1192,18 @@ export default function DriverApp() {
       {showChat  && currentOrder && <CustomerChat order={currentOrder} driverId={user?.id} onClose={() => setShowChat(false)} />}
       {showPin   && currentOrder && <PinEntry order={currentOrder} onSuccess={() => { setShowPin(false); setCurrentOrder(null); setActiveTab('home') }} onCancel={() => setShowPin(false)} />}
       {showIssue && currentOrder && <IssueReport order={currentOrder} onClose={() => setShowIssue(false)} />}
-      {showSOS   && <SosPanel driverPos={driverPos} onClose={() => setShowSOS(false)} />}
+      {showSOS        && <SosPanel driverPos={driverPos} onClose={() => setShowSOS(false)} />}
+      {showScanner    && currentOrder && <BarcodeScanner order={currentOrder} onComplete={() => { setShowScanner(false); toast.success('Items verified! Start delivery 🛵') }} onClose={() => setShowScanner(false)} />}
+      {showSignature  && currentOrder && <SignaturePad order={currentOrder} onComplete={() => setShowSignature(false)} onSkip={() => setShowSignature(false)} />}
+      {showExpenses   && <ExpenseLogger onClose={() => setShowExpenses(false)} />}
+      {showPayslip    && <PayslipGenerator profile={profile} onClose={() => setShowPayslip(false)} />}
+      {showIncident   && <IncidentReport driverPos={driverPos} onClose={() => setShowIncident(false)} />}
+      {showBonus      && <BonusTracker stats={stats} onClose={() => setShowBonus(false)} />}
+      {showHeatmap    && <ZoneHeatmap onClose={() => setShowHeatmap(false)} />}
+      {showHistory    && <RouteHistory onClose={() => setShowHistory(false)} />}
+      {showNotifSetup && <NotificationSetup onClose={() => setShowNotifSetup(false)} />}
+      {showDispatch   && <DispatchMessages driverId={user?.id} onClose={() => { setShowDispatch(false); setDispatchUnread(0) }} />}
+      {appLocked      && <AppLock onUnlock={() => setAppLocked(false)} />}
       {newOrder  && !currentOrder && <NewOrderAlert order={newOrder} onAccept={handleAccept} onDecline={() => setNewOrder(null)} loading={accepting} />}
 
       {/* ── HEADER ── */}
@@ -1201,6 +1244,26 @@ export default function DriverApp() {
       {/* ── HOME TAB ── */}
       {activeTab==='home' && (
         <div style={{ padding:16, paddingBottom:90 }}>
+
+          {/* Weather + quick actions */}
+          <div style={{ marginBottom:12 }}>
+            <WeatherWidget />
+          </div>
+
+          {/* Quick action bar */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginBottom:16 }}>
+            {[
+              { icon:'📍', label:'Demand', action:()=>setShowHeatmap(true), color:DS.blue },
+              { icon:'🎯', label:'Bonuses', action:()=>setShowBonus(true), color:DS.yellow },
+              { icon:'📢', label:'Dispatch'+(dispatchUnread>0?' ('+dispatchUnread+')':''), action:()=>setShowDispatch(true), color:DS.purple },
+              { icon:'📊', label:'Insights', action:()=>setShowHistory(true), color:DS.teal },
+            ].map(qa => (
+              <button key={qa.label} onClick={qa.action} style={{ padding:'10px 4px', background:DS.surface, border:'1px solid '+DS.border, borderRadius:DS.r1, cursor:'pointer', textAlign:'center' }}>
+                <div style={{ fontSize:18, marginBottom:3 }}>{qa.icon}</div>
+                <div style={{ fontSize:9, color:qa.color, fontWeight:600, fontFamily:DS.f, lineHeight:1.2 }}>{qa.label}</div>
+              </button>
+            ))}
+          </div>
 
           {/* Active order card */}
           {currentOrder && cfg && (
@@ -1290,6 +1353,11 @@ export default function DriverApp() {
                   <button onClick={() => setShowMap(true)} style={{ padding:'12px 8px', background:DS.blueDim, border:'1px solid '+DS.blueBdr, borderRadius:DS.r1, color:DS.blue, fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
                     🗺 Map
                   </button>
+                  {currentOrder.status==='assigned' && (
+                    <button onClick={() => setShowScanner(true)} style={{ padding:'12px 8px', background:DS.tealDim||'rgba(20,184,166,0.12)', border:'1px solid rgba(20,184,166,0.3)', borderRadius:DS.r1, color:DS.teal||'#14B8A6', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
+                      📦 Scan
+                    </button>
+                  )}
                   <button onClick={() => setShowChat(true)} style={{ padding:'12px 8px', background:'rgba(168,85,247,0.12)', border:'1px solid rgba(168,85,247,0.3)', borderRadius:DS.r1, color:DS.purple, fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
                     💬 Chat
                   </button>
@@ -1308,9 +1376,14 @@ export default function DriverApp() {
                 )}
 
                 {/* Report issue */}
-                <button onClick={() => setShowIssue(true)} style={{ width:'100%', padding:'10px', background:'transparent', border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t3, fontSize:12, cursor:'pointer' }}>
-                  ⚠️ Report a delivery issue
-                </button>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:0 }}>
+                  <button onClick={() => setShowIssue(true)} style={{ padding:'10px', background:'transparent', border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t3, fontSize:12, cursor:'pointer' }}>
+                    ⚠️ Report issue
+                  </button>
+                  <button onClick={() => setShowSignature(true)} style={{ padding:'10px', background:'transparent', border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t3, fontSize:12, cursor:'pointer' }}>
+                    ✍️ Get signature
+                  </button>
+                </div>
               </div>
             </Card>
           )}
