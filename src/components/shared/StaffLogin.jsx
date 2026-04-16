@@ -51,29 +51,35 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
       if (error) throw error
       let profile = await getProfile(data.user.id).catch(() => null)
       
-      // Profile missing - try to create it, otherwise give clear instructions
+      // Profile missing — create it
       if (!profile) {
-        // Sign in first to get session, then insert profile
-        await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token })
         const { data: np, error: pe } = await supabase
           .from('profiles')
-          .insert({ id: data.user.id, full_name: data.user.user_metadata?.full_name || data.user.email.split('@')[0], role: role || 'ops' })
+          .upsert({ 
+            id: data.user.id, 
+            full_name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User', 
+            role: role || 'ops' 
+          }, { onConflict: 'id' })
           .select().single()
-        if (pe || !np) {
-          throw new Error('Your account exists but has no profile. Please run the fix SQL in Supabase (check the ops setup docs) then sign in again.')
+        if (!pe && np) {
+          profile = np
+        } else {
+          // Try fetching again in case upsert succeeded but select failed
+          profile = await getProfile(data.user.id).catch(() => null)
         }
-        profile = np
+        if (!profile) {
+          throw new Error('Could not load your profile. Please contact ops@isladrop.net')
+        }
       }
 
-      if (role && profile.role !== role) {
-        // Role mismatch - offer to fix it
-        if (profile.role === 'customer' && role === 'ops') {
-          // Auto-upgrade to ops if signing into ops portal
-          await supabase.from('profiles').update({ role: 'ops' }).eq('id', data.user.id)
-          profile.role = 'ops'
-        } else {
-          throw new Error('You do not have ' + role + ' access. Contact your administrator.')
-        }
+      // Strict role check — no auto-upgrades
+      if (role === 'ops' && !['ops', 'admin'].includes(profile.role)) {
+        await supabase.auth.signOut()
+        throw new Error('This account does not have ops access. Sign up through the Management Portal or contact your administrator.')
+      }
+      if (role === 'driver' && profile.role !== 'driver') {
+        await supabase.auth.signOut()
+        throw new Error('This account does not have driver access. Contact your administrator.')
       }
 
       setUser(data.user)
