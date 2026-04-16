@@ -1612,7 +1612,7 @@ export default function DriverApp() {
       </div>}
 
       <style>{'@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}'}</style>
-      </div>{/* end main content column */}
+      </div>
     </div>
   )
 }
