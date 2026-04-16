@@ -32,6 +32,8 @@ import {
 // ─────────────────────────────────────────────────────────────
 // DESIGN SYSTEM
 // ─────────────────────────────────────────────────────────────
+const pcs = n => n.toFixed(0) + String.fromCharCode(37)
+
 const DS = {
   // Colours
   bg:       '#0D0D0D',
@@ -768,7 +770,7 @@ function EarningsTab({ stats, isDesktop }) {
           </div>
         </div>
         <div style={{ background:DS.border, borderRadius:99, height:8, overflow:'hidden', marginBottom:8 }}>
-          <div style={{ height:'100%', borderRadius:99, background:goalPct>=100?DS.green:'linear-gradient(to right,'+DS.accent+','+DS.yellow+')', width:(goalPct).toFixed(0)+'%', transition:'width 0.6s ease' }} />
+          <div style={{ height:'100%', borderRadius:99, background:goalPct>=100?DS.green:'linear-gradient(to right,'+DS.accent+','+DS.yellow+')', width:pcs(goalPct), transition:'width 0.6s ease' }} />
         </div>
         <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, fontFamily:DS.f }}>
           <span style={{ color:goalPct>=100?DS.green:DS.accent, fontWeight:700 }}>€{todayEarnings.toFixed(2)} earned</span>

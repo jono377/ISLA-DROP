@@ -23,6 +23,8 @@ const DS = {
   r1:'8px', r2:'16px', r3:'24px',
 }
 
+const pcs = n => n.toFixed(0) + String.fromCharCode(37)
+
 function Card({ children, style={}, accent }) {
   return <div style={{ background:DS.surface, borderRadius:DS.r2, border:'1px solid '+(accent?accent+'40':DS.border), overflow:'hidden', ...style }}>{children}</div>
 }
@@ -64,9 +66,9 @@ export const haptic = {
 // 2. SKELETON LOADING SCREENS
 // Professional loading states instead of spinners
 // ═══════════════════════════════════════════════════════════════
-function Skeleton({ width='100%', height=16, radius=8, style={} }) {
+function Skeleton({ width='100vw', height=16, radius=8, style={} }) {
   return (
-    <div style={{ width, height, borderRadius:radius, background:'linear-gradient(90deg,'+DS.surface2+' 25%,'+DS.border2+' 50%,'+DS.surface2+' 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite', ...style }} />
+    <div style={{ width, height, borderRadius:radius, background:'linear-gradient(to right,'+DS.surface2+','+DS.border2+','+DS.surface2+')', backgroundSize:'400px', ...style }} />
   )
 }
 
@@ -78,16 +80,16 @@ export function OrderCardSkeleton() {
         <Skeleton width={60} height={20} />
       </div>
       <Skeleton height={12} style={{ marginBottom:8 }} />
-      <Skeleton width='70%' height={12} style={{ marginBottom:16 }} />
+      <Skeleton width='70vw' height={12} style={{ marginBottom:16 }} />
       <div style={{ display:'flex', gap:8 }}>
         {[1,2,3,4].map(i=><div key={i} style={{ flex:1, height:4, borderRadius:2, background:DS.border2 }} />)}
       </div>
       <div style={{ marginTop:16 }}>
         <Skeleton height={12} style={{ marginBottom:8 }} />
-        <Skeleton width='80%' height={12} style={{ marginBottom:16 }} />
+        <Skeleton width='80vw' height={12} style={{ marginBottom:16 }} />
         <Skeleton height={48} radius={8} />
       </div>
-      <style>{'@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}'}</style>
+
     </Card>
   )
 }
@@ -300,7 +302,7 @@ export function EarningsForecast({ stats, shiftSecs }) {
           <div style={{ fontSize:9, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.4px', fontFamily:DS.f }}>Forecast total</div>
         </div>
         <div style={{ textAlign:'center', borderLeft:'1px solid '+DS.border, borderRight:'1px solid '+DS.border }}>
-          <div style={{ fontSize:18, fontWeight:800, color:DS.blue, fontFamily:DS.f }}>€{ratePerHour.toFixed(0)}/h</div>
+          <div style={{ fontSize:18, fontWeight:800, color:DS.blue, fontFamily:DS.f }}>€{ratePerHour.toFixed(0) + "/h"}</div>
           <div style={{ fontSize:9, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.4px', fontFamily:DS.f }}>Current rate</div>
         </div>
         <div style={{ textAlign:'center' }}>
@@ -379,7 +381,7 @@ export function CustomerFeedback({ onClose }) {
                   <span style={{ fontSize:11, color:DS.t3, width:8, fontFamily:DS.f }}>{star}</span>
                   <span style={{ fontSize:11, color:DS.yellow }}>★</span>
                   <div style={{ flex:1, height:6, background:DS.border, borderRadius:3, overflow:'hidden' }}>
-                    <div style={{ height:'100%', borderRadius:3, background:DS.yellow, width:pct+'%', transition:'width 0.5s' }} />
+                    <div style={{ height:'100%', borderRadius:3, background:DS.yellow, width:pcs(pct), transition:'width 0.5s' }} />
                   </div>
                   <span style={{ fontSize:11, color:DS.t3, width:16, textAlign:'right', fontFamily:DS.f }}>{count}</span>
                 </div>
@@ -592,7 +594,7 @@ export function VoiceMessage({ order, driverId, onClose }) {
             </div>
             <div style={{ fontSize:20, fontWeight:800, color:DS.red, fontFamily:DS.f }}>{duration}s / 30s</div>
             <div style={{ background:DS.border, borderRadius:99, height:4, margin:'8px auto', maxWidth:200, overflow:'hidden' }}>
-              <div style={{ height:'100%', background:DS.red, width:(duration/30*100)+'%', transition:'width 1s linear' }} />
+              <div style={{ height:'100%', background:DS.red, width:pcs(duration/30*100), transition:'width 1s linear' }} />
             </div>
           </div>
         ) : audioUrl ? (
@@ -681,7 +683,7 @@ export function StreakBadge({ compact=false }) {
       {streak < 7 && (
         <div style={{ marginTop:10 }}>
           <div style={{ background:DS.border, borderRadius:99, height:4, overflow:'hidden' }}>
-            <div style={{ height:'100%', background:DS.accent, width:(streak/7*100)+'%', borderRadius:99 }} />
+            <div style={{ height:'100%', background:DS.accent, width:pcs(streak/7*100), borderRadius:99 }} />
           </div>
           <div style={{ fontSize:10, color:DS.t3, marginTop:4, fontFamily:DS.f }}>{7-streak} more day{7-streak!==1?'s':''} to 7-day streak bonus</div>
         </div>

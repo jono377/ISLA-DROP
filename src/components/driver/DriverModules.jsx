@@ -24,6 +24,8 @@ const DS = {
 }
 
 // ── Primitive helpers ─────────────────────────────────────────
+const pcs = n => n.toFixed(0) + String.fromCharCode(37)
+
 function Card({ children, style={}, accent }) {
   return <div style={{ background:DS.surface, borderRadius:DS.r2, border:'1px solid '+(accent?accent+'40':DS.border), overflow:'hidden', ...style }}>{children}</div>
 }
@@ -642,7 +644,7 @@ export function BonusTracker({ stats, onClose }) {
               </div>
             </div>
             <div style={{ background:DS.border, borderRadius:99, height:6, overflow:'hidden', marginBottom:4 }}>
-              <div style={{ height:'100%', borderRadius:99, background:done?DS.yellow:DS.accent, width:pct+'%', transition:'width 0.5s' }} />
+              <div style={{ height:'100%', borderRadius:99, background:done?DS.yellow:DS.accent, width:pcs(pct), transition:'width 0.5s' }} />
             </div>
             <div style={{ fontSize:11, color:DS.t3, fontFamily:DS.f }}>
               {c.prefix||''}{c.current} / {c.prefix||''}{c.target} {c.unit}
@@ -717,7 +719,7 @@ export function ZoneHeatmap({ onClose }) {
               <Pill color={z.color} style={{ fontSize:9, padding:'2px 7px' }}>{z.demand}</Pill>
             </div>
             <div style={{ background:DS.border, borderRadius:99, height:4, width:150, overflow:'hidden' }}>
-              <div style={{ height:'100%', borderRadius:99, background:z.color, width:Math.min(100,(z.orders/8)*100)+'%' }} />
+              <div style={{ height:'100%', borderRadius:99, background:z.color, width:pcs(Math.min(100,(z.orders/8)*100)) }} />
             </div>
           </div>
           <div style={{ textAlign:'right' }}>
