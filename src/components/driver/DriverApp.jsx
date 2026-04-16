@@ -330,7 +330,6 @@ function DeliveryMap({ order, driverPos, onClose }) {
           <ActionBtn onClick={whatsapp} color={DS.green} outline style={{ fontSize:12, padding:'10px 4px' }}>💬 WA</ActionBtn>
         </div>
       </div>
-      </div>
     </div>
   )
 }
@@ -431,7 +430,6 @@ function CustomerChat({ order, driverId, onClose }) {
             ➤
           </button>
         </div>
-      </div>
       </div>
     </div>
   )
@@ -1048,8 +1046,6 @@ function SettingsTab({ profile, stats, onSignOut, isDesktop }) {
       <button onClick={onSignOut} style={{ width:'100%', marginTop:12, padding:14, background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, color:DS.red, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:DS.f }}>
         🚪 Sign out
       </button>
-      </div>
-    </div>
   )
 }
 
