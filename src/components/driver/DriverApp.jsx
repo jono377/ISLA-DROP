@@ -261,8 +261,8 @@ function DeliveryMap({ order, driverPos, onClose }) {
       const coords = data.routes[0].geometry.coordinates.map(([lng,lat])=>[lat,lng])
       routeRef.current = L.polyline(coords, { color:DS.accent, weight:5, opacity:0.85 })
       routeRef.current.addTo(mapRef.current)
-      setDist((data.routes[0].distance/1000).toFixed(1))
-      setEta(Math.ceil(data.routes[0].duration/60))
+      setDist((data.routes[0].distance * 0.001).toFixed(1))
+      setEta(Math.ceil(data.routes[0].duration * 0.01667))
     } catch {}
   }, [mapRef])
 
@@ -799,7 +799,7 @@ function EarningsTab({ stats, isDesktop }) {
         <div style={{ display:'flex', gap:3, height:72, alignItems:'flex-end' }}>
           {PEAK_HOURS.map(h => {
             const curr = String(currentHour).padStart(2,'0')===h.h
-            const barH = Math.round(h.v * 56 / 100) + 'px'
+            const barH = Math.round(h.v * 0.56) + 'px'
             return (
               <div key={h.h} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
                 <div style={{ width:'100%', height:barH, background:curr?DS.green:h.v>80?DS.accent:h.v>50?DS.yellow:DS.border2, borderRadius:'4px 4px 0 0', transition:'height 0.3s' }} />
@@ -1099,7 +1099,7 @@ export default function DriverApp() {
     if (!isOnline) { clearInterval(shiftRef.current); setShiftStart(null); setShiftSecs(0); return }
     const t0 = Date.now()
     setShiftStart(t0)
-    shiftRef.current = setInterval(() => setShiftSecs(Math.floor((Date.now()-t0)/1000)), 1000)
+    shiftRef.current = setInterval(() => setShiftSecs(Math.floor((Date.now()-t0) * 0.001)), 1000)
     return () => clearInterval(shiftRef.current)
   }, [isOnline])
 
@@ -1107,7 +1107,7 @@ export default function DriverApp() {
   useEffect(() => {
     if (!currentOrder) { setOrderTimer(0); return }
     const start = new Date(currentOrder.created_at).getTime()
-    const t = setInterval(() => setOrderTimer(Math.floor((Date.now()-start)/1000)), 1000)
+    const t = setInterval(() => setOrderTimer(Math.floor((Date.now()-start) * 0.001)), 1000)
     return () => clearInterval(t)
   }, [currentOrder])
 
@@ -1188,8 +1188,8 @@ export default function DriverApp() {
       // Speed alert (approximate from consecutive positions)
       // Proximity alert — 2 min away
       if (currentOrder?.delivery_lat && !alertedProximity && ['en_route'].includes(currentOrder.status)) {
-        const R=6371, dLat=(currentOrder.delivery_lat-lat)*Math.PI/180, dLng=(currentOrder.delivery_lng-lng)*Math.PI/180
-        const a=Math.sin(dLat/2)**2+Math.cos(lat*Math.PI/180)*Math.cos(currentOrder.delivery_lat*Math.PI/180)*Math.sin(dLng/2)**2
+        const R=6371, dLat=(currentOrder.delivery_lat-lat)*0.01745, dLng=(currentOrder.delivery_lng-lng)*0.01745
+        const a=Math.sin(dLat/2)**2+Math.cos(lat*0.01745)*Math.cos(currentOrder.delivery_lat*0.01745)*Math.sin(dLng/2)**2
         const dist=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))
         if (dist < 0.3) {
           alertedProximity = true
