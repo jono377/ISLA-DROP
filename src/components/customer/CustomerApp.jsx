@@ -23,6 +23,10 @@ import {
   FirstOrderBanner, PWAInstallPrompt, DriverContact, ReferralShare,
   SortFilterSheet, WhatsAppButton, OverlayErrorBoundary
 } from './CustomerFeatures2'
+import {
+  DriverProfileCard, LateBanner, ProductReviews, DriverTip,
+  OrderIssue, SmartSuggestions, WalletPayButton
+} from './CustomerFeatures3'
 import { useWishlistStore } from '../../lib/store'
 
 const VIEWS = {
@@ -454,6 +458,9 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
           )}
 
+          {/* Smart time-of-day suggestions */}
+          <SmartSuggestions previousItems={prevItems} />
+
           {/* Best sellers */}
           <div style={{ paddingTop:prevItems.length?0:16, marginBottom:22 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0 16px', marginBottom:12 }}>
@@ -533,6 +540,10 @@ export default function CustomerApp() {
   const [showUpsell, setShowUpsell] = useState(false)
   const [showDriverContact, setShowDriverContact] = useState(false)
   const [showReferral, setShowReferral] = useState(false)
+  const [showOrderIssue, setShowOrderIssue] = useState(false)
+  const [showReviews, setShowReviews] = useState(null)
+  const [tip, setTip] = useState(0)
+  const [prevETA, setPrevETA] = useState(null)
 
   const { user } = useAuthStore()
   const cart = useCartStore()
@@ -575,6 +586,13 @@ export default function CustomerApp() {
     setView(VIEWS.CHECKOUT)
   }
 
+  // Track ETA changes for LateBanner
+  useEffect(() => {
+    if (activeOrder?.estimated_minutes && activeOrder.estimated_minutes !== prevETA) {
+      setPrevETA(activeOrder.estimated_minutes)
+    }
+  }, [activeOrder?.estimated_minutes])
+
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
       const { createOrder, subscribeToOrder: subToOrder } = await import('../../lib/supabase')
@@ -583,7 +601,8 @@ export default function CustomerApp() {
         deliveryLat: cart.deliveryLat, deliveryLng: cart.deliveryLng,
         deliveryAddress: cart.deliveryAddress, deliveryNotes: cart.deliveryNotes,
         what3words: cart.what3words, subtotal: cart.getSubtotal(),
-        total: Math.max(0, cart.getTotal() - (promoCode?.reward_eur||0)),
+        total: Math.max(0, cart.getTotal() - (promoCode?.reward_eur||0) + (tip||0)),
+        tip_amount: tip||0,
         paymentIntentId, scheduled_at: scheduledDelivery ? new Date(scheduledDelivery.date+'T'+scheduledDelivery.time).toISOString() : null,
       })
       cart.clearCart(); setPromoCode(null); setActiveOrder(order); setView(VIEWS.TRACKING)
@@ -659,6 +678,8 @@ export default function CustomerApp() {
         </div>
 
         <div style={{ fontFamily:F.serif, fontSize:16, color:'white', marginBottom:16 }}>Payment</div>
+        <DriverTip onChange={setTip} />
+        <WalletPayButton total={Math.max(0, cart.getTotal()-(promoCode?.reward_eur||0)+(tip||0))} onSuccess={handlePaymentSuccess} />
         <StripeCheckout onSuccess={handlePaymentSuccess} onCancel={()=>setView(VIEWS.BASKET)} />
       </div>
     </div>
@@ -690,11 +711,23 @@ export default function CustomerApp() {
             <div><div style={{ fontSize:12, color:'rgba(255,255,255,0.45)' }}>Estimated arrival</div><div style={{ fontSize:22, fontWeight:500, color:'white' }}>{activeOrder.estimated_minutes} min</div></div>
           </div>
         )}
+        <LateBanner order={activeOrder} prevETA={prevETA} />
+
         {activeOrder.driver_id && (
-          <div style={{ marginBottom:16 }}>
-            <div style={{ fontFamily:F.serif, fontSize:16, color:'white', marginBottom:10 }}>Live tracking</div>
-            <OrderTrackingMap order={activeOrder} driverId={activeOrder.driver_id} />
-          </div>
+          <>
+            <DriverProfileCard driverId={activeOrder.driver_id} onContact={()=>setShowDriverContact(true)} />
+            <div style={{ marginBottom:16 }}>
+              <div style={{ fontFamily:F.serif, fontSize:16, color:'white', marginBottom:10 }}>Live tracking</div>
+              <OrderTrackingMap order={activeOrder} driverId={activeOrder.driver_id} />
+            </div>
+          </>
+        )}
+
+        {activeOrder.status==='delivered' && !showOrderIssue && (
+          <button onClick={()=>setShowOrderIssue(true)}
+            style={{ width:'100%', padding:12, marginBottom:10, background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:12, color:'rgba(255,255,255,0.6)', fontFamily:F.sans, fontSize:13, cursor:'pointer' }}>
+            ⚠️ Problem with your order?
+          </button>
         )}
         {activeOrder.status === 'en_route' && (
           <button onClick={()=>setShowDriverContact(true)}
@@ -761,8 +794,10 @@ export default function CustomerApp() {
       {showHelp && <OverlayErrorBoundary onClose={()=>setHelp(false)}><HelpSupport onClose={()=>setShowHelp(false)} />}
       {showLoyalty && <OverlayErrorBoundary onClose={()=>setLoyalty(false)}><LoyaltyCard onClose={()=>setShowLoyalty(false)} />}
       {showNotifications && <OverlayErrorBoundary onClose={()=>setNotifications(false)}><NotificationSettings onClose={()=>setShowNotifications(false)} />}
-      {showDetail && <ProductDetail product={showDetail} onClose={()=>setShowDetail(null)} />}
+      {showDetail && <ProductDetail product={showDetail} onClose={()=>setShowDetail(null)} onReviews={()=>setShowReviews(showDetail?.id)} />}
+      {showReviews && <OverlayErrorBoundary onClose={()=>setShowReviews(null)}><ProductReviews productId={showReviews} onClose={()=>setShowReviews(null)} /></OverlayErrorBoundary>}
       {showRating && <RatingPrompt order={showRating} onClose={()=>setShowRating(null)} />}
+      {showOrderIssue && activeOrder && <OverlayErrorBoundary onClose={()=>setShowOrderIssue(false)}><OrderIssue order={activeOrder} onClose={()=>setShowOrderIssue(false)} /></OverlayErrorBoundary>}
       {showCocktails && <CocktailBuilder products={PRODUCTS} onClose={()=>setShowCocktails(false)} />}
       {showBundles && <BundleDeals products={PRODUCTS} onClose={()=>setShowBundles(false)} />}
       {showSchedule && <ScheduleDelivery onClose={()=>setShowSchedule(false)} onSchedule={s=>{ setScheduledDelivery(s); setShowSchedule(false) }} />}
