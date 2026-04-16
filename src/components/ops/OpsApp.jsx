@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { useOpsStore, useAuthStore } from '../../lib/store'
 import { formatDistanceToNow } from 'date-fns'
 import Analytics from './Analytics'
+import FunnelAnalytics from './FunnelAnalytics'
 import DemandForecast from './DemandForecast'
 import CustomerProfiles from './CustomerProfiles'
 import StockManager from './StockManager'
@@ -434,6 +435,7 @@ export default function OpsApp() {
     ]},
     { group: 'Business', items: [
       { id: 'analytics', icon: '📊', label: 'Analytics' },
+      { id: 'funnel', icon: '📉', label: 'Customer Journey' },
       { id: 'forecast',  icon: '🔮', label: 'Forecast' },
       { id: 'customers', icon: '👥', label: 'Customers' },
       { id: 'earnings',  icon: '💰', label: 'Earnings' },
@@ -573,6 +575,7 @@ export default function OpsApp() {
           {tab === 'fleet'     && <FleetTab drivers={drivers} />}
           {tab === 'map'       && <MapTab drivers={drivers} orders={activeOrders} />}
           {tab === 'analytics' && <Analytics />}
+          {tab === 'funnel'    && <FunnelAnalytics />}
           {tab === 'forecast'  && <DemandForecast />}
           {tab === 'customers' && <CustomerProfiles />}
           {tab === 'earnings'  && <DriverEarnings />}
