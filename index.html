@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#2B7A8B" />
+    <meta name="theme-color" content="#FF6B35" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -37,5 +37,12 @@
     <!-- Onfido mounts here when triggered -->
     <div id="onfido-mount"></div>
     <script type="module" src="/src/main.jsx"></script>
-  </body>
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/driver-sw.js').catch(() => {})
+      })
+    }
+  </script>
+</body>
 </html>
