@@ -1237,6 +1237,7 @@ export default function DriverApp() {
 
   return (
     <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f, display:'flex', overflow:'hidden', width:'100%' }}>
+      <style>{globalStyles}</style>
 
       {/* ── OVERLAYS ── */}
       {showMap   && currentOrder && <DeliveryMap order={currentOrder} driverPos={driverPos} onClose={() => setShowMap(false)} />}
@@ -1613,7 +1614,6 @@ export default function DriverApp() {
         ))}
       </div>}
 
-      <style>{globalStyles}</style>
       </div>
     </div>
   )
