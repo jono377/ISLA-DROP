@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '../../lib/store'
+import { supabase } from '../../lib/supabase'
 
 const C = {
   bg: 'linear-gradient(170deg,#0A2A38,#0D3545)',
@@ -54,8 +55,6 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
     }, 10000)
 
     try {
-      const { supabase } = await import('../../lib/supabase')
-
       // Sign in with 8s timeout
       const signInPromise = supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -183,7 +182,6 @@ function CreateAccountForm({ role, onSuccess, onSignIn }) {
     if (password !== confirm) { toast.error('Passwords do not match'); return }
     setLoading(true)
     try {
-      const { supabase } = await import('../../lib/supabase')
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -262,7 +260,6 @@ function ForgotPasswordForm({ onBack }) {
     if (!email) { toast.error('Please enter your email address'); return }
     setLoading(true)
     try {
-      const { supabase } = await import('../../lib/supabase')
       const redirectTo = window.location.origin + '/?reset=true'
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
       if (error) throw error
@@ -310,7 +307,6 @@ function ResetPasswordForm({ onDone }) {
     if (password !== confirm) { toast.error('Passwords do not match'); return }
     setLoading(true)
     try {
-      const { supabase } = await import('../../lib/supabase')
       const { error } = await supabase.auth.updateUser({ password })
       if (error) throw error
       toast.success('Password updated! Please sign in.')
