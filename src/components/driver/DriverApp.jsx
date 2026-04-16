@@ -720,138 +720,146 @@ function NewOrderAlert({ order, onAccept, onDecline, loading }) {
 // EARNINGS TAB
 // ─────────────────────────────────────────────────────────────
 function EarningsTab({ stats, isDesktop }) {
-  const [history, setHistory] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState('today')
-  const [goal, setGoal] = useState(100)
-  const todayEarnings = stats?.earnings || 0
-  const goalPct = Math.min(100, (todayEarnings/goal)*100)
-  const currentHour = new Date().getHours()
+  const [period, setPeriod] = React.useState('today')
+  const [goal, setGoal] = React.useState(100)
+  const [history, setHistory] = React.useState([])
+  const [loading, setLoading] = React.useState(false)
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      try {
-        const { supabase } = await import('../../lib/supabase')
-        const { useAuthStore } = await import('../../lib/store')
+  const todayEarnings = stats?.earnings || 0
+  const goalPct = Math.min(100, todayEarnings * 100 / Math.max(goal, 1))
+  const currentHour = new Date().getHours()
+  const total = history.reduce((s, e) => s + (e.amount || 0), 0)
+
+  React.useEffect(() => {
+    setLoading(true)
+    import('../../lib/supabase').then(({ supabase }) => {
+      import('../../lib/store').then(({ useAuthStore }) => {
         const user = useAuthStore.getState().user
-        if (!user) return
-        const from = new Date()
-        if (period==='today') from.setHours(0,0,0,0)
-        else if (period==='week') from.setDate(from.getDate()-7)
-        else from.setDate(1)
-        const { data } = await supabase.from('driver_earnings').select('*').eq('driver_id',user.id).gte('created_at',from.toISOString()).order('created_at',{ascending:false})
-        if (data) setHistory(data)
-      } catch {}
-      setLoading(false)
-    }
-    load()
+        const now = new Date()
+        const from = new Date(now)
+        if (period === 'today') from.setHours(0, 0, 0, 0)
+        else if (period === 'week') from.setDate(now.getDate() - 7)
+        else from.setDate(now.getDate() - 30)
+        supabase.from('driver_earnings').select('*').eq('driver_id', user?.id)
+          .gte('created_at', from.toISOString()).order('created_at', { ascending: false })
+          .then(({ data }) => { if (data) setHistory(data); setLoading(false) })
+          .catch(() => setLoading(false))
+      })
+    }).catch(() => setLoading(false))
   }, [period])
 
-  const total = history.reduce((s,e) => s+(e.amount||0), 0)
+  const PEAK = [
+    { h:'00', l:'12am', v:90 }, { h:'01', l:'1am',  v:95 }, { h:'02', l:'2am',  v:85 },
+    { h:'03', l:'3am',  v:60 }, { h:'04', l:'4am',  v:30 }, { h:'05', l:'5am',  v:20 },
+    { h:'12', l:'12pm', v:40 }, { h:'18', l:'6pm',  v:50 }, { h:'20', l:'8pm',  v:65 },
+    { h:'22', l:'10pm', v:80 }, { h:'23', l:'11pm', v:88 },
+  ]
+
+  const padHour = String(currentHour).padStart(2, '0')
+  const peakBars = PEAK.map(h => ({
+    ...h,
+    isCurr: h.h === String(currentHour).padStart(2, '0'),
+    ht: Math.round(h.v * 0.56) + 'px',
+    bg: h.h === String(currentHour).padStart(2, '0') ? DS.green : h.v > 80 ? DS.accent : h.v > 50 ? DS.yellow : DS.border2
+  }))
 
   return (
-    <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
+    <div style={{ padding: isDesktop ? 24 : 16, paddingBottom: isDesktop ? 24 : 90, boxSizing:'border-box' }}>
 
-      {/* Summary */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
         {[
-          { label:"Today's earnings", val:'€'+todayEarnings.toFixed(2), color:DS.green, icon:'💰' },
-          { label:'Deliveries today',  val:stats?.deliveries||0,          color:DS.blue,  icon:'📦' },
-          { label:'Period total',      val:'€'+total.toFixed(2),          color:DS.yellow,icon:'📊' },
-          { label:'Driver rating',     val:(stats?.rating||5.0).toFixed(1)+'★', color:DS.accent, icon:'⭐' },
+          { label:'Today earnings', val:'€' + todayEarnings.toFixed(2), color:DS.green, icon:'💰' },
+          { label:'Deliveries',     val:stats?.deliveries || 0,         color:DS.blue,  icon:'📦' },
+          { label:'Period total',   val:'€' + total.toFixed(2),         color:DS.yellow,icon:'📊' },
+          { label:'Rating',         val:(stats?.rating || 5).toFixed(1) + '★', color:DS.accent, icon:'⭐' },
         ].map(s => (
           <Card key={s.label} style={{ padding:'16px 12px', textAlign:'center' }}>
             <div style={{ fontSize:24, marginBottom:6 }}>{s.icon}</div>
-            <div style={{ fontSize:22, fontWeight:800, color:s.color, fontFamily:DS.f }}>{s.val}</div>
-            <div style={{ fontSize:10, color:DS.t3, marginTop:4, textTransform:'uppercase', letterSpacing:'0.5px', fontFamily:DS.f }}>{s.label}</div>
+            <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.val}</div>
+            <div style={{ fontSize:10, color:DS.t3, marginTop:4, textTransform:'uppercase' }}>{s.label}</div>
           </Card>
         ))}
       </div>
 
-      {/* Goal tracker */}
       <Card style={{ padding:16, marginBottom:12 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ fontSize:14, fontWeight:700, color:DS.t1, fontFamily:DS.f }}>🎯 Daily goal</div>
+          <div style={{ fontSize:14, fontWeight:700, color:DS.t1 }}>Daily goal</div>
           <div style={{ display:'flex', gap:6 }}>
-            {[50,100,150,200].map(g => (
+            {[50, 100, 150, 200].map(g => (
               <button key={g} onClick={() => setGoal(g)}
-                style={{ padding:'4px 9px', background:goal===g?DS.accentDim:DS.surface2, border:'1px solid '+(goal===g?DS.accent:DS.border2), borderRadius:99, color:goal===g?DS.accent:DS.t3, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:DS.f }}>
-                €{g}
+                style={{ padding:'4px 9px', background:goal===g?DS.accentDim:DS.surface2, border:'1px solid '+(goal===g?DS.accent:DS.border2), borderRadius:DS.r1, color:goal===g?DS.accent:DS.t3, fontSize:12, cursor:'pointer' }}>
+                {g}
               </button>
             ))}
           </div>
         </div>
         <div style={{ background:DS.border, borderRadius:99, height:8, overflow:'hidden', marginBottom:8 }}>
-          <div style={{ height:'100%', borderRadius:99, background:goalPct>=100?DS.green:'linear-gradient(to right,'+DS.accent+','+DS.yellow+')', width:pcs(goalPct), transition:'width 0.6s ease' }} />
+          <div style={{ height:'100%', borderRadius:99, background:goalPct>=100?DS.green:DS.accent, width: pcs(Math.min(100, goalPct)), transition:'width 0.5s' }} />
         </div>
-        <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, fontFamily:DS.f }}>
-          <span style={{ color:goalPct>=100?DS.green:DS.accent, fontWeight:700 }}>€{todayEarnings.toFixed(2)} earned</span>
-          <span style={{ color:DS.t3 }}>€{Math.max(0,goal-todayEarnings).toFixed(2)} to go</span>
+        <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
+          <span style={{ color:goalPct>=100?DS.green:DS.accent, fontWeight:700 }}>€{todayEarnings.toFixed(2)}</span>
+          <span style={{ color:DS.t3 }}>€{Math.max(0, goal - todayEarnings).toFixed(2)} to go</span>
         </div>
-        {goalPct>=100 && <div style={{ marginTop:10, textAlign:'center', fontSize:13, color:DS.green, fontWeight:700, fontFamily:DS.f }}>🎉 Goal reached!</div>}
       </Card>
 
-      {/* Peak hours */}
       <Card style={{ padding:16, marginBottom:12 }}>
-        <div style={{ fontSize:13, fontWeight:700, color:DS.t1, marginBottom:2, fontFamily:DS.f }}>🔥 Ibiza peak hours</div>
-        <div style={{ fontSize:11, color:DS.t3, marginBottom:16, fontFamily:DS.f }}>Plan your shift around peak demand</div>
+        <div style={{ fontSize:13, fontWeight:700, color:DS.t1, marginBottom:2 }}>Peak hours</div>
+        <div style={{ fontSize:11, color:DS.t3, marginBottom:14 }}>Best times to be online in Ibiza</div>
         <div style={{ display:'flex', gap:3, height:72, alignItems:'flex-end' }}>
-          {PEAK_HOURS.map(h => {
-            const curr = String(currentHour).padStart(2,'0')===h.h
-            const barH = Math.round(h.v * 0.56) + 'px'
-            return (
-              <div key={h.h} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                <div style={{ width:'100%', height:barH, background:curr?DS.green:h.v>80?DS.accent:h.v>50?DS.yellow:DS.border2, borderRadius:'4px 4px 0 0', transition:'height 0.3s' }} />
-                <div style={{ fontSize:7, color:curr?DS.green:DS.t3, fontFamily:DS.f, whiteSpace:'nowrap' }}>{h.l}</div>
-              </div>
-            )
-          })}
+          {peakBars.map(h => (
+            <div key={h.h} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+              <div style={{ width:'100%', height:h.ht, background:h.bg, borderRadius:'4px 4px 0 0', transition:'height 0.3s' }} />
+              <div style={{ fontSize:7, color:h.isCurr?DS.green:DS.t3, whiteSpace:'nowrap' }}>{h.l}</div>
+            </div>
+          ))}
         </div>
       </Card>
 
-      {/* Period filter */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:14 }}>
-        {[['today','Today'],['week','This week'],['month','This month']].map(([id,label]) => (
+      <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+        {[['today','Today'],['week','Week'],['month','Month']].map(([id, label]) => (
           <button key={id} onClick={() => setPeriod(id)}
-            style={{ padding:'10px', background:period===id?DS.accentDim:DS.surface, border:'1px solid '+(period===id?DS.accent:DS.border), borderRadius:DS.r1, color:period===id?DS.accent:DS.t2, fontSize:12, fontWeight:period===id?700:400, cursor:'pointer', fontFamily:DS.f }}>
+            style={{ flex:1, padding:'10px', background:period===id?DS.accentDim:DS.surface, border:'1px solid '+(period===id?DS.accent:DS.border2), borderRadius:DS.r1, color:period===id?DS.accent:DS.t3, fontSize:13, fontWeight:period===id?700:400, cursor:'pointer' }}>
             {label}
           </button>
         ))}
       </div>
 
-      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12, fontFamily:DS.f }}>Delivery history</div>
-      {loading && <div style={{ textAlign:'center', padding:32, color:DS.t3, fontFamily:DS.f }}>Loading...</div>}
-      {!loading && history.length===0 && (
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>
+        Delivery history
+      </div>
+
+      {loading && (
+        <div style={{ textAlign:'center', padding:32, color:DS.t3 }}>Loading...</div>
+      )}
+
+      {!loading && history.length === 0 && (
         <div style={{ textAlign:'center', padding:'40px 0', color:DS.t3 }}>
           <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
-          <div style={{ fontSize:14, fontFamily:DS.f }}>No deliveries in this period</div>
+          <div style={{ fontSize:14 }}>No deliveries in this period</div>
         </div>
       )}
-      {!loading && history.length > 0 && history.map((e,i) => {
-        const dateStr = new Date(e.created_at).toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'})
-        const orderRef = e.order_number || (e.order_id ? e.order_id.slice(0,6) : 'N/A')
-        const amt = (e.amount||0).toFixed(2)
-        return (
-          <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border }}>
-            <div style={{ width:40, height:40, borderRadius:DS.r1, background:DS.greenDim, border:'1px solid '+DS.greenBdr, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>📦</div>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:14, color:DS.t1, fontWeight:600, fontFamily:DS.f }}>Order #{orderRef}</div>
-              <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>{dateStr}</div>
-            </div>
-            <div style={{ fontSize:17, fontWeight:800, color:DS.green, fontFamily:DS.f }}>€{amt}</div>
+
+      {!loading && history.map((e, idx) => (
+        <div key={idx} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border }}>
+          <div style={{ width:40, height:40, borderRadius:DS.r1, background:DS.greenDim, border:'1px solid '+DS.greenBdr, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>📦</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:14, color:DS.t1, fontWeight:600 }}>#{e.order_number||'order'}</div>
+            <div style={{ fontSize:11, color:DS.t3, marginTop:2 }}>{new Date(e.created_at).toDateString().slice(0,10)}</div>
           </div>
-        )
-      })}
-      </div>
-      </div>
+          <div style={{ fontSize:17, fontWeight:800, color:DS.green }}>€{(e.amount||0).toFixed(2)}</div>
+        </div>
+      ))}
+
     </div>
   )
 }
+
+
 function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
   const [leaderboard, setLeaderboard] = useState([])
   const deliveries = stats?.deliveries||0
   const rating = stats?.rating||5.0
+  const BADGES_DATA = BADGES.map(b => ({ ...b, earned: b.req(deliveries, rating) }))
 
   useEffect(() => {
     const load = async () => {
@@ -915,15 +923,12 @@ function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
       {/* Badges */}
       <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12, fontFamily:DS.f }}>Achievements</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:20 }}>
-        {BADGES.map(b => {
-          const earned = b.req(deliveries,rating)
-          return (
-            <div key={b.id} style={{ background:earned?DS.yellowDim:DS.surface, border:'1px solid '+(earned?DS.yellowBdr:DS.border), borderRadius:DS.r1, padding:'12px 6px', textAlign:'center', opacity:earned?1:0.35, transition:'all 0.2s' }}>
-              <div style={{ fontSize:26, marginBottom:4, filter:earned?'none':'grayscale(100%)' }}>{b.icon}</div>
-              <div style={{ fontSize:9, color:earned?DS.yellow:DS.t3, fontWeight:700, lineHeight:1.3, fontFamily:DS.f }}>{b.label}</div>
-            </div>
-          )
-        })}
+        {BADGES_DATA.map(b => (
+          <div key={b.id} style={{ background:b.earned?DS.yellowDim:DS.surface, border:'1px solid '+(b.earned?DS.yellowBdr:DS.border2), borderRadius:DS.r1, padding:10, textAlign:'center' }}>
+            <div style={{ fontSize:26, marginBottom:4, filter:b.earned?'none':'grayscale(1)' }}>{b.icon}</div>
+            <div style={{ fontSize:9, color:b.earned?DS.yellow:DS.t3, fontWeight:700, lineHeight:1.3 }}>{b.label}</div>
+          </div>
+        ))}
       </div>
 
       {/* Leaderboard */}
@@ -932,12 +937,13 @@ function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
       </button>
 
       <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12, fontFamily:DS.f }}>🏆 Today's leaderboard</div>
-      {leaderboard.length===0 ? (
+      {leaderboard.length===0 && (
         <div style={{ textAlign:'center', padding:'32px 0', color:DS.t3 }}>
           <div style={{ fontSize:36, marginBottom:10 }}>🏁</div>
           <div style={{ fontSize:14, fontFamily:DS.f }}>No data yet today</div>
         </div>
-      ) : leaderboard.map((d,i) => (
+      )}
+      {leaderboard.length > 0 && leaderboard.map((d,i) => (
         <div key={d.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:i===0?DS.yellowDim:DS.surface, border:'1px solid '+(i===0?DS.yellowBdr:DS.border), borderRadius:DS.r1, marginBottom:8 }}>
           <div style={{ fontSize:i<3?22:14, fontWeight:800, color:i===0?DS.yellow:i===1?'#C0C0C0':i===2?'#CD7F32':DS.t3, width:28, textAlign:'center', fontFamily:DS.f }}>
             {i===0?'🥇':i===1?'🥈':i===2?'🥉':d.rank}
