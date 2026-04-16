@@ -704,7 +704,7 @@ function NewOrderAlert({ order, onAccept, onDecline, loading }) {
 // ─────────────────────────────────────────────────────────────
 // EARNINGS TAB
 // ─────────────────────────────────────────────────────────────
-function EarningsTab({ stats }) {
+function EarningsTab({ stats, isDesktop }) {
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('today')
@@ -736,7 +736,7 @@ function EarningsTab({ stats }) {
   const total = history.reduce((s,e) => s+(e.amount||0), 0)
 
   return (
-    <div style={{ padding:16, paddingBottom:90 }}>
+    <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%' }}>
 
       {/* Summary */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
@@ -828,7 +828,7 @@ function EarningsTab({ stats }) {
 // ─────────────────────────────────────────────────────────────
 // PERFORMANCE TAB
 // ─────────────────────────────────────────────────────────────
-function PerformanceTab({ stats, onShowFeedback }) {
+function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
   const [leaderboard, setLeaderboard] = useState([])
   const deliveries = stats?.deliveries||0
   const rating = stats?.rating||5.0
@@ -867,7 +867,7 @@ function PerformanceTab({ stats, onShowFeedback }) {
   const earnedBadges = BADGES.filter(b=>b.req(deliveries,rating))
 
   return (
-    <div style={{ padding:16, paddingBottom:90 }}>
+    <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%' }}>
 
       {/* Metrics */}
       <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12, fontFamily:DS.f }}>Performance</div>
@@ -936,7 +936,7 @@ function PerformanceTab({ stats, onShowFeedback }) {
 // ─────────────────────────────────────────────────────────────
 // SETTINGS TAB
 // ─────────────────────────────────────────────────────────────
-function SettingsTab({ profile, stats, onSignOut }) {
+function SettingsTab({ profile, stats, onSignOut, isDesktop }) {
   const [vehicle, setVehicle] = useState('scooter')
   const [notifSound, setNotifSound] = useState(true)
   const [screenLock, setScreenLock] = useState(true)
@@ -947,7 +947,7 @@ function SettingsTab({ profile, stats, onSignOut }) {
   const toggleBreak = () => { setBreakMode(b=>!b); toast(breakMode?'Back to work! 🛵':'Break started ☕',{duration:3000}) }
 
   return (
-    <div style={{ padding:16, paddingBottom:90 }}>
+    <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%' }}>
 
       {/* Profile card */}
       <Card style={{ padding:20, marginBottom:16 }}>
@@ -1218,6 +1218,14 @@ export default function DriverApp() {
   const cfg = currentOrder ? STATUS_CONFIG[currentOrder.status] : null
   const name = profile?.full_name?.split(' ')[0] || 'Driver'
   const ageCheck = currentOrder ? hasAgeRestricted(currentOrder) : false
+]
+
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768)
+  useEffect(() => {
+    const handle = () => setIsDesktop(window.innerWidth >= 768)
+    window.addEventListener('resize', handle)
+    return () => window.removeEventListener('resize', handle)
+  }, [])
 
   const TABS = [
     { id:'home',        icon:'🏠', label:'Home' },
@@ -1227,7 +1235,7 @@ export default function DriverApp() {
   ]
 
   return (
-    <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f }}>
+    <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f, display:'flex' }}>
 
       {/* ── OVERLAYS ── */}
       {showMap   && currentOrder && <DeliveryMap order={currentOrder} driverPos={driverPos} onClose={() => setShowMap(false)} />}
@@ -1251,6 +1259,73 @@ export default function DriverApp() {
       {showVoice && currentOrder && <VoiceMessage order={currentOrder} driverId={user?.id} onClose={() => setShowVoice(false)} />}
       {showEmergency    && <EmergencyCall onClose={() => setShowEmergency(false)} />}
       {newOrder  && !currentOrder && <NewOrderAlert order={newOrder} onAccept={handleAccept} onDecline={() => setNewOrder(null)} loading={accepting} />}
+
+      {/* ── DESKTOP SIDEBAR (768px+) ── */}
+      {isDesktop && (
+        <div style={{ width:240, flexShrink:0, background:DS.surface, borderRight:'1px solid '+DS.border, display:'flex', flexDirection:'column', position:'sticky', top:0, height:'100vh', overflowY:'auto' }}>
+          {/* Logo */}
+          <div style={{ padding:'24px 20px 20px', borderBottom:'1px solid '+DS.border }}>
+            <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1 }}>Isla Drop</div>
+            <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Driver Dashboard</div>
+          </div>
+
+          {/* Driver info */}
+          <div style={{ padding:'16px 20px', borderBottom:'1px solid '+DS.border }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ width:40, height:40, borderRadius:'50%', background:DS.accentDim, border:'1px solid '+DS.accentBdr, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>🛵</div>
+              <div>
+                <div style={{ fontSize:13, fontWeight:700, color:DS.t1, fontFamily:DS.f }}>{profile?.full_name||'Driver'}</div>
+                <div style={{ fontSize:11, color:isOnline?DS.green:DS.t3, display:'flex', alignItems:'center', gap:4, marginTop:2 }}>
+                  <div style={{ width:6, height:6, borderRadius:'50%', background:isOnline?DS.green:DS.border2 }} />
+                  {isOnline ? 'Online' : 'Offline'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div style={{ padding:'12px 20px', borderBottom:'1px solid '+DS.border }}>
+            {[
+              { icon:'💰', val:'€'+(stats?.earnings||0).toFixed(0), label:'Today' },
+              { icon:'📦', val:stats?.deliveries||0, label:'Deliveries' },
+              { icon:'⭐', val:(stats?.rating||5.0).toFixed(1), label:'Rating' },
+              { icon:'🕐', val:fmt(shiftSecs).slice(0,5), label:'Shift' },
+            ].map(s => (
+              <div key={s.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 0', borderBottom:'1px solid '+DS.border }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <span style={{ fontSize:14 }}>{s.icon}</span>
+                  <span style={{ fontSize:12, color:DS.t2, fontFamily:DS.f }}>{s.label}</span>
+                </div>
+                <span style={{ fontSize:13, fontWeight:700, color:DS.t1, fontFamily:DS.f }}>{s.val}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Nav links */}
+          <nav style={{ flex:1, padding:'8px 0' }}>
+            {TABS.map(tab => (
+              <button key={tab.id} onClick={() => { setActiveTab(tab.id); haptic.light() }}
+                style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'12px 20px', background:activeTab===tab.id?DS.accentDim:'transparent', border:'none', borderLeft:'3px solid '+(activeTab===tab.id?DS.accent:'transparent'), cursor:'pointer', transition:'all 0.15s' }}>
+                <span style={{ fontSize:18 }}>{tab.icon}</span>
+                <span style={{ fontSize:14, color:activeTab===tab.id?DS.accent:DS.t2, fontWeight:activeTab===tab.id?700:400, fontFamily:DS.f }}>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Online toggle */}
+          <div style={{ padding:'16px 20px', borderTop:'1px solid '+DS.border }}>
+            <button onClick={toggleOnline} style={{ width:'100%', padding:'11px', background:isOnline?DS.greenDim:DS.accentDim, border:'1px solid '+(isOnline?DS.greenBdr:DS.accentBdr), borderRadius:DS.r1, color:isOnline?DS.green:DS.accent, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:DS.f }}>
+              {isOnline ? '● Go offline' : '○ Go online'}
+            </button>
+            <button onClick={() => setShowSOS(true)} style={{ width:'100%', marginTop:8, padding:'11px', background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, color:DS.red, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:DS.f }}>
+              🆘 SOS Emergency
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MAIN CONTENT COLUMN ── */}
+      <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', maxWidth:isDesktop?'none':'100vw' }}>
 
       {/* Status bar */}
       <StatusBar gpsAccuracy={gpsAccuracy} isOffline={isOffline} />
@@ -1293,7 +1368,7 @@ export default function DriverApp() {
 
       {/* ── HOME TAB ── */}
       {activeTab==='home' && (
-        <div style={{ padding:16, paddingBottom:90 }}>
+        <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%' }}>
 
           {/* Weather + quick actions */}
           <div style={{ marginBottom:12 }}>
@@ -1509,12 +1584,13 @@ export default function DriverApp() {
         </div>
       )}
 
-      {activeTab==='earnings'    && <EarningsTab stats={stats} />}
-      {activeTab==='performance' && <PerformanceTab stats={stats} onShowFeedback={() => setShowFeedback(true)} />}
-      {activeTab==='settings'    && <SettingsTab profile={profile} stats={stats} onSignOut={clear} />}
+      {activeTab==='earnings'    && <EarningsTab stats={stats} isDesktop={isDesktop} />}
+      {activeTab==='performance' && <PerformanceTab stats={stats} onShowFeedback={() => setShowFeedback(true)} isDesktop={isDesktop} />}
+      {activeTab==='settings'    && <SettingsTab profile={profile} stats={stats} onSignOut={clear} isDesktop={isDesktop} />}
 
-      {/* ── BOTTOM TAB BAR ── */}
-      <div style={{ position:'fixed', bottom:0, left:0, right:0, background:DS.surface, borderTop:'1px solid '+DS.border, display:'flex', paddingBottom:'env(safe-area-inset-bottom)', zIndex:200 }}>
+
+      {/* ── BOTTOM TAB BAR (mobile only) ── */}
+      {!isDesktop && <div style={{ position:'fixed', bottom:0, left:0, right:0, background:DS.surface, borderTop:'1px solid '+DS.border, display:'flex', paddingBottom:'env(safe-area-inset-bottom)', zIndex:200 }}>
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             style={{ flex:1, padding:'12px 0 8px', background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, position:'relative' }}>
@@ -1526,9 +1602,10 @@ export default function DriverApp() {
             {activeTab===tab.id && <div style={{ position:'absolute', top:0, left:'15%', right:'15%', height:2, background:DS.accent, borderRadius:1 }} />}
           </button>
         ))}
-      </div>
+      </div>}
 
       <style>{'@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}'}</style>
+      </div>{/* end main content column */}
     </div>
   )
 }
