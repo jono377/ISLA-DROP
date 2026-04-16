@@ -209,7 +209,6 @@ function BottomSheet({ children, zIndex=600, onDismiss, maxH='90vh' }) {
       }}>
         <SheetHandle />{children}
       </div>
-      </div>
     </div>
   )
 }
