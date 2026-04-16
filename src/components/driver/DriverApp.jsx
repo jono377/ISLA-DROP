@@ -50,8 +50,8 @@ function CustomerFeedback({ onClose }) {
   const starData = [5,4,3,2,1].map(star => ({ star, count: reviews.filter(r => r.rating===star).length }))
   const stars = (n) => Array(5).fill(0).map((_,i) => i < Math.round(n) ? '★' : '☆').join('')
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
-      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'85vh', overflowY:'auto' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems: window.innerWidth>=768?'center':'flex-end', justifyContent:'center' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', maxWidth: window.innerWidth>=768?600:'100%', background:DS.surface, borderRadius: window.innerWidth>=768?DS.r2:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'85vh', overflowY:'auto' }}>
         <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
           <div>
@@ -119,8 +119,8 @@ function ExpenseLogger({ onClose }) {
   const totals = entries.reduce((acc,e) => { acc[e.type]=(acc[e.type]||0)+e.amount; return acc }, {})
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
-      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'90vh', overflowY:'auto' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems: window.innerWidth>=768?'center':'flex-end', justifyContent:'center' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', maxWidth: window.innerWidth>=768?600:'100%', background:DS.surface, borderRadius: window.innerWidth>=768?DS.r2:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'90vh', overflowY:'auto' }}>
         <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ fontSize:11, fontWeight:700, color:DS.green, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:4 }}>💰 Finance</div>
         <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1, marginBottom:16 }}>Expenses and tips</div>
@@ -195,8 +195,8 @@ function PayslipGenerator({ profile, onClose }) {
   }
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
-      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'85vh', overflowY:'auto' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems: window.innerWidth>=768?'center':'flex-end', justifyContent:'center' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', maxWidth: window.innerWidth>=768?600:'100%', background:DS.surface, borderRadius: window.innerWidth>=768?DS.r2:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'85vh', overflowY:'auto' }}>
         <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ fontSize:11, fontWeight:700, color:DS.yellow, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:4 }}>📄 Finance</div>
         <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1, marginBottom:16 }}>Weekly payslip</div>
@@ -264,8 +264,8 @@ function IncidentReport({ onClose }) {
   )
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
-      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'90vh', overflowY:'auto' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems: window.innerWidth>=768?'center':'flex-end', justifyContent:'center' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', maxWidth: window.innerWidth>=768?600:'100%', background:DS.surface, borderRadius: window.innerWidth>=768?DS.r2:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'90vh', overflowY:'auto' }}>
         <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ fontSize:11, fontWeight:700, color:DS.red, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:4 }}>🚨 Safety</div>
         <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1, marginBottom:16 }}>Report incident</div>
@@ -313,8 +313,8 @@ function NotificationSetup({ onClose }) {
   }
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
-      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px 48px' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems: window.innerWidth>=768?'center':'flex-end', justifyContent:'center' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', maxWidth: window.innerWidth>=768?600:'100%', background:DS.surface, borderRadius: window.innerWidth>=768?DS.r2:'20px 20px 0 0', padding:'20px 20px 48px' }}>
         <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
         <div style={{ textAlign:'center', marginBottom:24 }}>
           <div style={{ fontSize:52, marginBottom:12 }}>🔔</div>
@@ -574,12 +574,15 @@ function SheetHandle() {
 }
 
 function BottomSheet({ children, zIndex=600, onDismiss, maxH='90vh' }) {
+  const wide = window.innerWidth >= 768
   return (
-    <div style={{ position:'fixed', inset:0, zIndex, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }}
+    <div style={{ position:'fixed', inset:0, zIndex, background:'rgba(0,0,0,0.85)', display:'flex', alignItems: wide?'center':'flex-end', justifyContent:'center' }}
       onClick={e => e.target===e.currentTarget && onDismiss?.()}>
       <div style={{
-        width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0',
-        padding:'16px 20px calc(40px + env(safe-area-inset-bottom))',
+        width:'100%', maxWidth: wide ? 580 : '100%',
+        background:DS.surface, borderRadius: wide ? DS.r2 : '20px 20px 0 0',
+        padding:'16px 20px 40px',
+        border: wide ? '1px solid '+DS.border2 : 'none',
         borderTop:'1px solid '+DS.border2, maxHeight:maxH, overflowY:'auto',
         animation:'slideUp 0.25s ease-out',
       }}>
@@ -1354,6 +1357,152 @@ function Sheet({ children, zIndex=600, onDismiss }) {
 // ─────────────────────────────────────────────────────────────
 // MAIN DRIVER APP
 // ─────────────────────────────────────────────────────────────
+function SettingsTab({ profile, stats, onSignOut, isDesktop, onExpenses, onPayslip, onIncident, onNotifs, onLock }) {
+  const [vehicle, setVehicle] = useState('scooter')
+  const [notifSound, setNotifSound] = useState(true)
+  const [screenLock, setScreenLock] = useState(true)
+  const [breakMode, setBreakMode] = useState(false)
+  const [speedAlert, setSpeedAlert] = useState(true)
+  const [fatigueAlert, setFatigueAlert] = useState(true)
+
+  const toggleBreak = async () => {
+    setBreakMode(v => !v)
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      const { useAuthStore } = await import('../../lib/store')
+      const user = useAuthStore.getState().user
+      await supabase.from('profiles').update({ on_break: !breakMode }).eq('id', user?.id)
+    } catch {}
+  }
+
+  const pad = isDesktop ? 24 : 16
+  const pb  = isDesktop ? 24 : 90
+
+  return (
+    <div style={{ padding:pad, paddingBottom:pb, boxSizing:'border-box', maxWidth:isDesktop?860:'none', margin:isDesktop?'0 auto':'0', width:'100%' }}>
+
+      <div style={{ background:DS.surface, borderRadius:DS.r2, border:'1px solid '+DS.border, padding:20, marginBottom:16 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:16 }}>
+          <div style={{ width:60, height:60, borderRadius:'50%', background:DS.accentDim, border:'2px solid '+DS.accent, display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>🛵</div>
+          <div>
+            <div style={{ fontFamily:DS.fh, fontSize:20, color:DS.t1 }}>{profile?.full_name||'Driver'}</div>
+            <div style={{ fontSize:12, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Isla Drop · Ibiza</div>
+          </div>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', background:DS.surface2, borderRadius:DS.r1, padding:'12px 0', border:'1px solid '+DS.border2 }}>
+          {[
+            { val:stats?.deliveries||0, label:'Deliveries', color:DS.green },
+            { val:(stats?.rating||5.0).toFixed(1)+'★', label:'Rating', color:DS.yellow },
+            { val:'€'+(stats?.earnings||0).toFixed(0), label:'Today', color:DS.accent },
+          ].map((s,i) => (
+            <div key={s.label} style={{ textAlign:'center', borderRight:i<2?'1px solid '+DS.border2:'none' }}>
+              <div style={{ fontSize:20, fontWeight:800, color:s.color, fontFamily:DS.f }}>{s.val}</div>
+              <div style={{ fontSize:9, color:DS.t3, textTransform:'uppercase', marginTop:2, fontFamily:DS.f }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10, fontFamily:DS.f }}>Vehicle type</div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:16 }}>
+        {[['scooter','🛵','Scooter'],['car','🚗','Car'],['ebike','🚲','E-bike']].map(([id,icon,label]) => (
+          <button key={id} onClick={() => setVehicle(id)}
+            style={{ padding:'14px 6px', background:vehicle===id?DS.accentDim:DS.surface, border:'1px solid '+(vehicle===id?DS.accent:DS.border), borderRadius:DS.r1, cursor:'pointer', textAlign:'center' }}>
+            <div style={{ fontSize:24, marginBottom:4 }}>{icon}</div>
+            <div style={{ fontSize:12, color:vehicle===id?DS.accent:DS.t2, fontWeight:vehicle===id?700:400, fontFamily:DS.f }}>{label}</div>
+          </button>
+        ))}
+      </div>
+
+      <button onClick={toggleBreak} style={{ width:'100%', padding:14, background:breakMode?'rgba(168,85,247,0.12)':DS.surface, border:'1px solid '+(breakMode?'#A855F7':DS.border), borderRadius:DS.r1, color:breakMode?'#A855F7':DS.t1, fontSize:14, fontWeight:600, cursor:'pointer', marginBottom:16, fontFamily:DS.f, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+        {breakMode?'☕ On break — tap to return':'☕ Take a break'}
+      </button>
+
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10, fontFamily:DS.f }}>Preferences</div>
+      {[
+        { label:'Notification sound', sub:'Alert tone for new orders', val:notifSound, fn:()=>setNotifSound(v=>!v), icon:'🔔' },
+        { label:'Keep screen on', sub:'Prevents lock during deliveries', val:screenLock, fn:()=>setScreenLock(v=>!v), icon:'📱' },
+        { label:'Speed alert (80 km/h)', sub:'Warning when riding fast', val:speedAlert, fn:()=>setSpeedAlert(v=>!v), icon:'⚡' },
+        { label:'Fatigue reminder', sub:'Break reminder after 4h online', val:fatigueAlert, fn:()=>setFatigueAlert(v=>!v), icon:'😴' },
+      ].map(item => (
+        <div key={item.label} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px', background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border }}>
+          <span style={{ fontSize:20, flexShrink:0 }}>{item.icon}</span>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:14, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>{item.label}</div>
+            <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>{item.sub}</div>
+          </div>
+          <Toggle val={item.val} onToggle={item.fn} />
+        </div>
+      ))}
+
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', margin:'20px 0 10px', fontFamily:DS.f }}>Support</div>
+      {[
+        { icon:'🌴', label:'Zone', value:'Ibiza Island' },
+        { icon:'📞', label:'Dispatch', value:'+34 971 000 000' },
+        { icon:'🕐', label:'Hours', value:'08:00 – 06:00 daily' },
+        { icon:'📱', label:'Version', value:'Isla Drop Driver 5.0' },
+      ].map(item => (
+        <div key={item.label} style={{ display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border }}>
+          <span style={{ fontSize:18, flexShrink:0 }}>{item.icon}</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:10, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.5px', fontFamily:DS.f }}>{item.label}</div>
+            <div style={{ fontSize:14, color:DS.t1, fontWeight:500, marginTop:2, fontFamily:DS.f }}>{item.value}</div>
+          </div>
+        </div>
+      ))}
+
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', margin:'20px 0 10px', fontFamily:DS.f }}>Finance</div>
+      <button onClick={onExpenses} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}>
+        <span style={{ fontSize:20 }}>💰</span>
+        <div style={{ flex:1, textAlign:'left' }}>
+          <div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Expenses and tips</div>
+          <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Log cash tips and fuel costs</div>
+        </div>
+        <span style={{ color:DS.t3 }}>›</span>
+      </button>
+      <button onClick={onPayslip} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}>
+        <span style={{ fontSize:20 }}>📄</span>
+        <div style={{ flex:1, textAlign:'left' }}>
+          <div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Weekly payslip</div>
+          <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Download earnings statement</div>
+        </div>
+        <span style={{ color:DS.t3 }}>›</span>
+      </button>
+
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', margin:'20px 0 10px', fontFamily:DS.f }}>Safety</div>
+      <button onClick={onIncident} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}>
+        <span style={{ fontSize:20 }}>🚨</span>
+        <div style={{ flex:1, textAlign:'left' }}>
+          <div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Report incident</div>
+          <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Accidents, near misses, theft</div>
+        </div>
+        <span style={{ color:DS.t3 }}>›</span>
+      </button>
+      <button onClick={onNotifs} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}>
+        <span style={{ fontSize:20 }}>🔔</span>
+        <div style={{ flex:1, textAlign:'left' }}>
+          <div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Push notifications</div>
+          <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Get order alerts in background</div>
+        </div>
+        <span style={{ color:DS.t3 }}>›</span>
+      </button>
+      <button onClick={onLock} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}>
+        <span style={{ fontSize:20 }}>🔒</span>
+        <div style={{ flex:1, textAlign:'left' }}>
+          <div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>App lock</div>
+          <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>PIN protect the driver app</div>
+        </div>
+        <span style={{ color:DS.t3 }}>›</span>
+      </button>
+
+      <button onClick={onSignOut} style={{ width:'100%', marginTop:12, padding:14, background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, color:DS.red, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:DS.f }}>
+        🚪 Sign out
+      </button>
+    </div>
+  )
+}
+
+
 export default function DriverApp() {
   const { user, profile, clear } = useAuthStore()
   const { isOnline, currentOrder, availableOrders, stats,
