@@ -43,22 +43,66 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
   const { setUser, setProfile } = useAuthStore()
 
   const handle = async () => {
-    if (!email || !password) { toast.error('Please fill in all fields'); return }
+    if (!email.trim()) { toast.error('Please enter your email'); return }
+    if (!password) { toast.error('Please enter your password'); return }
     setLoading(true)
-    try {
-      const { supabase, getProfile } = await import('../../lib/supabase')
 
-      // Sign in
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+    // Timeout after 10 seconds
+    const timeout = setTimeout(() => {
+      setLoading(false)
+      toast.error('Request timed out — check your internet connection and try again')
+    }, 10000)
+
+    try {
+      const { supabase } = await import('../../lib/supabase')
+
+      // Sign in with 8s timeout
+      const signInPromise = supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
         password
       })
-      if (error) throw error
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Connection timed out')), 8000)
+      )
+      const { data, error } = await Promise.race([signInPromise, timeoutPromise])
 
-      // Load profile — create if missing
-      let profile = await getProfile(data.user.id).catch(() => null)
+      clearTimeout(timeout)
+
+      if (error) {
+        const msg = error.message || ''
+        if (msg.includes('Invalid login') || msg.includes('invalid_credentials') || msg.includes('Invalid email')) {
+          toast.error('Incorrect email or password')
+        } else if (msg.includes('Email not confirmed')) {
+          toast.error('Please check your email and click the confirmation link first')
+        } else if (msg.includes('timed out')) {
+          toast.error('Connection timed out — check your internet and try again')
+        } else {
+          toast.error(msg || 'Sign in failed')
+        }
+        setLoading(false)
+        return
+      }
+
+      if (!data?.user) {
+        toast.error('Sign in failed — no user returned')
+        setLoading(false)
+        return
+      }
+
+      // Load profile
+      let profile = null
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single()
+        profile = profileData
+      } catch {}
+
+      // Create profile if missing
       if (!profile) {
-        const { data: np } = await supabase
+        const { data: newProfile } = await supabase
           .from('profiles')
           .upsert({
             id: data.user.id,
@@ -66,41 +110,39 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
             role: role || 'customer',
             status: 'active'
           }, { onConflict: 'id' })
-          .select().single()
-        profile = np || await getProfile(data.user.id).catch(() => null)
+          .select()
+          .single()
+        profile = newProfile
       }
 
       if (!profile) {
-        throw new Error('Could not load your account. Please contact ops@isladrop.net')
+        toast.error('Account loaded but profile missing — run the fix SQL in Supabase')
+        setLoading(false)
+        return
       }
 
-      // Role check — ops portal requires ops or admin role
+      // Role check
       if (role === 'ops' && !['ops', 'admin'].includes(profile.role)) {
         await supabase.auth.signOut()
-        throw new Error('This account does not have ops access. Contact your administrator.')
+        toast.error('This email does not have ops access. Run the fix SQL to grant access.')
+        setLoading(false)
+        return
       }
       if (role === 'driver' && profile.role !== 'driver') {
         await supabase.auth.signOut()
-        throw new Error('This account does not have driver access. Contact your administrator.')
+        toast.error('This account does not have driver access.')
+        setLoading(false)
+        return
       }
 
-      // Status check — blocked accounts cannot sign in
-      if (profile.status === 'blocked') {
-        await supabase.auth.signOut()
-        throw new Error('This account has been suspended. Contact ops@isladrop.net')
-      }
-
-      // All good
       setUser(data.user)
       setProfile(profile)
-      toast.success('Welcome back, ' + (profile.full_name?.split(' ')[0] || 'there') + '!')
-      onSuccess?.()
+      toast.success('Welcome back!')
     } catch(err) {
-      const msg = err.message || 'Sign in failed'
-      if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
-        toast.error('Incorrect email or password')
-      } else if (msg.includes('Email not confirmed')) {
-        toast.error('Please confirm your email first, then sign in')
+      clearTimeout(timeout)
+      const msg = err?.message || 'Unknown error'
+      if (msg.includes('timed out') || msg.includes('fetch')) {
+        toast.error('Cannot reach the server — check your internet connection')
       } else {
         toast.error(msg)
       }
