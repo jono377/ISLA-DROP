@@ -1233,6 +1233,8 @@ export default function DriverApp() {
     { id:'settings',    icon:'⚙️', label:'Settings' },
   ]
 
+  const globalStyles = "@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}"
+
   return (
     <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f, display:'flex', overflow:'hidden', width:'100%' }}>
 
@@ -1611,7 +1613,7 @@ export default function DriverApp() {
         ))}
       </div>}
 
-      <style>{'@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}'}</style>
+      <style>{globalStyles}</style>
       </div>
     </div>
   )
