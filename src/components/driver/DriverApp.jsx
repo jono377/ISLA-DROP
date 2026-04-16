@@ -7,40 +7,416 @@ import {
 } from '../../lib/supabase'
 import { useAuthStore, useDriverStore } from '../../lib/store'
 import { useLeafletMap, PIN_ICON } from '../../lib/useLeafletMap'
-// ── Module stubs (features loaded from DriverModules/DriverExtras when available)
+// ── Utility stubs
 const haptic = { light:()=>navigator.vibrate&&navigator.vibrate(10), medium:()=>navigator.vibrate&&navigator.vibrate(20), success:()=>navigator.vibrate&&navigator.vibrate([10,50,10]), error:()=>navigator.vibrate&&navigator.vibrate([100,30,100]), newOrder:()=>navigator.vibrate&&navigator.vibrate([200,100,200,100,200]) }
-const WeatherWidget = () => null
-const BarcodeScanner = ({ onComplete, onClose }) => null
-const SignaturePad = ({ onComplete, onSkip }) => null
-const ExpenseLogger = ({ onClose }) => null
-const PayslipGenerator = ({ profile, onClose }) => null
-const IncidentReport = ({ order, onClose }) => null
-const BonusTracker = ({ stats, onClose }) => null
-const ZoneHeatmap = ({ onClose }) => null
-const RouteHistory = ({ onClose }) => null
-const AppLock = ({ onUnlock }) => { onUnlock(); return null }
-const NotificationSetup = ({ onClose }) => null
-const DispatchMessages = ({ driverId, onClose }) => null
-const setupPushNotifications = () => {}
+const setupPushNotifications = () => { if ('Notification' in window) Notification.requestPermission() }
 const sendPushNotification = () => {}
-const OrderCardSkeleton = () => null
-const EarningsRowSkeleton = () => null
 const usePWAInstall = () => ({ canInstall:false, isInstalled:false, install:()=>{} })
-const PWAInstallBanner = () => null
-const useOfflineMode = (order) => ({ isOffline:!navigator.onLine, getCachedOrder:()=>null })
-const OfflineBanner = () => null
+const useOfflineMode = () => ({ isOffline:!navigator.onLine, getCachedOrder:()=>null })
+const useAppUpdate = () => ({ updateAvailable:false, refresh:()=>window.location.reload() })
 const useCrashDetection = () => {}
-const CrashAlert = ({ onDismiss }) => null
-const EarningsForecast = () => null
-const CustomerFeedback = ({ onClose }) => null
+const WeatherWidget = () => null
 const RunningLateButton = () => null
 const MultiOrderPanel = () => null
-const VoiceMessage = ({ onClose }) => null
 const StreakBadge = () => null
 const StatusBar = () => null
-const useAppUpdate = () => ({ updateAvailable:false, refresh:()=>window.location.reload() })
+const BonusTracker = () => null
+const ZoneHeatmap = () => null
+const RouteHistory = () => null
+const VoiceMessage = () => null
+const EarningsForecast = () => null
+const CrashAlert = () => null
+const PWAInstallBanner = () => null
+const OfflineBanner = () => null
 const UpdateBanner = () => null
-const EmergencyCall = ({ onClose }) => null
+const EmergencyCall = () => null
+const BarcodeScanner = () => null
+const SignaturePad = () => null
+const OrderCardSkeleton = () => null
+const EarningsRowSkeleton = () => null
+const DispatchMessages = () => null
+
+// ─────────────────────────────────────────────────────────────
+// CUSTOMER FEEDBACK COMPONENT
+// ─────────────────────────────────────────────────────────────
+function CustomerFeedback({ onClose }) {
+  const [reviews] = React.useState([
+    { id:1, rating:5, comment:'Super fast delivery, perfectly packed!', date:'Today' },
+    { id:2, rating:5, comment:'Driver was very polite and professional.', date:'Yesterday' },
+    { id:3, rating:4, comment:'Good delivery, arrived slightly warm.', date:'Mon' },
+    { id:4, rating:5, comment:'Excellent! Will order again.', date:'Sun' },
+  ])
+  const avg = 4.75
+  const starData = [5,4,3,2,1].map(star => ({ star, count: reviews.filter(r => r.rating===star).length }))
+  const stars = (n) => Array(5).fill(0).map((_,i) => i < Math.round(n) ? '★' : '☆').join('')
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'85vh', overflowY:'auto' }}>
+        <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, color:DS.yellow, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:4 }}>⭐ Customer feedback</div>
+            <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1 }}>Your reviews</div>
+          </div>
+          <div style={{ textAlign:'center', background:DS.yellowDim, border:'1px solid '+DS.yellowBdr, borderRadius:DS.r2, padding:'12px 16px' }}>
+            <div style={{ fontSize:32, fontWeight:900, color:DS.yellow, fontFamily:DS.f }}>{avg.toFixed(1)}</div>
+            <div style={{ fontSize:14, color:DS.yellow }}>{stars(avg)}</div>
+            <div style={{ fontSize:10, color:DS.t3, marginTop:2, fontFamily:DS.f }}>{reviews.length} reviews</div>
+          </div>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:20 }}>
+          {starData.map(s => (
+            <div key={s.star} style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <span style={{ fontSize:11, color:DS.t3, width:8, fontFamily:DS.f }}>{s.star}</span>
+              <span style={{ fontSize:11, color:DS.yellow }}>★</span>
+              <div style={{ flex:1, height:6, background:DS.border, borderRadius:3, overflow:'hidden' }}>
+                <div style={{ height:'100%', background:DS.yellow, width: Math.round((s.count/Math.max(reviews.length,1))*80) + 'px', transition:'width 0.5s' }} />
+              </div>
+              <span style={{ fontSize:10, color:DS.t3, width:14, fontFamily:DS.f }}>{s.count}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12, fontFamily:DS.f }}>Recent reviews</div>
+        {reviews.map(r => (
+          <div key={r.id} style={{ background:DS.surface2, borderRadius:DS.r1, padding:'14px', marginBottom:10, border:'1px solid '+DS.border2 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+              <div style={{ fontSize:16, color:DS.yellow }}>{stars(r.rating)}</div>
+              <div style={{ fontSize:11, color:DS.t3, fontFamily:DS.f }}>{r.date}</div>
+            </div>
+            <div style={{ fontSize:13, color:DS.t1, fontFamily:DS.f, lineHeight:1.5, fontStyle:'italic' }}>"{r.comment}"</div>
+          </div>
+        ))}
+        <button onClick={onClose} style={{ width:'100%', marginTop:8, padding:'14px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t2, fontSize:14, cursor:'pointer', fontFamily:DS.f }}>Close</button>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// EXPENSE LOGGER COMPONENT
+// ─────────────────────────────────────────────────────────────
+function ExpenseLogger({ onClose }) {
+  const [type, setType] = React.useState('tip')
+  const [amount, setAmount] = React.useState('')
+  const [note, setNote] = React.useState('')
+  const [entries, setEntries] = React.useState([])
+
+  const types = [
+    { id:'tip', label:'Cash tip', icon:'💵', color:DS.green },
+    { id:'fuel', label:'Fuel', icon:'⛽', color:DS.yellow },
+    { id:'parking', label:'Parking', icon:'🅿️', color:DS.blue },
+    { id:'other', label:'Other', icon:'📝', color:DS.t2 },
+  ]
+
+  const save = () => {
+    if (!amount || isNaN(parseFloat(amount))) return
+    const entry = { type, amount:parseFloat(amount), note, time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) }
+    setEntries(prev => [entry, ...prev])
+    setAmount(''); setNote('')
+    haptic.success()
+  }
+
+  const totals = entries.reduce((acc,e) => { acc[e.type]=(acc[e.type]||0)+e.amount; return acc }, {})
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'90vh', overflowY:'auto' }}>
+        <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
+        <div style={{ fontSize:11, fontWeight:700, color:DS.green, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:4 }}>💰 Finance</div>
+        <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1, marginBottom:16 }}>Expenses and tips</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:14 }}>
+          {types.map(t => (
+            <button key={t.id} onClick={() => setType(t.id)} style={{ padding:'10px 4px', background:type===t.id?t.color+'18':DS.surface2, border:'1px solid '+(type===t.id?t.color:DS.border2), borderRadius:DS.r1, cursor:'pointer', textAlign:'center' }}>
+              <div style={{ fontSize:20, marginBottom:4 }}>{t.icon}</div>
+              <div style={{ fontSize:10, color:type===t.id?t.color:DS.t3, fontWeight:600, fontFamily:DS.f }}>{t.label}</div>
+            </button>
+          ))}
+        </div>
+        <div style={{ display:'flex', gap:8, marginBottom:10 }}>
+          <div style={{ flex:1, position:'relative' }}>
+            <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:DS.t3, fontSize:16 }}>€</span>
+            <input value={amount} onChange={e=>setAmount(e.target.value)} type="number" step="0.50" min="0" placeholder="0.00"
+              style={{ width:'100%', padding:'13px 12px 13px 28px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t1, fontSize:18, fontWeight:700, outline:'none', fontFamily:DS.f, boxSizing:'border-box' }} />
+          </div>
+          <button onClick={save} style={{ padding:'13px 20px', background:DS.green, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:DS.f }}>Log</button>
+        </div>
+        <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Note (optional)..."
+          style={{ width:'100%', padding:'10px 12px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t1, fontSize:13, outline:'none', fontFamily:DS.f, marginBottom:16, boxSizing:'border-box' }} />
+        {Object.keys(totals).length > 0 && (
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10, fontFamily:DS.f }}>Today</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
+              {types.filter(t=>totals[t.id]).map(t => (
+                <div key={t.id} style={{ background:DS.surface2, borderRadius:DS.r1, padding:'10px 12px', border:'1px solid '+DS.border2 }}>
+                  <div style={{ fontSize:12, color:DS.t3, fontFamily:DS.f }}>{t.icon} {t.label}</div>
+                  <div style={{ fontSize:18, fontWeight:800, color:t.color||DS.t1, fontFamily:DS.f }}>€{(totals[t.id]||0).toFixed(2)}</div>
+                </div>
+              ))}
+            </div>
+            {entries.slice(0,5).map((e,i) => (
+              <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'10px 12px', background:DS.surface2, borderRadius:DS.r1, marginBottom:6, border:'1px solid '+DS.border2 }}>
+                <div style={{ fontSize:13, color:DS.t1, fontFamily:DS.f }}>{types.find(t=>t.id===e.type)?.icon} {e.note||types.find(t=>t.id===e.type)?.label}</div>
+                <div style={{ fontSize:14, fontWeight:700, color:e.type==='tip'?DS.green:DS.yellow, fontFamily:DS.f }}>€{e.amount.toFixed(2)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        <button onClick={onClose} style={{ width:'100%', marginTop:8, padding:'14px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t2, fontSize:14, cursor:'pointer', fontFamily:DS.f }}>Close</button>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// PAYSLIP GENERATOR COMPONENT
+// ─────────────────────────────────────────────────────────────
+function PayslipGenerator({ profile, onClose }) {
+  const [week, setWeek] = React.useState(0)
+  const weeks = ['This week', 'Last week', '2 weeks ago']
+  const grossData = [87.50, 124.00, 96.75]
+  const tipsData  = [12.00, 8.50, 15.00]
+  const costsData = [18.00, 22.00, 14.50]
+  const gross = grossData[week]
+  const tips  = tipsData[week]
+  const costs = costsData[week]
+  const net   = gross + tips - costs
+  const delivs = [18, 26, 20]
+
+  const download = () => {
+    const css = 'body{font-family:Arial,sans-serif;max-width:600px;margin:40px auto;color:#1a1a1a;padding:0 20px}h1{color:#FF6B35}table{width:100%;border-collapse:collapse;margin:20px 0}td,th{padding:10px;border-bottom:1px solid #eee;text-align:left}th{background:#f5f5f5;font-size:12px;text-transform:uppercase}.total{font-weight:700;font-size:18px;color:#FF6B35}'
+    const rows = '<tr><td>Delivery fees</td><td style="text-align:right">EUR' + gross.toFixed(2) + '</td></tr><tr><td>Cash tips</td><td style="text-align:right">EUR' + tips.toFixed(2) + '</td></tr><tr><td>Expenses</td><td style="text-align:right">-EUR' + costs.toFixed(2) + '</td></tr>'
+    const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' + css + '</style></head><body><h1>Isla Drop</h1><h2>Driver Earnings Statement</h2><p><strong>Driver:</strong> ' + (profile?.full_name||'Driver') + '</p><p><strong>Period:</strong> ' + weeks[week] + '</p><p><strong>Deliveries:</strong> ' + delivs[week] + '</p><table><thead><tr><th>Description</th><th style="text-align:right">Amount</th></tr></thead><tbody>' + rows + '</tbody></table><p class="total">Net earnings: EUR' + net.toFixed(2) + '</p><footer style="margin-top:40px;font-size:11px;color:#aaa">Generated by Isla Drop · ops@isladrop.net</footer></body></html>'
+    const blob = new Blob([html], {type:'text/html'})
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'IslaDropPayslip_' + weeks[week].replace(' ','_') + '.html'
+    a.click(); URL.revokeObjectURL(url)
+    haptic.success()
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'85vh', overflowY:'auto' }}>
+        <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
+        <div style={{ fontSize:11, fontWeight:700, color:DS.yellow, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:4 }}>📄 Finance</div>
+        <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1, marginBottom:16 }}>Weekly payslip</div>
+        <div style={{ display:'flex', gap:8, marginBottom:20 }}>
+          {weeks.map((w,i) => (
+            <button key={i} onClick={() => setWeek(i)} style={{ flex:1, padding:'9px 4px', background:week===i?DS.yellowDim:DS.surface2, border:'1px solid '+(week===i?DS.yellowBdr:DS.border2), borderRadius:DS.r1, color:week===i?DS.yellow:DS.t3, fontSize:11, fontWeight:week===i?700:400, cursor:'pointer', fontFamily:DS.f }}>{w}</button>
+          ))}
+        </div>
+        {[
+          { label:'Delivery fees', val:'€'+gross.toFixed(2), color:DS.t1 },
+          { label:'Cash tips', val:'€'+tips.toFixed(2), color:DS.green },
+          { label:'Expenses (fuel, parking)', val:'-€'+costs.toFixed(2), color:DS.red },
+          { label:'Deliveries', val:delivs[week], color:DS.blue },
+        ].map(r => (
+          <div key={r.label} style={{ display:'flex', justifyContent:'space-between', padding:'12px 0', borderBottom:'1px solid '+DS.border }}>
+            <span style={{ fontSize:14, color:DS.t2, fontFamily:DS.f }}>{r.label}</span>
+            <span style={{ fontSize:14, fontWeight:700, color:r.color, fontFamily:DS.f }}>{r.val}</span>
+          </div>
+        ))}
+        <div style={{ display:'flex', justifyContent:'space-between', padding:'16px 0', marginBottom:20 }}>
+          <span style={{ fontSize:16, fontWeight:700, color:DS.t1, fontFamily:DS.f }}>Net earnings</span>
+          <span style={{ fontSize:26, fontWeight:900, color:DS.accent, fontFamily:DS.f }}>€{net.toFixed(2)}</span>
+        </div>
+        <button onClick={download} style={{ width:'100%', padding:'15px', background:DS.yellow, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:15, fontWeight:800, cursor:'pointer', fontFamily:DS.f, marginBottom:10 }}>
+          ⬇ Download payslip
+        </button>
+        <button onClick={onClose} style={{ width:'100%', padding:'14px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t2, fontSize:14, cursor:'pointer', fontFamily:DS.f }}>Close</button>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// INCIDENT REPORT COMPONENT
+// ─────────────────────────────────────────────────────────────
+function IncidentReport({ onClose }) {
+  const [type, setType] = React.useState(null)
+  const [details, setDetails] = React.useState('')
+  const [injury, setInjury] = React.useState(false)
+  const [done, setDone] = React.useState(false)
+
+  const types = [
+    { id:'accident', label:'Road accident', icon:'🚨' },
+    { id:'near_miss', label:'Near miss', icon:'⚠️' },
+    { id:'theft', label:'Theft / robbery', icon:'🔓' },
+    { id:'vehicle', label:'Vehicle breakdown', icon:'🛵' },
+    { id:'assault', label:'Assault', icon:'🆘' },
+    { id:'other', label:'Other', icon:'📋' },
+  ]
+
+  const submit = () => {
+    if (!type || !details.trim()) return
+    haptic.success()
+    setDone(true)
+  }
+
+  if (done) return (
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.92)', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', padding:32, textAlign:'center' }}>
+      <div style={{ fontSize:52, marginBottom:16 }}>📋</div>
+      <div style={{ fontFamily:DS.fh, fontSize:24, color:DS.t1, marginBottom:8 }}>Incident reported</div>
+      <div style={{ fontSize:14, color:DS.t2, marginBottom:8, fontFamily:DS.f }}>Ops team has been notified.</div>
+      <div style={{ fontSize:20, fontWeight:700, color:DS.t1, marginBottom:32, fontFamily:DS.f }}>📞 +34 971 000 000</div>
+      <button onClick={onClose} style={{ width:'100%', maxWidth:320, padding:'15px', background:DS.accent, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:16, fontWeight:800, cursor:'pointer', fontFamily:DS.f }}>Close</button>
+    </div>
+  )
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px 48px', maxHeight:'90vh', overflowY:'auto' }}>
+        <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
+        <div style={{ fontSize:11, fontWeight:700, color:DS.red, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:4 }}>🚨 Safety</div>
+        <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1, marginBottom:16 }}>Report incident</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
+          {types.map(t => (
+            <button key={t.id} onClick={() => setType(t.id)} style={{ padding:'12px 10px', background:type===t.id?DS.redDim:DS.surface2, border:'1px solid '+(type===t.id?DS.redBdr:DS.border2), borderRadius:DS.r1, cursor:'pointer', textAlign:'left' }}>
+              <div style={{ fontSize:20, marginBottom:4 }}>{t.icon}</div>
+              <div style={{ fontSize:12, color:type===t.id?DS.red:DS.t2, fontWeight:600, fontFamily:DS.f }}>{t.label}</div>
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setInjury(i=>!i)} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:injury?DS.redDim:DS.surface2, border:'1px solid '+(injury?DS.redBdr:DS.border2), borderRadius:DS.r1, marginBottom:10, cursor:'pointer' }}>
+          <div style={{ width:24, height:24, borderRadius:6, background:injury?DS.red:'transparent', border:'2px solid '+(injury?DS.red:DS.border2), display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>{injury?'✓':''}</div>
+          <span style={{ fontSize:14, color:injury?DS.red:DS.t2, fontWeight:600, fontFamily:DS.f }}>Injury involved</span>
+        </button>
+        <textarea value={details} onChange={e=>setDetails(e.target.value)} placeholder="Describe what happened..." rows={4}
+          style={{ width:'100%', padding:'12px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t1, fontSize:13, resize:'none', outline:'none', fontFamily:DS.f, marginBottom:14, boxSizing:'border-box' }} />
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:10 }}>
+          <button onClick={onClose} style={{ padding:'13px', background:'transparent', border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t2, fontSize:14, cursor:'pointer', fontFamily:DS.f }}>Cancel</button>
+          <button onClick={submit} disabled={!type||!details.trim()} style={{ padding:'13px', background:!type||!details.trim()?DS.surface2:DS.red, border:'none', borderRadius:DS.r1, color:!type||!details.trim()?DS.t3:DS.t1, fontSize:14, fontWeight:700, cursor:!type||!details.trim()?'default':'pointer', fontFamily:DS.f }}>Submit report</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// NOTIFICATION SETUP COMPONENT
+// ─────────────────────────────────────────────────────────────
+function NotificationSetup({ onClose }) {
+  const [status, setStatus] = React.useState(typeof Notification !== 'undefined' ? Notification.permission : 'default')
+  const [checking, setChecking] = React.useState(false)
+
+  const enable = async () => {
+    setChecking(true)
+    try {
+      const perm = await Notification.requestPermission()
+      setStatus(perm)
+      if (perm === 'granted') {
+        haptic.success()
+        new Notification('Isla Drop notifications enabled!', { body:'You will now receive order alerts even when the app is in the background.' })
+      }
+    } catch (e) { setStatus('denied') }
+    setChecking(false)
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }} onClick={e => e.target===e.currentTarget && onClose()}>
+      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px 48px' }}>
+        <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
+        <div style={{ textAlign:'center', marginBottom:24 }}>
+          <div style={{ fontSize:52, marginBottom:12 }}>🔔</div>
+          <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1, marginBottom:8 }}>Push notifications</div>
+          <div style={{ fontSize:13, color:DS.t2, fontFamily:DS.f, lineHeight:1.6 }}>Get order alerts even when the app is in the background. Never miss a delivery.</div>
+        </div>
+        {status === 'granted' ? (
+          <div style={{ background:DS.greenDim, border:'1px solid '+DS.greenBdr, borderRadius:DS.r1, padding:'16px', textAlign:'center', marginBottom:16 }}>
+            <div style={{ fontSize:22, marginBottom:6 }}>✅</div>
+            <div style={{ fontSize:15, color:DS.green, fontWeight:700, fontFamily:DS.f }}>Notifications are enabled</div>
+            <div style={{ fontSize:12, color:DS.t2, marginTop:4, fontFamily:DS.f }}>You will receive alerts for new orders</div>
+          </div>
+        ) : status === 'denied' ? (
+          <div style={{ background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, padding:'16px', marginBottom:16 }}>
+            <div style={{ fontSize:14, color:DS.red, fontWeight:700, fontFamily:DS.f, textAlign:'center' }}>Notifications blocked by browser</div>
+            <div style={{ fontSize:12, color:DS.t2, marginTop:6, fontFamily:DS.f, textAlign:'center' }}>Go to your browser settings → Notifications and allow isladrop.net</div>
+          </div>
+        ) : (
+          <button onClick={enable} disabled={checking} style={{ width:'100%', padding:'15px', background:DS.green, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:15, fontWeight:800, cursor:'pointer', fontFamily:DS.f, marginBottom:10 }}>
+            {checking ? 'Requesting...' : 'Enable push notifications'}
+          </button>
+        )}
+        <button onClick={onClose} style={{ width:'100%', padding:'14px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t2, fontSize:14, cursor:'pointer', fontFamily:DS.f }}>Close</button>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// APP LOCK COMPONENT  
+// Full PIN setup (enter twice to confirm) + lock screen
+// ─────────────────────────────────────────────────────────────
+function AppLock({ onUnlock }) {
+  const savedPin = typeof localStorage !== 'undefined' ? localStorage.getItem('driver_pin') : null
+  const [mode, setMode] = React.useState(savedPin ? 'unlock' : 'setup1')
+  const [pin, setPin] = React.useState('')
+  const [firstPin, setFirstPin] = React.useState('')
+  const [error, setError] = React.useState('')
+
+  const handleKey = (k) => {
+    setError('')
+    if (k === '⌫') { setPin(p => p.slice(0,-1)); return }
+    if (pin.length >= 4) return
+    const next = pin + k
+    setPin(next)
+    if (next.length === 4) {
+      setTimeout(() => {
+        if (mode === 'setup1') {
+          setFirstPin(next); setPin(''); setMode('setup2')
+        } else if (mode === 'setup2') {
+          if (next === firstPin) {
+            localStorage.setItem('driver_pin', next)
+            haptic.success()
+            onUnlock()
+          } else {
+            haptic.error()
+            setError('PINs do not match — try again')
+            setPin(''); setFirstPin(''); setMode('setup1')
+          }
+        } else {
+          if (next === savedPin) {
+            haptic.success()
+            onUnlock()
+          } else {
+            haptic.error()
+            setError('Incorrect PIN')
+            setPin('')
+          }
+        }
+      }, 120)
+    }
+  }
+
+  const titles = { setup1:'Create your PIN', setup2:'Confirm your PIN', unlock:'Enter PIN to unlock' }
+  const subs = { setup1:'Enter a 4-digit PIN to protect the driver app', setup2:'Enter the same PIN again to confirm', unlock:'Isla Drop Driver is locked' }
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:9999, background:DS.bg, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', padding:32 }}>
+      <div style={{ fontFamily:DS.fh, fontSize:30, color:DS.t1, marginBottom:8 }}>Isla Drop</div>
+      <div style={{ fontSize:13, color:DS.t3, marginBottom:36, fontFamily:DS.f, textAlign:'center', maxWidth:260, lineHeight:1.5 }}>{subs[mode]}</div>
+      <div style={{ fontFamily:DS.fh, fontSize:18, color:DS.t1, marginBottom:20 }}>{titles[mode]}</div>
+      <div style={{ display:'flex', gap:14, marginBottom:10 }}>
+        {[0,1,2,3].map(i => (
+          <div key={i} style={{ width:18, height:18, borderRadius:'50%', background:pin.length>i?DS.accent:DS.border2, transition:'background 0.15s', border:'2px solid '+(pin.length>i?DS.accent:DS.border2) }} />
+        ))}
+      </div>
+      {error && <div style={{ color:DS.red, fontSize:13, marginBottom:16, fontFamily:DS.f, textAlign:'center' }}>{error}</div>}
+      {!error && <div style={{ height:24, marginBottom:16 }} />}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, width:'100%', maxWidth:280 }}>
+        {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((d,i) => (
+          <button key={i} onClick={() => d!=='' && handleKey(String(d))}
+            style={{ padding:'18px', background:d===''?'transparent':DS.surface, border:d===''?'none':'1px solid '+DS.border, borderRadius:DS.r2, fontSize:22, fontWeight:700, color:DS.t1, cursor:d===''?'default':'pointer', fontFamily:DS.f, transition:'background 0.1s' }}>
+            {d}
+          </button>
+        ))}
+      </div>
+      {mode !== 'unlock' && (
+        <button onClick={onUnlock} style={{ marginTop:28, background:'none', border:'none', color:DS.t3, fontSize:13, cursor:'pointer', fontFamily:DS.f }}>Cancel — skip PIN setup</button>
+      )}
+    </div>
+  )
+}
 
 // ─────────────────────────────────────────────────────────────
 // DESIGN SYSTEM
@@ -958,6 +1334,445 @@ function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
     </div>
   )
 }
+// ─────────────────────────────────────────────────────────────
+// INLINE FEATURE COMPONENTS
+// ─────────────────────────────────────────────────────────────
+
+function Sheet({ children, zIndex=600, onDismiss }) {
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end' }}
+      onClick={e => e.target===e.currentTarget && onDismiss?.()}>
+      <div style={{ width:'100%', background:DS.surface, borderRadius:'20px 20px 0 0', padding:'20px 20px calc(40px + env(safe-area-inset-bottom))', borderTop:'1px solid '+DS.border2, maxHeight:'90vh', overflowY:'auto' }}>
+        <div style={{ width:36, height:4, background:DS.border2, borderRadius:2, margin:'0 auto 20px' }} />
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function CustomerFeedback({ onClose }) {
+  const [reviews] = React.useState([
+    { rating:5, comment:'Super fast, perfectly packed!', order:'#1042', date:'Today' },
+    { rating:5, comment:'Very polite and professional driver.', order:'#1039', date:'Yesterday' },
+    { rating:4, comment:'Good delivery, arrived slightly warm.', order:'#1035', date:'3 days ago' },
+    { rating:5, comment:'Excellent! Will order again.', order:'#1031', date:'4 days ago' },
+    { rating:5, comment:'Arrived faster than expected.', order:'#1028', date:'5 days ago' },
+  ])
+  const avg = (reviews.reduce((s,r)=>s+r.rating,0)/reviews.length)
+  const ratingDist = [5,4,3,2,1].map(star => ({
+    star,
+    count: reviews.filter(r=>r.rating===star).length,
+    pct: Math.round(reviews.filter(r=>r.rating===star).length / reviews.length * 100)
+  }))
+  const stars = n => Array(5).fill(0).map((_,i) => i < Math.round(n) ? '★' : '☆').join('')
+  return (
+    <Sheet zIndex={650} onDismiss={onClose}>
+      <div style={{ fontSize:18, fontWeight:700, color:DS.t1, marginBottom:4, fontFamily:DS.f }}>Customer feedback</div>
+      <div style={{ fontSize:12, color:DS.t2, marginBottom:20, fontFamily:DS.f }}>What customers say about you</div>
+      <div style={{ background:DS.surface2, borderRadius:DS.r2, padding:20, marginBottom:20, display:'flex', alignItems:'center', gap:20, border:'1px solid '+DS.border2 }}>
+        <div style={{ textAlign:'center' }}>
+          <div style={{ fontSize:52, fontWeight:900, color:DS.yellow, lineHeight:1, fontFamily:DS.f }}>{avg.toFixed(1)}</div>
+          <div style={{ fontSize:18, color:DS.yellow }}>{stars(avg)}</div>
+          <div style={{ fontSize:11, color:DS.t3, marginTop:4, fontFamily:DS.f }}>{reviews.length} reviews</div>
+        </div>
+        <div style={{ flex:1 }}>
+          {ratingDist.map(row => (
+              <div key={row.star} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                <span style={{ fontSize:11, color:DS.t3, width:8, fontFamily:DS.f }}>{row.star}</span>
+                <span style={{ fontSize:11, color:DS.yellow }}>★</span>
+                <div style={{ flex:1, height:6, background:DS.border, borderRadius:3, overflow:'hidden' }}>
+                  <div style={{ height:'100%', borderRadius:3, background:DS.yellow, width:row.pct+'px', maxWidth:'100%', transition:'width 0.5s' }} />
+                </div>
+                <span style={{ fontSize:11, color:DS.t3, width:16, fontFamily:DS.f }}>{row.count}</span>
+              </div>
+            ))}
+        </div>
+      </div>
+      {avg >= 4.5 && (
+        <div style={{ background:'rgba(234,179,8,0.12)', border:'1px solid rgba(234,179,8,0.3)', borderRadius:DS.r1, padding:'10px 14px', marginBottom:16, display:'flex', gap:8 }}>
+          <span>🏆</span>
+          <span style={{ fontSize:12, color:DS.yellow, fontFamily:DS.f }}>Top rated driver — excellent performance!</span>
+        </div>
+      )}
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12, fontFamily:DS.f }}>Recent reviews</div>
+      {reviews.map((r,i) => (
+        <div key={i} style={{ background:DS.surface2, borderRadius:DS.r1, padding:14, marginBottom:10, border:'1px solid '+DS.border2 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+            <div style={{ color:DS.yellow, fontSize:16 }}>{stars(r.rating)}</div>
+            <div style={{ textAlign:'right' }}>
+              <div style={{ fontSize:11, color:DS.t3, fontFamily:DS.f }}>{r.order}</div>
+              <div style={{ fontSize:10, color:DS.t3, fontFamily:DS.f }}>{r.date}</div>
+            </div>
+          </div>
+          <div style={{ fontSize:13, color:DS.t1, fontFamily:DS.f, lineHeight:1.5, fontStyle:'italic' }}>"{r.comment}"</div>
+        </div>
+      ))}
+    </Sheet>
+  )
+}
+
+function ExpenseLogger({ onClose }) {
+  const [type, setType] = React.useState('tip')
+  const [amount, setAmount] = React.useState('')
+  const [note, setNote] = React.useState('')
+  const [entries, setEntries] = React.useState([
+    { type:'tip', amount:3.50, note:'Cash tip', time:'14:32' },
+    { type:'fuel', amount:12.00, note:'Petrol station', time:'11:15' },
+  ])
+  const types = [
+    { id:'tip', label:'Cash tip', icon:'💵', color:DS.green },
+    { id:'fuel', label:'Fuel', icon:'⛽', color:DS.yellow },
+    { id:'parking', label:'Parking', icon:'🅿️', color:DS.blue },
+    { id:'other', label:'Other', icon:'📝', color:DS.t2 },
+  ]
+  const save = () => {
+    if (!amount || isNaN(parseFloat(amount))) { toast.error('Enter a valid amount'); return }
+    const newEntry = { type, amount:parseFloat(amount), note:note||types.find(t=>t.id===type).label, time:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) }
+    setEntries(prev => [newEntry, ...prev])
+    toast.success(type==='tip' ? 'Tip logged 💰' : 'Expense logged ✓')
+    setAmount(''); setNote('')
+  }
+  const totals = entries.reduce((acc,e) => { acc[e.type]=(acc[e.type]||0)+e.amount; return acc }, {})
+  const tipTotal = totals['tip']||0
+  const costTotal = (totals['fuel']||0)+(totals['parking']||0)+(totals['other']||0)
+  return (
+    <Sheet zIndex={650} onDismiss={onClose}>
+      <div style={{ fontSize:18, fontWeight:700, color:DS.t1, marginBottom:4, fontFamily:DS.f }}>Expenses and tips</div>
+      <div style={{ fontSize:12, color:DS.t2, marginBottom:16, fontFamily:DS.f }}>Log cash tips and fuel costs</div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+        <div style={{ background:DS.greenDim, border:'1px solid '+DS.greenBdr, borderRadius:DS.r1, padding:'12px 14px', textAlign:'center' }}>
+          <div style={{ fontSize:22, fontWeight:800, color:DS.green, fontFamily:DS.f }}>€{tipTotal.toFixed(2)}</div>
+          <div style={{ fontSize:11, color:DS.t2, fontFamily:DS.f }}>💵 Tips today</div>
+        </div>
+        <div style={{ background:DS.yellowDim, border:'1px solid '+DS.yellowBdr, borderRadius:DS.r1, padding:'12px 14px', textAlign:'center' }}>
+          <div style={{ fontSize:22, fontWeight:800, color:DS.yellow, fontFamily:DS.f }}>-€{costTotal.toFixed(2)}</div>
+          <div style={{ fontSize:11, color:DS.t2, fontFamily:DS.f }}>⛽ Costs today</div>
+        </div>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
+        {types.map(t => (
+          <button key={t.id} onClick={() => setType(t.id)} style={{ padding:'10px 4px', background:type===t.id?t.color+'18':DS.surface2, border:'1px solid '+(type===t.id?t.color:DS.border2), borderRadius:DS.r1, cursor:'pointer', textAlign:'center' }}>
+            <div style={{ fontSize:18, marginBottom:3 }}>{t.icon}</div>
+            <div style={{ fontSize:9, color:type===t.id?t.color:DS.t3, fontWeight:600, fontFamily:DS.f }}>{t.label}</div>
+          </button>
+        ))}
+      </div>
+      <div style={{ display:'flex', gap:8, marginBottom:10 }}>
+        <div style={{ flex:1, position:'relative' }}>
+          <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:DS.t3, fontSize:16 }}>€</span>
+          <input value={amount} onChange={e=>setAmount(e.target.value)} type="number" step="0.50" min="0" placeholder="0.00"
+            style={{ width:'100%', padding:'13px 12px 13px 28px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t1, fontSize:18, fontWeight:700, outline:'none', fontFamily:DS.f, boxSizing:'border-box' }} />
+        </div>
+        <button onClick={save} style={{ padding:'13px 20px', background:DS.green, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:DS.f }}>Log</button>
+      </div>
+      <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Note (optional)..."
+        style={{ width:'100%', padding:'10px 12px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t1, fontSize:13, outline:'none', fontFamily:DS.f, marginBottom:20, boxSizing:'border-box' }} />
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10, fontFamily:DS.f }}>Today's entries</div>
+      {entries.map((e,i) => (
+        <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'11px 14px', background:DS.surface2, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border2 }}>
+          <div>
+            <div style={{ fontSize:13, color:DS.t1, fontFamily:DS.f }}>{types.find(t=>t.id===e.type)?.icon} {e.note}</div>
+            <div style={{ fontSize:10, color:DS.t3, fontFamily:DS.f }}>{e.time}</div>
+          </div>
+          <div style={{ fontSize:15, fontWeight:700, color:e.type==='tip'?DS.green:DS.yellow, fontFamily:DS.f }}>
+            {e.type==='fuel'||e.type==='parking'||e.type==='other'?'-':''}€{e.amount.toFixed(2)}
+          </div>
+        </div>
+      ))}
+    </Sheet>
+  )
+}
+
+function PayslipGenerator({ profile, onClose }) {
+  const [week, setWeek] = React.useState(0)
+  const weeks = ['This week', 'Last week', '2 weeks ago']
+  const earnings = [
+    { date:'Mon', deliveries:8, amount:42.50 },
+    { date:'Tue', deliveries:11, amount:58.00 },
+    { date:'Wed', deliveries:6, amount:31.50 },
+    { date:'Thu', deliveries:9, amount:47.00 },
+    { date:'Fri', deliveries:14, amount:74.00 },
+    { date:'Sat', deliveries:18, amount:96.00 },
+    { date:'Sun', deliveries:15, amount:80.00 },
+  ]
+  const total = earnings.reduce((s,e)=>s+e.amount,0)
+  const deliveries = earnings.reduce((s,e)=>s+e.deliveries,0)
+  const tips = 18.50
+  const costs = 24.00
+  const net = total + tips - costs
+
+  const download = () => {
+    const name = profile?.full_name || 'Driver'
+    const rows = earnings.map(e => '<tr><td>' + e.date + '</td><td>' + e.deliveries + '</td><td style="text-align:right;color:#22C55E;font-weight:700">EUR' + e.amount.toFixed(2) + '</td></tr>').join('')
+    const css = 'body{font-family:Arial,sans-serif;max-width:580px;margin:40px auto;color:#1a1a1a}h1{color:#FF6B35}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#f5f5f5;padding:10px;text-align:left;font-size:12px}td{padding:10px;border-bottom:1px solid #eee}.net{font-size:28px;font-weight:900;color:#FF6B35}footer{margin-top:30px;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px}'
+    const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' + css + '</style></head><body>' +
+      '<h1>Isla Drop Driver Payslip</h1>' +
+      '<p><strong>Driver:</strong> ' + name + '</p>' +
+      '<p><strong>Period:</strong> ' + weeks[week] + '</p>' +
+      '<p>Delivery fees: EUR' + total.toFixed(2) + '</p>' +
+      '<p>Cash tips: EUR' + tips.toFixed(2) + '</p>' +
+      '<p>Expenses: -EUR' + costs.toFixed(2) + '</p>' +
+      '<p><strong>Net: <span class="net">EUR' + net.toFixed(2) + '</span></strong></p>' +
+      '<table><thead><tr><th>Day</th><th>Deliveries</th><th>Amount</th></tr></thead><tbody>' + rows +
+      '<tr><td colspan="2"><strong>Total</strong></td><td style="text-align:right"><strong>EUR' + total.toFixed(2) + '</strong></td></tr>' +
+      '</tbody></table><footer>Generated by Isla Drop · isladrop.net · For queries: ops@isladrop.net</footer></body></html>'
+    const blob = new Blob([html], {type:'text/html'})
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'IslaDropPayslip_' + weeks[week].replace(' ','_') + '.html'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast.success('Payslip downloaded ✓')
+  }
+
+  return (
+    <Sheet zIndex={650} onDismiss={onClose}>
+      <div style={{ fontSize:18, fontWeight:700, color:DS.t1, marginBottom:4, fontFamily:DS.f }}>Weekly payslip</div>
+      <div style={{ fontSize:12, color:DS.t2, marginBottom:16, fontFamily:DS.f }}>Download your earnings statement</div>
+      <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+        {weeks.map((w,i) => (
+          <button key={i} onClick={()=>setWeek(i)} style={{ flex:1, padding:'9px 4px', background:week===i?DS.yellowDim:DS.surface2, border:'1px solid '+(week===i?DS.yellowBdr:DS.border2), borderRadius:DS.r1, color:week===i?DS.yellow:DS.t3, fontSize:11, fontWeight:week===i?700:400, cursor:'pointer', fontFamily:DS.f }}>{w}</button>
+        ))}
+      </div>
+      {[
+        { label:'Delivery fees', val:'€'+total.toFixed(2), color:DS.t1 },
+        { label:'Cash tips', val:'+€'+tips.toFixed(2), color:DS.green },
+        { label:'Expenses', val:'-€'+costs.toFixed(2), color:DS.red },
+        { label:'Total deliveries', val:deliveries, color:DS.blue },
+      ].map(row => (
+        <div key={row.label} style={{ display:'flex', justifyContent:'space-between', padding:'12px 0', borderBottom:'1px solid '+DS.border }}>
+          <span style={{ fontSize:14, color:DS.t2, fontFamily:DS.f }}>{row.label}</span>
+          <span style={{ fontSize:14, fontWeight:700, color:row.color, fontFamily:DS.f }}>{row.val}</span>
+        </div>
+      ))}
+      <div style={{ display:'flex', justifyContent:'space-between', padding:'16px 0', marginBottom:20 }}>
+        <span style={{ fontSize:16, fontWeight:700, color:DS.t1, fontFamily:DS.f }}>Net earnings</span>
+        <span style={{ fontSize:28, fontWeight:900, color:DS.accent, fontFamily:DS.f }}>€{net.toFixed(2)}</span>
+      </div>
+      {earnings.map((e,i) => (
+        <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:DS.surface2, borderRadius:DS.r1, marginBottom:6, border:'1px solid '+DS.border2 }}>
+          <div style={{ fontSize:13, color:DS.t1, fontFamily:DS.f }}>{e.date}</div>
+          <div style={{ fontSize:11, color:DS.t3, fontFamily:DS.f }}>{e.deliveries} deliveries</div>
+          <div style={{ fontSize:13, fontWeight:700, color:DS.green, fontFamily:DS.f }}>€{e.amount.toFixed(2)}</div>
+        </div>
+      ))}
+      <button onClick={download} style={{ width:'100%', marginTop:16, padding:'15px', background:DS.yellow, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:DS.f, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+        ⬇ Download payslip (.html)
+      </button>
+    </Sheet>
+  )
+}
+
+function IncidentReport({ onClose }) {
+  const [type, setType] = React.useState(null)
+  const [details, setDetails] = React.useState('')
+  const [injury, setInjury] = React.useState(false)
+  const [policeRef, setPoliceRef] = React.useState('')
+  const [loading, setLoading] = React.useState(false)
+  const [done, setDone] = React.useState(false)
+  const types = [
+    { id:'accident', label:'Road accident', icon:'🚨' },
+    { id:'near_miss', label:'Near miss', icon:'⚠️' },
+    { id:'theft', label:'Theft', icon:'🔓' },
+    { id:'breakdown', label:'Breakdown', icon:'🛵' },
+    { id:'assault', label:'Assault', icon:'🆘' },
+    { id:'other', label:'Other', icon:'📋' },
+  ]
+  const submit = async () => {
+    if (!type||!details.trim()) { toast.error('Select type and describe the incident'); return }
+    setLoading(true)
+    await new Promise(r=>setTimeout(r,1000))
+    setDone(true); setLoading(false)
+    toast.success('Incident reported to ops team')
+  }
+  if (done) return (
+    <Sheet zIndex={650} onDismiss={onClose}>
+      <div style={{ textAlign:'center', padding:'16px 0' }}>
+        <div style={{ fontSize:52, marginBottom:12 }}>📋</div>
+        <div style={{ fontSize:20, fontWeight:700, color:DS.t1, marginBottom:8, fontFamily:DS.f }}>Incident reported</div>
+        <div style={{ fontSize:14, color:DS.t2, marginBottom:8, fontFamily:DS.f }}>Ops team has been notified.</div>
+        <div style={{ fontSize:18, fontWeight:700, color:DS.t1, marginBottom:28, fontFamily:DS.f }}>📞 +34 971 000 000</div>
+        <button onClick={onClose} style={{ width:'100%', padding:'14px', background:DS.accent, border:'none', borderRadius:DS.r1, color:DS.t1, fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:DS.f }}>Close</button>
+      </div>
+    </Sheet>
+  )
+  return (
+    <Sheet zIndex={650} onDismiss={onClose}>
+      <div style={{ fontSize:18, fontWeight:700, color:DS.t1, marginBottom:4, fontFamily:DS.f }}>Report incident</div>
+      <div style={{ fontSize:12, color:DS.t2, marginBottom:16, fontFamily:DS.f }}>For accidents, near misses or theft</div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
+        {types.map(t => (
+          <button key={t.id} onClick={()=>setType(t.id)} style={{ padding:'12px 10px', background:type===t.id?DS.redDim:DS.surface2, border:'1px solid '+(type===t.id?DS.redBdr:DS.border2), borderRadius:DS.r1, cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
+            <div style={{ fontSize:20, marginBottom:4 }}>{t.icon}</div>
+            <div style={{ fontSize:12, color:type===t.id?DS.red:DS.t2, fontWeight:600, fontFamily:DS.f }}>{t.label}</div>
+          </button>
+        ))}
+      </div>
+      <button onClick={()=>setInjury(v=>!v)} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:injury?DS.redDim:DS.surface2, border:'1px solid '+(injury?DS.redBdr:DS.border2), borderRadius:DS.r1, marginBottom:10, cursor:'pointer', textAlign:'left' }}>
+        <div style={{ width:24, height:24, borderRadius:6, background:injury?DS.red:'transparent', border:'2px solid '+(injury?DS.red:DS.border2), display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:DS.t1, flexShrink:0 }}>{injury?'✓':''}</div>
+        <span style={{ fontSize:14, color:injury?DS.red:DS.t2, fontWeight:600, fontFamily:DS.f }}>Injury involved</span>
+      </button>
+      <input value={policeRef} onChange={e=>setPoliceRef(e.target.value)} placeholder="Police reference number (if applicable)"
+        style={{ width:'100%', padding:'10px 12px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t1, fontSize:13, outline:'none', fontFamily:DS.f, marginBottom:10, boxSizing:'border-box' }} />
+      <textarea value={details} onChange={e=>setDetails(e.target.value)} placeholder="Describe what happened..." rows={4}
+        style={{ width:'100%', padding:'12px', background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, color:DS.t1, fontSize:13, resize:'none', outline:'none', fontFamily:DS.f, marginBottom:14, boxSizing:'border-box' }} />
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:10 }}>
+        <button onClick={onClose} style={{ padding:'13px', background:'transparent', border:'1.5px solid '+DS.border2+'60', borderRadius:DS.r1, color:DS.t2, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:DS.f }}>Cancel</button>
+        <button onClick={submit} disabled={!type||!details.trim()||loading} style={{ padding:'13px', background:DS.red, border:'none', borderRadius:DS.r1, color:DS.t1, fontSize:14, fontWeight:700, cursor:!type||!details.trim()?'default':'pointer', opacity:!type||!details.trim()?0.5:1, fontFamily:DS.f }}>
+          {loading?'Submitting...':'Submit report'}
+        </button>
+      </div>
+    </Sheet>
+  )
+}
+
+function NotificationSetup({ onClose }) {
+  const [status, setStatus] = React.useState(typeof Notification !== 'undefined' ? Notification.permission : 'default')
+  const enable = async () => {
+    if (typeof Notification === 'undefined') { toast.error('Notifications not supported in this browser'); return }
+    const perm = await Notification.requestPermission()
+    setStatus(perm)
+    if (perm === 'granted') {
+      toast.success('Push notifications enabled!')
+      new Notification('Isla Drop Driver', { body: 'You will now receive order alerts even when the app is in the background.' })
+    } else if (perm === 'denied') {
+      toast.error('Notifications blocked — enable in browser settings')
+    }
+  }
+  return (
+    <Sheet zIndex={650} onDismiss={onClose}>
+      <div style={{ textAlign:'center', marginBottom:24 }}>
+        <div style={{ fontSize:52, marginBottom:12 }}>🔔</div>
+        <div style={{ fontSize:18, fontWeight:700, color:DS.t1, marginBottom:8, fontFamily:DS.f }}>Push notifications</div>
+        <div style={{ fontSize:13, color:DS.t2, fontFamily:DS.f, lineHeight:1.5 }}>
+          Receive new order alerts even when the app is in the background or your screen is locked.
+        </div>
+      </div>
+      {status === 'granted' ? (
+        <div style={{ background:DS.greenDim, border:'1px solid '+DS.greenBdr, borderRadius:DS.r2, padding:20, textAlign:'center', marginBottom:16 }}>
+          <div style={{ fontSize:32, marginBottom:8 }}>✅</div>
+          <div style={{ fontSize:16, fontWeight:700, color:DS.green, marginBottom:4, fontFamily:DS.f }}>Notifications are enabled</div>
+          <div style={{ fontSize:13, color:DS.t2, fontFamily:DS.f }}>You will receive alerts for every new order, even when the screen is off.</div>
+        </div>
+      ) : status === 'denied' ? (
+        <div style={{ background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r2, padding:20, marginBottom:16 }}>
+          <div style={{ fontSize:32, marginBottom:8, textAlign:'center' }}>🚫</div>
+          <div style={{ fontSize:15, fontWeight:700, color:DS.red, marginBottom:8, fontFamily:DS.f }}>Notifications are blocked</div>
+          <div style={{ fontSize:13, color:DS.t2, fontFamily:DS.f }}>To enable notifications: open your browser settings, find this site, and allow notifications. Then come back here.</div>
+        </div>
+      ) : (
+        <div>
+          <div style={{ background:DS.surface2, border:'1px solid '+DS.border2, borderRadius:DS.r1, padding:14, marginBottom:16 }}>
+            {[
+              'New order alerts with earnings and address',
+              'Works even when the screen is locked',
+              'Vibration alert for incoming orders',
+            ].map((b,i) => (
+              <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start', marginBottom:i<2?10:0 }}>
+                <span style={{ color:DS.green, fontSize:14, marginTop:1 }}>✓</span>
+                <span style={{ fontSize:13, color:DS.t1, fontFamily:DS.f }}>{b}</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={enable} style={{ width:'100%', padding:'15px', background:DS.green, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:DS.f, marginBottom:8 }}>
+            Enable push notifications
+          </button>
+        </div>
+      )}
+      <button onClick={onClose} style={{ width:'100%', padding:'13px', background:'transparent', border:'1.5px solid '+DS.border2+'60', borderRadius:DS.r1, color:DS.t2, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:DS.f }}>
+        {status==='granted' ? 'Done' : 'Maybe later'}
+      </button>
+    </Sheet>
+  )
+}
+
+function AppLock({ onUnlock }) {
+  const STORAGE_KEY = 'isla_driver_pin'
+  const savedPin = localStorage.getItem(STORAGE_KEY)
+  const [mode, setMode] = React.useState(savedPin ? 'enter' : 'set')
+  const [pin, setPin] = React.useState('')
+  const [confirm, setConfirm] = React.useState('')
+  const [step, setStep] = React.useState('first')
+  const [error, setError] = React.useState('')
+
+  const handleDigit = (d) => {
+    setError('')
+    if (mode === 'enter') {
+      const next = pin + d
+      setPin(next)
+      if (next.length === 4) {
+        if (next === savedPin) { haptic.success(); onUnlock() }
+        else { haptic.error(); setError('Incorrect PIN'); setTimeout(()=>setPin(''), 400) }
+      }
+    } else {
+      if (step === 'first') {
+        const next = pin + d
+        setPin(next)
+        if (next.length === 4) { setStep('confirm'); setTimeout(()=>{}, 200) }
+      } else {
+        const next = confirm + d
+        setConfirm(next)
+        if (next.length === 4) {
+          if (next === pin) {
+            localStorage.setItem(STORAGE_KEY, pin)
+            haptic.success()
+            toast.success('PIN set! App is now locked.')
+            onUnlock()
+          } else {
+            haptic.error()
+            setError('PINs do not match — try again')
+            setConfirm('')
+            setStep('first')
+            setPin('')
+          }
+        }
+      }
+    }
+  }
+
+  const handleBack = () => {
+    setError('')
+    if (mode === 'enter') setPin(p => p.slice(0,-1))
+    else if (step === 'first') setPin(p => p.slice(0,-1))
+    else setConfirm(p => p.slice(0,-1))
+  }
+
+  const currentPin = mode === 'enter' ? pin : step === 'first' ? pin : confirm
+  const title = mode === 'enter' ? 'Enter your PIN' : step === 'first' ? 'Set a new PIN' : 'Confirm your PIN'
+  const subtitle = mode === 'enter' ? 'Enter your 4-digit PIN to unlock' : step === 'first' ? 'Choose a 4-digit PIN to protect the app' : 'Enter the same PIN again to confirm'
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:900, background:DS.bg, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:32 }}>
+      <div style={{ fontSize:48, marginBottom:12 }}>🔒</div>
+      <div style={{ fontFamily:DS.fh, fontSize:26, color:DS.t1, marginBottom:6, textAlign:'center' }}>Isla Drop</div>
+      <div style={{ fontSize:15, fontWeight:600, color:DS.t1, marginBottom:4, fontFamily:DS.f, textAlign:'center' }}>{title}</div>
+      <div style={{ fontSize:13, color:DS.t3, marginBottom:32, fontFamily:DS.f, textAlign:'center' }}>{subtitle}</div>
+      <div style={{ display:'flex', gap:14, marginBottom:12 }}>
+        {[0,1,2,3].map(i => (
+          <div key={i} style={{ width:18, height:18, borderRadius:'50%', background:currentPin.length > i ? DS.accent : DS.border2, transition:'background 0.1s', border:'2px solid '+(currentPin.length > i ? DS.accent : DS.border2) }} />
+        ))}
+      </div>
+      {error && <div style={{ color:DS.red, fontSize:13, marginBottom:16, fontFamily:DS.f, fontWeight:600 }}>{error}</div>}
+      {!error && <div style={{ height:32, marginBottom:4 }} />}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, width:'100%', maxWidth:280 }}>
+        {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((d,i) => (
+          <button key={i} onClick={() => d==='' ? null : d==='⌫' ? handleBack() : handleDigit(String(d))}
+            style={{ padding:'18px', background:d===''?'transparent':DS.surface, border:d===''?'none':'1px solid '+DS.border, borderRadius:DS.r2, fontSize:22, fontWeight:700, color:d===''?'transparent':d==='⌫'?DS.red:DS.t1, cursor:d===''?'default':'pointer', fontFamily:DS.f, transition:'background 0.1s' }}>
+            {d}
+          </button>
+        ))}
+      </div>
+      {mode === 'enter' && (
+        <button onClick={() => { localStorage.removeItem(STORAGE_KEY); setMode('set'); setPin(''); setStep('first') }}
+          style={{ marginTop:24, background:'none', border:'none', color:DS.t3, fontSize:12, cursor:'pointer', fontFamily:DS.f }}>
+          Forgot PIN? Reset
+        </button>
+      )}
+    </div>
+  )
+}
+
+
 function SettingsTab({ profile, stats, onSignOut, isDesktop, onExpenses, onPayslip, onIncident, onNotifs, onLock }) {
   const [vehicle, setVehicle] = useState('scooter')
   const [notifSound, setNotifSound] = useState(true)
@@ -1269,7 +2084,7 @@ export default function DriverApp() {
       '@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}',
       '@keyframes pulse{0%25,100%25{opacity:1}50%25{opacity:0.4}}',
       '*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}'
-    ].join(' ').replace(/%25/g, '%')
+    ].join(' ').split('%25').join('%')
     if (!document.getElementById('driver-app-styles')) document.head.appendChild(el)
     return () => { el.remove() }
   }, [])
