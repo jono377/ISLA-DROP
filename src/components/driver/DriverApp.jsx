@@ -1058,6 +1058,7 @@ function SettingsTab({ profile, stats, onSignOut, isDesktop }) {
       <button onClick={onSignOut} style={{ width:'100%', marginTop:12, padding:14, background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, color:DS.red, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:DS.f }}>
         🚪 Sign out
       </button>
+    </div>
   )
 }
 
@@ -1494,6 +1495,7 @@ export default function DriverApp() {
           </button>
         ))}
       </div>}
+      </div>
     </div>
   )
 }
