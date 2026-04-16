@@ -385,7 +385,7 @@ function CustomerChat({ order, driverId, onClose }) {
           const mine = msg.sender_role==='driver'
           return (
             <div key={i} style={{ display:'flex', justifyContent:mine?'flex-end':'flex-start' }}>
-              <div style={{ maxWidth:'78%', background:mine?DS.accentDim:DS.surface2, border:'1px solid '+(mine?DS.accentBdr:DS.border2), borderRadius:mine?'16px 4px 16px 16px':'4px 16px 16px 16px', padding:'10px 14px' }}>
+              <div style={{ maxWidth:'78vw', background:mine?DS.accentDim:DS.surface2, border:'1px solid '+(mine?DS.accentBdr:DS.border2), borderRadius:mine?'16px 4px 16px 16px':'4px 16px 16px 16px', padding:'10px 14px' }}>
                 <div style={{ fontSize:14, color:DS.t1, fontFamily:DS.f, lineHeight:1.4 }}>{msg.content}</div>
                 <div style={{ fontSize:10, color:DS.t3, marginTop:4, textAlign:'right' }}>
                   {new Date(msg.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
@@ -768,7 +768,7 @@ function EarningsTab({ stats, isDesktop }) {
           </div>
         </div>
         <div style={{ background:DS.border, borderRadius:99, height:8, overflow:'hidden', marginBottom:8 }}>
-          <div style={{ height:'100%', borderRadius:99, background:goalPct>=100?DS.green:'linear-gradient(90deg,'+DS.accent+','+DS.yellow+')', width:goalPct+'%', transition:'width 0.6s ease' }} />
+          <div style={{ height:'100%', borderRadius:99, background:goalPct>=100?DS.green:'linear-gradient(to right,'+DS.accent+','+DS.yellow+')', width:(goalPct).toFixed(0)+'%', transition:'width 0.6s ease' }} />
         </div>
         <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, fontFamily:DS.f }}>
           <span style={{ color:goalPct>=100?DS.green:DS.accent, fontWeight:700 }}>€{todayEarnings.toFixed(2)} earned</span>
@@ -1233,11 +1233,20 @@ export default function DriverApp() {
     { id:'settings',    icon:'⚙️', label:'Settings' },
   ]
 
-  const globalStyles = "@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}"
+  useEffect(() => {
+    const el = document.createElement('style')
+    el.id = 'driver-app-styles'
+    el.textContent = [
+      '@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}',
+      '@keyframes pulse{0%25,100%25{opacity:1}50%25{opacity:0.4}}',
+      '*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}'
+    ].join(' ').replace(/%25/g, '%')
+    if (!document.getElementById('driver-app-styles')) document.head.appendChild(el)
+    return () => { el.remove() }
+  }, [])
 
   return (
     <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f, display:'flex', overflow:'hidden', width:'100%' }}>
-      <style>{globalStyles}</style>
 
       {/* ── OVERLAYS ── */}
       {showMap   && currentOrder && <DeliveryMap order={currentOrder} driverPos={driverPos} onClose={() => setShowMap(false)} />}
@@ -1604,12 +1613,10 @@ export default function DriverApp() {
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             style={{ flex:1, padding:'12px 0 8px', background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, position:'relative' }}>
-            {tab.id==='home' && currentOrder && (
-              <div style={{ position:'absolute', top:8, right:'calc(50% - 18px)', width:8, height:8, borderRadius:'50%', background:cfg?.color||DS.accent, boxShadow:'0 0 6px '+(cfg?.color||DS.accent) }} />
-            )}
+
             <span style={{ fontSize:21 }}>{tab.icon}</span>
             <span style={{ fontSize:10, color:activeTab===tab.id?DS.accent:DS.t3, fontWeight:activeTab===tab.id?700:400, fontFamily:DS.f }}>{tab.label}</span>
-            {activeTab===tab.id && <div style={{ position:'absolute', top:0, left:'15%', right:'15%', height:2, background:DS.accent, borderRadius:1 }} />}
+
           </button>
         ))}
       </div>}
