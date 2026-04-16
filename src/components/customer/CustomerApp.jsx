@@ -18,6 +18,12 @@ import {
   ScheduleDelivery, PromoCodeEntry, NotificationSettings,
   ProductCardSkeleton, OrderCardSkeleton
 } from './CustomerFeatures'
+import {
+  WishlistView, WishlistHeart, UpsellSuggestions, FlashSaleBanner,
+  FirstOrderBanner, PWAInstallPrompt, DriverContact, ReferralShare,
+  SortFilterSheet, WhatsAppButton, OverlayErrorBoundary
+} from './CustomerFeatures2'
+import { useWishlistStore } from '../../lib/store'
 
 const VIEWS = {
   SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search',
@@ -238,15 +244,18 @@ function BasketView({ t, onCheckout, promoCode, setPromoCode }) {
 }
 
 // ─── Account ──────────────────────────────────────────────────
-function AccountView({ t, onShowHistory, onShowAddresses, onShowHelp, onShowLoyalty, onShowNotifications, onSignIn }) {
+function AccountView({ t, onShowHistory, onShowAddresses, onShowHelp, onShowLoyalty, onShowNotifications, onShowWishlist, onShowReferral, onSignIn }) {
   const { user, profile, clear } = useAuthStore()
 
   const menuItems = user ? [
     { icon:'📦', label:'Order history', action:onShowHistory },
+    { icon:'❤️', label:'Favourites', action:onShowWishlist },
     { icon:'📍', label:'Saved addresses', action:onShowAddresses },
     { icon:'🌴', label:'Loyalty rewards', action:onShowLoyalty },
+    { icon:'🔗', label:'Refer a friend · Earn €10', action:onShowReferral },
     { icon:'🔔', label:'Notifications', action:onShowNotifications },
     { icon:'❓', label:'Help & support', action:onShowHelp },
+    { icon:'💬', label:'WhatsApp support', action:()=>window.open('https://wa.me/34971000000','_blank') },
   ] : []
 
   return (
@@ -345,7 +354,7 @@ function SearchView({ t, onDetail }) {
 }
 
 // ─── Home ─────────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onBundles, onCocktails, onDetail }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onBundles, onCocktails, onDetail, onPromoApply }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -416,8 +425,12 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 
       {!searchQuery && (
         <div style={{ paddingBottom:20 }}>
+          {/* Flash sale + first order banners */}
+          <FlashSaleBanner onShop={()=>onCategorySelect('beer')} />
+          <FirstOrderBanner onApply={onPromoApply} />
+
           {/* Quick actions */}
-          <div style={{ display:'flex', gap:8, padding:'16px 16px 8px', overflowX:'auto', scrollbarWidth:'none' }}>
+          <div style={{ display:'flex', gap:8, padding:'12px 16px 8px', overflowX:'auto', scrollbarWidth:'none' }}>
             {[
               { emoji:'🍹', label:'Cocktail builder', action:onCocktails },
               { emoji:'🎁', label:'Bundle deals', action:onBundles },
@@ -504,6 +517,7 @@ export default function CustomerApp() {
   const [scheduledDelivery, setScheduledDelivery] = useState(null)
 
   // Overlay states
+  const wishlist = useWishlistStore()
   const [showHistory, setShowHistory] = useState(false)
   const [showAddresses, setShowAddresses] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
@@ -515,6 +529,10 @@ export default function CustomerApp() {
   const [showBundles, setShowBundles] = useState(false)
   const [showSchedule, setShowSchedule] = useState(false)
   const [showSignIn, setShowSignIn] = useState(false)
+  const [showWishlist, setShowWishlist] = useState(false)
+  const [showUpsell, setShowUpsell] = useState(false)
+  const [showDriverContact, setShowDriverContact] = useState(false)
+  const [showReferral, setShowReferral] = useState(false)
 
   const { user } = useAuthStore()
   const cart = useCartStore()
@@ -548,6 +566,12 @@ export default function CustomerApp() {
   const handleCheckoutStart = () => {
     if (!user) { setShowSignIn(true); return }
     if (cart.getHasAgeRestricted()) { setView(VIEWS.AGE_VERIFY); return }
+    // Show upsell suggestions before payment
+    setShowUpsell(true)
+  }
+
+  const proceedToCheckout = () => {
+    setShowUpsell(false)
     setView(VIEWS.CHECKOUT)
   }
 
@@ -672,6 +696,12 @@ export default function CustomerApp() {
             <OrderTrackingMap order={activeOrder} driverId={activeOrder.driver_id} />
           </div>
         )}
+        {activeOrder.status === 'en_route' && (
+          <button onClick={()=>setShowDriverContact(true)}
+            style={{ width:'100%', padding:13, marginBottom:10, background:'rgba(255,255,255,0.08)', border:'0.5px solid rgba(255,255,255,0.2)', borderRadius:12, color:'white', fontFamily:F.sans, fontSize:14, cursor:'pointer' }}>
+            💬 Contact driver
+          </button>
+        )}
         <button onClick={()=>setView(VIEWS.HOME)} style={{ width:'100%', padding:15, background:'#C4683A', color:'white', border:'none', borderRadius:12, fontFamily:F.sans, fontSize:15, cursor:'pointer' }}>Place another order</button>
       </div>
     )
@@ -688,7 +718,7 @@ export default function CustomerApp() {
           estimatedMins={estimatedMins} onAssist={()=>setView(VIEWS.ASSIST)}
           onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)}
           onBundles={()=>setShowBundles(true)} onCocktails={()=>setShowCocktails(true)}
-          onDetail={p=>setShowDetail(p)} />
+          onDetail={p=>setShowDetail(p)} onPromoApply={p=>setPromoCode(p)} />
       )}
       {view===VIEWS.SEARCH && <SearchView t={t} onDetail={p=>setShowDetail(p)} />}
       {view===VIEWS.BASKET && <BasketView t={t} onCheckout={handleCheckoutStart} promoCode={promoCode} setPromoCode={setPromoCode} />}
@@ -699,6 +729,8 @@ export default function CustomerApp() {
           onShowHelp={()=>setShowHelp(true)}
           onShowLoyalty={()=>setShowLoyalty(true)}
           onShowNotifications={()=>setShowNotifications(true)}
+          onShowWishlist={()=>setShowWishlist(true)}
+          onShowReferral={()=>setShowReferral(true)}
           onSignIn={()=>setShowSignIn(true)} />
       )}
       {view===VIEWS.ASSIST && <AssistBot onClose={()=>setView(VIEWS.HOME)} />}
@@ -720,17 +752,22 @@ export default function CustomerApp() {
       <TabBar view={view} setView={handleTabChange} cartCount={cart.getItemCount()} />
 
       {/* Overlays */}
-      {showHistory && <OrderHistory onClose={()=>setShowHistory(false)} />}
-      {showAddresses && <SavedAddresses onClose={()=>setShowAddresses(false)} onSelect={addr=>{ cart.setDeliveryLocation(null,null,addr); setShowAddresses(false) }} />}
-      {showHelp && <HelpSupport onClose={()=>setShowHelp(false)} />}
-      {showLoyalty && <LoyaltyCard onClose={()=>setShowLoyalty(false)} />}
-      {showNotifications && <NotificationSettings onClose={()=>setShowNotifications(false)} />}
+      {showWishlist && <OverlayErrorBoundary onClose={()=>setShowWishlist(false)}><WishlistView onClose={()=>setShowWishlist(false)} onDetail={p=>setShowDetail(p)} /></OverlayErrorBoundary>}
+      {showUpsell && <OverlayErrorBoundary onClose={()=>setShowUpsell(false)}><UpsellSuggestions cartItems={cart.items} onClose={proceedToCheckout} /></OverlayErrorBoundary>}
+      {showReferral && <OverlayErrorBoundary onClose={()=>setShowReferral(false)}><ReferralShare onClose={()=>setShowReferral(false)} /></OverlayErrorBoundary>}
+      {showDriverContact && activeOrder && <OverlayErrorBoundary onClose={()=>setShowDriverContact(false)}><DriverContact order={activeOrder} onClose={()=>setShowDriverContact(false)} /></OverlayErrorBoundary>}
+      {showHistory && <OverlayErrorBoundary onClose={()=>setShowHistory(false)}><OrderHistory onClose={()=>setShowHistory(false)} /></OverlayErrorBoundary>}
+      {showAddresses && <OverlayErrorBoundary onClose={()=>setAddresses(false)}><SavedAddresses onClose={()=>setShowAddresses(false)} onSelect={addr=>{ cart.setDeliveryLocation(null,null,addr); setShowAddresses(false) }} />}
+      {showHelp && <OverlayErrorBoundary onClose={()=>setHelp(false)}><HelpSupport onClose={()=>setShowHelp(false)} />}
+      {showLoyalty && <OverlayErrorBoundary onClose={()=>setLoyalty(false)}><LoyaltyCard onClose={()=>setShowLoyalty(false)} />}
+      {showNotifications && <OverlayErrorBoundary onClose={()=>setNotifications(false)}><NotificationSettings onClose={()=>setShowNotifications(false)} />}
       {showDetail && <ProductDetail product={showDetail} onClose={()=>setShowDetail(null)} />}
       {showRating && <RatingPrompt order={showRating} onClose={()=>setShowRating(null)} />}
       {showCocktails && <CocktailBuilder products={PRODUCTS} onClose={()=>setShowCocktails(false)} />}
       {showBundles && <BundleDeals products={PRODUCTS} onClose={()=>setShowBundles(false)} />}
       {showSchedule && <ScheduleDelivery onClose={()=>setShowSchedule(false)} onSchedule={s=>{ setScheduledDelivery(s); setShowSchedule(false) }} />}
 
+      <PWAInstallPrompt />
       {/* Sign in overlay */}
       {showSignIn && (
         <div style={{ position:'fixed', inset:0, zIndex:500, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'flex-end' }} onClick={()=>setShowSignIn(false)}>
