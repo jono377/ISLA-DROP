@@ -123,6 +123,7 @@ function CreateAccountForm({ role, onSuccess, onSignIn }) {
     try {
       const { supabase } = await import('../../lib/supabase')
       const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
         password,
         options: { data: { full_name: name.trim() } }
       })
