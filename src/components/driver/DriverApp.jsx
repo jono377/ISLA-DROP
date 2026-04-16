@@ -821,22 +821,28 @@ function EarningsTab({ stats, isDesktop }) {
       </div>
 
       <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12, fontFamily:DS.f }}>Delivery history</div>
-      {loading ? <div style={{ textAlign:'center', padding:32, color:DS.t3, fontFamily:DS.f }}>Loading...</div>
-        : history.length===0 ? (
-          <div style={{ textAlign:'center', padding:'40px 0', color:DS.t3 }}>
-            <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
-            <div style={{ fontSize:14, fontFamily:DS.f }}>No deliveries in this period</div>
-          </div>
-        ) : history.map((e,i) => (
+      {loading && <div style={{ textAlign:'center', padding:32, color:DS.t3, fontFamily:DS.f }}>Loading...</div>}
+      {!loading && history.length===0 && (
+        <div style={{ textAlign:'center', padding:'40px 0', color:DS.t3 }}>
+          <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
+          <div style={{ fontSize:14, fontFamily:DS.f }}>No deliveries in this period</div>
+        </div>
+      )}
+      {!loading && history.length > 0 && history.map((e,i) => {
+        const dateStr = new Date(e.created_at).toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'})
+        const orderRef = e.order_number || (e.order_id ? e.order_id.slice(0,6) : 'N/A')
+        const amt = (e.amount||0).toFixed(2)
+        return (
           <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border }}>
             <div style={{ width:40, height:40, borderRadius:DS.r1, background:DS.greenDim, border:'1px solid '+DS.greenBdr, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>📦</div>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:14, color:DS.t1, fontWeight:600, fontFamily:DS.f }}>Order #{e.order_number||e.order_id?.slice(0,6)}</div>
-              <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>{new Date(e.created_at).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+              <div style={{ fontSize:14, color:DS.t1, fontWeight:600, fontFamily:DS.f }}>Order #{orderRef}</div>
+              <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>{dateStr}</div>
             </div>
-            <div style={{ fontSize:17, fontWeight:800, color:DS.green, fontFamily:DS.f }}>€{(e.amount||0).toFixed(2)}</div>
+            <div style={{ fontSize:17, fontWeight:800, color:DS.green, fontFamily:DS.f }}>€{amt}</div>
           </div>
-        ))}
+        )
+      })}
       </div>
       </div>
     </div>
