@@ -23,6 +23,10 @@ export default function AuthScreen() {
 
   const handle = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
+  // Debug: check if supabase is configured
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+  const isConfigured = supabaseUrl && supabaseUrl !== '' && !supabaseUrl.includes('placeholder')
+
   const submit = async (e) => {
     e.preventDefault()
     if (!form.email.trim() || !form.password) {
@@ -109,7 +113,17 @@ export default function AuthScreen() {
       }
     } catch (err) {
       clearTimeout(timer)
-      toast.error(err?.message || 'Something went wrong — please try again')
+      console.error('Auth error:', err)
+      const msg = err?.message || ''
+      if (msg.includes('fetch') || msg.includes('network') || msg.includes('timed out') || msg.includes('Failed to fetch')) {
+        toast.error('Cannot connect to server. Check Vercel env vars: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set correctly.')
+      } else if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
+        toast.error('Incorrect email or password')
+      } else if (msg.includes('placeholder')) {
+        toast.error('Supabase not configured — set VITE_SUPABASE_URL in Vercel environment variables')
+      } else {
+        toast.error(msg || 'Sign in failed — please try again')
+      }
     }
     setLoading(false)
   }
@@ -122,6 +136,11 @@ export default function AuthScreen() {
           <div style={{ fontSize: 14, color: '#7A6E60', marginTop: 4 }}>Ibiza · 24/7 Delivery</div>
         </div>
 
+        {!isConfigured && (
+          <div style={{ background: '#C43A3A', color: 'white', borderRadius: 10, padding: '10px 16px', marginBottom: 12, fontSize: 13, fontFamily: 'DM Sans, sans-serif', textAlign: 'center' }}>
+            ⚠️ Supabase not configured. Set VITE_SUPABASE_URL in Vercel.
+          </div>
+        )}
         <div style={{ background: '#FEFCF9', borderRadius: 20, padding: 28, boxShadow: '0 4px 32px rgba(42,35,24,0.08)' }}>
           <div style={{ display: 'flex', gap: 4, background: '#F5F0E8', borderRadius: 10, padding: 4, marginBottom: 24 }}>
             {['signin', 'signup'].map(m => (
