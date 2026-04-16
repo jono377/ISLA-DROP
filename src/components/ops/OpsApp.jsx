@@ -37,6 +37,13 @@ import {
 import {
   GlobalSearch, ExportManager, OpsSettings
 } from './OpsModules4'
+import {
+  ProductManager, FlashSaleCreator, AnnouncementManager,
+  PushDeliveryManager, DriverAccountCreator, LiveZoneManager
+} from './OpsModules5'
+import {
+  CommissionDashboard, BookingConfirmationSender, PartnerPortalManager, ConciergeOverview
+} from './ConciergeOps'
 
 
 
@@ -658,7 +665,11 @@ export default function OpsApp() {
           {tab === 'discounts' && <DiscountManager />}
           {tab === 'banners'   && <PromoBannerManager />}
           {tab === 'winback'   && <WinBackManager />}
+          {tab === 'concierge_overview' && <ConciergeOverview onNavigate={t=>setTab(t)} />}
           {tab === 'concierge' && <ConciergeBookings />}
+          {tab === 'commission'&& <CommissionDashboard />}
+          {tab === 'confirmations' && <BookingConfirmationSender />}
+          {tab === 'partners_portal' && <PartnerPortalManager />}
           {tab === 'pipeline'  && <ConciergePipeline />}
           {tab === 'partners'  && <PartnerManager />}
           {tab === 'drivers'   && <DriverApprovals />}
@@ -677,6 +688,12 @@ export default function OpsApp() {
           {tab === 'shifts'      && <ShiftScheduler />}
           {tab === 'reconcile'   && <FinancialReconciliation />}
           {tab === 'playbooks'   && <OpsPlaybooks />}
+          {tab === 'product_mgr' && <ProductManager />}
+          {tab === 'flash_sale'  && <FlashSaleCreator />}
+          {tab === 'announce'    && <AnnouncementManager />}
+          {tab === 'push_send'   && <PushDeliveryManager />}
+          {tab === 'driver_create'&&<DriverAccountCreator />}
+          {tab === 'zone_fees'   && <LiveZoneManager />}
           {tab === 'eta'         && <ETAManager />}
           {tab === 'webhooks'    && <WebhooksManager />}
           {tab === 'age_verify'  && <AgeVerificationManager />}
