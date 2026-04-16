@@ -958,7 +958,7 @@ function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
     </div>
   )
 }
-function SettingsTab({ profile, stats, onSignOut, isDesktop }) {
+function SettingsTab({ profile, stats, onSignOut, isDesktop, onExpenses, onPayslip, onIncident, onNotifs, onLock }) {
   const [vehicle, setVehicle] = useState('scooter')
   const [notifSound, setNotifSound] = useState(true)
   const [screenLock, setScreenLock] = useState(true)
@@ -1047,13 +1047,13 @@ function SettingsTab({ profile, stats, onSignOut, isDesktop }) {
       ))}
 
       <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', margin:'20px 0 10px', fontFamily:DS.f }}>Finance</div>
-      <button onClick={() => setShowExpenses(true)} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}><span style={{ fontSize:20, flexShrink:0 }}>💰</span><div style={{ flex:1, textAlign:'left' }}><div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Expenses and tips</div><div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Log cash tips and fuel costs</div></div><span style={{ color:DS.t3, fontSize:14 }}>›</span></button>
-      <button onClick={() => setShowPayslip(true)} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}><span style={{ fontSize:20, flexShrink:0 }}>📄</span><div style={{ flex:1, textAlign:'left' }}><div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Weekly payslip</div><div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Download earnings statement</div></div><span style={{ color:DS.t3, fontSize:14 }}>›</span></button>
+      <button onClick={onExpenses} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}><span style={{ fontSize:20, flexShrink:0 }}>💰</span><div style={{ flex:1, textAlign:'left' }}><div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Expenses and tips</div><div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Log cash tips and fuel costs</div></div><span style={{ color:DS.t3, fontSize:14 }}>›</span></button>
+      <button onClick={onPayslip} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}><span style={{ fontSize:20, flexShrink:0 }}>📄</span><div style={{ flex:1, textAlign:'left' }}><div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Weekly payslip</div><div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Download earnings statement</div></div><span style={{ color:DS.t3, fontSize:14 }}>›</span></button>
 
       <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', margin:'20px 0 10px', fontFamily:DS.f }}>Safety</div>
-      <button onClick={() => setShowIncident(true)} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}><span style={{ fontSize:20, flexShrink:0 }}>🚨</span><div style={{ flex:1, textAlign:'left' }}><div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Report incident</div><div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Accidents, near misses, theft</div></div><span style={{ color:DS.t3, fontSize:14 }}>›</span></button>
-      <button onClick={() => setShowNotifSetup(true)} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}><span style={{ fontSize:20, flexShrink:0 }}>🔔</span><div style={{ flex:1, textAlign:'left' }}><div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Push notifications</div><div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Get order alerts in background</div></div><span style={{ color:DS.t3, fontSize:14 }}>›</span></button>
-      <button onClick={() => setAppLocked(true)} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}><span style={{ fontSize:20, flexShrink:0 }}>🔒</span><div style={{ flex:1, textAlign:'left' }}><div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>App lock</div><div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>PIN protect the driver app</div></div><span style={{ color:DS.t3, fontSize:14 }}>›</span></button>
+      <button onClick={onIncident} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}><span style={{ fontSize:20, flexShrink:0 }}>🚨</span><div style={{ flex:1, textAlign:'left' }}><div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Report incident</div><div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Accidents, near misses, theft</div></div><span style={{ color:DS.t3, fontSize:14 }}>›</span></button>
+      <button onClick={onNotifs} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}><span style={{ fontSize:20, flexShrink:0 }}>🔔</span><div style={{ flex:1, textAlign:'left' }}><div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>Push notifications</div><div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Get order alerts in background</div></div><span style={{ color:DS.t3, fontSize:14 }}>›</span></button>
+      <button onClick={onLock} style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:14, background:DS.surface, borderRadius:DS.r1, marginBottom:8, border:'1px solid '+DS.border, cursor:'pointer' }}><span style={{ fontSize:20, flexShrink:0 }}>🔒</span><div style={{ flex:1, textAlign:'left' }}><div style={{ fontSize:13, color:DS.t1, fontWeight:500, fontFamily:DS.f }}>App lock</div><div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>PIN protect the driver app</div></div><span style={{ color:DS.t3, fontSize:14 }}>›</span></button>
 
       <button onClick={onSignOut} style={{ width:'100%', marginTop:12, padding:14, background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, color:DS.red, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:DS.f }}>
         🚪 Sign out
@@ -1281,7 +1281,14 @@ export default function DriverApp() {
       {showChat && currentOrder && <CustomerChat order={currentOrder} driverId={user?.id} onClose={() => setShowChat(false)} />}
       {showPin && currentOrder && <PinEntry order={currentOrder} onSuccess={() => { setShowPin(false); setCurrentOrder(null); setActiveTab('home') }} onCancel={() => setShowPin(false)} />}
       {showIssue && currentOrder && <IssueReport order={currentOrder} onClose={() => setShowIssue(false)} />}
-      {showSOS && <SosPanel driverPos={driverPos} onClose={() => setShowSOS(false)} />}
+      {showSOS      && <SosPanel driverPos={driverPos} onClose={() => setShowSOS(false)} />}
+      {showExpenses  && <ExpenseLogger onClose={() => setShowExpenses(false)} />}
+      {showPayslip   && <PayslipGenerator profile={profile} onClose={() => setShowPayslip(false)} />}
+      {showIncident  && <IncidentReport onClose={() => setShowIncident(false)} />}
+      {showNotifSetup && <NotificationSetup onClose={() => setShowNotifSetup(false)} />}
+      {appLocked     && <AppLock onUnlock={() => setAppLocked(false)} />}
+      {showScanner   && currentOrder && <BarcodeScanner order={currentOrder} onComplete={() => setShowScanner(false)} onClose={() => setShowScanner(false)} />}
+      {showSignature && currentOrder && <SignaturePad order={currentOrder} onComplete={() => setShowSignature(false)} onSkip={() => setShowSignature(false)} />}
       {newOrder && !currentOrder && <NewOrderAlert order={newOrder} onAccept={handleAccept} onDecline={() => setNewOrder(null)} loading={accepting} />}
 
       {/* Desktop sidebar */}
@@ -1482,7 +1489,7 @@ export default function DriverApp() {
 
         {activeTab === 'earnings' && <EarningsTab stats={stats} isDesktop={false} />}
         {activeTab === 'performance' && <PerformanceTab stats={stats} onShowFeedback={() => {}} isDesktop={false} />}
-        {activeTab === 'settings' && <SettingsTab profile={profile} stats={stats} onSignOut={clear} isDesktop={false} />}
+        {activeTab === 'settings' && <SettingsTab profile={profile} stats={stats} onSignOut={clear} isDesktop={isWide} onExpenses={() => setShowExpenses(true)} onPayslip={() => setShowPayslip(true)} onIncident={() => setShowIncident(true)} onNotifs={() => setShowNotifSetup(true)} onLock={() => setAppLocked(true)} />}
       </div>
 
       {/* Bottom tab bar - mobile only */}
