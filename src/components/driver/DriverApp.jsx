@@ -1330,22 +1330,31 @@ export default function DriverApp() {
       <StatusBar gpsAccuracy={gpsAccuracy} isOffline={isOffline} />
 
       {/* ── HEADER ── */}
-      <div style={{ background:DS.surface, borderBottom:'1px solid '+DS.border, padding:'14px 16px 0' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, minWidth:0 }}>
-          <div style={{ flex:1, minWidth:0, overflow:'hidden' }}>
-            <div style={{ fontFamily:DS.fh, fontSize:20, color:DS.t1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Hey, {name} 👋</div>
-            <div style={{ fontSize:11, color:isOnline?DS.green:DS.t3, marginTop:2, display:'flex', alignItems:'center', gap:4 }}>
-              <div style={{ width:6, height:6, borderRadius:'50%', background:isOnline?DS.green:DS.border2, flexShrink:0 }} />
-              <span style={{ whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{isOnline ? 'Online · '+fmt(shiftSecs) : 'Offline'}</span>
-            </div>
-          </div>
-          <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
-            <button onClick={() => setShowSOS(true)} style={{ height:36, width:36, borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>🆘</button>
-            <button onClick={toggleOnline} style={{ height:36, padding:'0 12px', borderRadius:99, background:isOnline?DS.greenDim:DS.accentDim, border:'1px solid '+(isOnline?DS.greenBdr:DS.accentBdr), color:isOnline?DS.green:DS.accent, fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>
-              {isOnline?'● Online':'○ Online'}
-            </button>
+      <div style={{ background:DS.surface, borderBottom:'1px solid '+DS.border, padding:'14px 16px 12px' }}>
+        {/* Row 1: Name */}
+        <div style={{ marginBottom:10 }}>
+          <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1 }}>Hey, {name} 👋</div>
+          <div style={{ fontSize:12, color:isOnline?DS.green:DS.t3, marginTop:3, display:'flex', alignItems:'center', gap:5 }}>
+            <div style={{ width:7, height:7, borderRadius:'50%', background:isOnline?DS.green:DS.border2, flexShrink:0 }} />
+            {isOnline ? 'Online · '+fmt(shiftSecs) : 'Offline · tap to go online'}
           </div>
         </div>
+        {/* Row 2: Action buttons */}
+        <div style={{ display:'flex', gap:8, width:'100%' }}>
+          <button onClick={() => setShowSOS(true)}
+            style={{ flex:1, height:38, borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+            🆘 SOS
+          </button>
+          <button onClick={toggleOnline}
+            style={{ flex:2, height:38, borderRadius:DS.r1, background:isOnline?DS.greenDim:DS.accentDim, border:'1px solid '+(isOnline?DS.greenBdr:DS.accentBdr), color:isOnline?DS.green:DS.accent, fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+            {isOnline ? '● Go offline' : '○ Go online'}
+          </button>
+          <button onClick={() => setShowEmergency(true)}
+            style={{ flex:1, height:38, borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
+            🚑 112
+          </button>
+        </div>
+      </div>
 
         {/* Stats strip */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', borderTop:'1px solid '+DS.border }}>
