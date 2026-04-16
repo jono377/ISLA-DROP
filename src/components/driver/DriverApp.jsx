@@ -321,7 +321,7 @@ function DeliveryMap({ order, driverPos, onClose }) {
 
       {/* Bottom panel */}
       <div style={{ background:DS.surface, borderTop:'1px solid '+DS.border, padding:'14px 16px calc(20px + env(safe-area-inset-bottom))' }}>
-        {order?.what3words && <div style={{ fontSize:13, color:DS.green, marginBottom:6, fontFamily:DS.f }}>/// {order.what3words}</div>}
+        {order?.what3words && <div style={{ fontSize:13, color:DS.green, marginBottom:6, fontFamily:DS.f }}>+++ {order.what3words}</div>}
         {order?.delivery_notes && <div style={{ fontSize:12, color:DS.yellow, marginBottom:10, background:DS.yellowDim, borderRadius:DS.r1, padding:'8px 12px', border:'1px solid '+DS.yellowBdr }}>📝 {order.delivery_notes}</div>}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8 }}>
           <ActionBtn onClick={openExtNav} color={DS.blue} outline style={{ fontSize:12, padding:'10px 4px' }}>🗺 Google</ActionBtn>
@@ -656,7 +656,6 @@ function SosPanel({ driverPos, onClose }) {
           </>
         )}
       </div>
-      </div>
     </div>
   )
 }
@@ -704,7 +703,7 @@ function NewOrderAlert({ order, onAccept, onDecline, loading }) {
         {/* Address */}
         <Card style={{ padding:'12px 14px', marginBottom:16 }}>
           <div style={{ fontSize:14, color:DS.t1, marginBottom:4, fontFamily:DS.f }}>📍 {order.delivery_address||'Address pending'}</div>
-          {order.what3words && <div style={{ fontSize:12, color:DS.green, fontFamily:DS.f }}>/// {order.what3words}</div>}
+          {order.what3words && <div style={{ fontSize:12, color:DS.green, fontFamily:DS.f }}>+++ {order.what3words}</div>}
           {order.delivery_notes && <div style={{ fontSize:12, color:DS.yellow, marginTop:6, background:DS.yellowDim, borderRadius:6, padding:'6px 8px', border:'1px solid '+DS.yellowBdr }}>📝 {order.delivery_notes}</div>}
         </Card>
 
@@ -714,7 +713,6 @@ function NewOrderAlert({ order, onAccept, onDecline, loading }) {
             {loading?'Accepting...':'✓ Accept order'}
           </ActionBtn>
         </div>
-      </div>
       </div>
     </div>
   )
@@ -842,13 +840,10 @@ function EarningsTab({ stats, isDesktop }) {
           </div>
         ))}
       </div>
+      </div>
     </div>
   )
 }
-
-// ─────────────────────────────────────────────────────────────
-// PERFORMANCE TAB
-// ─────────────────────────────────────────────────────────────
 function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
   const [leaderboard, setLeaderboard] = useState([])
   const deliveries = stats?.deliveries||0
@@ -950,14 +945,9 @@ function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
           <div style={{ fontSize:16, fontWeight:800, color:i===0?DS.yellow:DS.green, fontFamily:DS.f }}>€{d.total.toFixed(2)}</div>
         </div>
       ))}
-      </div>
     </div>
   )
 }
-
-// ─────────────────────────────────────────────────────────────
-// SETTINGS TAB
-// ─────────────────────────────────────────────────────────────
 function SettingsTab({ profile, stats, onSignOut, isDesktop }) {
   const [vehicle, setVehicle] = useState('scooter')
   const [notifSound, setNotifSound] = useState(true)
@@ -1496,7 +1486,6 @@ export default function DriverApp() {
           </button>
         ))}
       </div>}
-      </div>
     </div>
   )
 }
