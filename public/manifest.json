@@ -1,17 +1,18 @@
 {
-  "name": "Isla Drop — Ibiza Delivery",
-  "short_name": "Isla Drop",
-  "description": "Premium 24/7 delivery and concierge service in Ibiza",
-  "start_url": "/",
+  "name": "Isla Drop Driver",
+  "short_name": "Isla Driver",
+  "description": "Isla Drop professional driver app for Ibiza deliveries",
+  "start_url": "/driver",
   "display": "standalone",
-  "background_color": "#0A2A38",
-  "theme_color": "#0D3B4A",
+  "background_color": "#0D0D0D",
+  "theme_color": "#FF6B35",
   "orientation": "portrait",
   "icons": [
-    { "src": "/splash.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/splash.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
-  "categories": ["food", "shopping", "lifestyle"],
-  "lang": "en",
-  "scope": "/"
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    { "name": "Go Online", "url": "/driver?action=online", "description": "Start your shift" }
+  ]
 }
