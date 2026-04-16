@@ -209,6 +209,7 @@ function BottomSheet({ children, zIndex=600, onDismiss, maxH='90vh' }) {
       }}>
         <SheetHandle />{children}
       </div>
+      </div>
     </div>
   )
 }
@@ -330,6 +331,7 @@ function DeliveryMap({ order, driverPos, onClose }) {
           <ActionBtn onClick={whatsapp} color={DS.green} outline style={{ fontSize:12, padding:'10px 4px' }}>💬 WA</ActionBtn>
         </div>
       </div>
+      </div>
     </div>
   )
 }
@@ -430,6 +432,7 @@ function CustomerChat({ order, driverId, onClose }) {
             ➤
           </button>
         </div>
+      </div>
       </div>
     </div>
   )
@@ -654,6 +657,7 @@ function SosPanel({ driverPos, onClose }) {
           </>
         )}
       </div>
+      </div>
     </div>
   )
 }
@@ -711,6 +715,7 @@ function NewOrderAlert({ order, onAccept, onDecline, loading }) {
             {loading?'Accepting...':'✓ Accept order'}
           </ActionBtn>
         </div>
+      </div>
       </div>
     </div>
   )
@@ -837,6 +842,7 @@ function EarningsTab({ stats, isDesktop }) {
             <div style={{ fontSize:17, fontWeight:800, color:DS.green, fontFamily:DS.f }}>€{(e.amount||0).toFixed(2)}</div>
           </div>
         ))}
+      </div>
     </div>
   )
 }
@@ -945,6 +951,7 @@ function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
           <div style={{ fontSize:16, fontWeight:800, color:i===0?DS.yellow:DS.green, fontFamily:DS.f }}>€{d.total.toFixed(2)}</div>
         </div>
       ))}
+      </div>
     </div>
   )
 }
@@ -1052,6 +1059,7 @@ function SettingsTab({ profile, stats, onSignOut, isDesktop }) {
       <button onClick={onSignOut} style={{ width:'100%', marginTop:12, padding:14, background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, color:DS.red, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:DS.f }}>
         🚪 Sign out
       </button>
+      </div>
     </div>
   )
 }
@@ -1242,6 +1250,13 @@ export default function DriverApp() {
     return () => window.removeEventListener('resize', handle)
   }, [])
 
+  const [isWide, setIsWide] = React.useState(window.innerWidth >= 800)
+  React.useEffect(() => {
+    const fn = () => setIsWide(window.innerWidth >= 800)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
+
   const TABS = [
     { id:'home',        icon:'🏠', label:'Home' },
     { id:'earnings',    icon:'💰', label:'Earnings' },
@@ -1262,7 +1277,7 @@ export default function DriverApp() {
   }, [])
 
   return (
-    <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f }}>
+    <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f, display:'flex' }}>
 
       {showMap && currentOrder && <DeliveryMap order={currentOrder} driverPos={driverPos} onClose={() => setShowMap(false)} />}
       {showChat && currentOrder && <CustomerChat order={currentOrder} driverId={user?.id} onClose={() => setShowChat(false)} />}
@@ -1270,6 +1285,53 @@ export default function DriverApp() {
       {showIssue && currentOrder && <IssueReport order={currentOrder} onClose={() => setShowIssue(false)} />}
       {showSOS && <SosPanel driverPos={driverPos} onClose={() => setShowSOS(false)} />}
       {newOrder && !currentOrder && <NewOrderAlert order={newOrder} onAccept={handleAccept} onDecline={() => setNewOrder(null)} loading={accepting} />}
+
+      {/* Desktop sidebar */}
+      {isWide && (
+        <div style={{ width:220, flexShrink:0, background:DS.surface, borderRight:'1px solid '+DS.border, display:'flex', flexDirection:'column', position:'sticky', top:0, height:'100vh', overflowY:'auto' }}>
+          <div style={{ padding:'20px 16px 16px', borderBottom:'1px solid '+DS.border }}>
+            <div style={{ fontFamily:DS.fh, fontSize:20, color:DS.t1 }}>Isla Drop</div>
+            <div style={{ fontSize:11, color:DS.t3, marginTop:2 }}>Driver Dashboard</div>
+          </div>
+          <div style={{ padding:'14px 16px', borderBottom:'1px solid '+DS.border }}>
+            <div style={{ fontSize:13, fontWeight:700, color:DS.t1 }}>{name}</div>
+            <div style={{ fontSize:11, color:isOnline?DS.green:DS.t3, marginTop:3, display:'flex', alignItems:'center', gap:5 }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:isOnline?DS.green:DS.border2 }} />
+              {isOnline ? 'Online' : 'Offline'}
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginTop:10 }}>
+              <div style={{ background:DS.surface2, borderRadius:DS.r1, padding:'8px 6px', textAlign:'center', border:'1px solid '+DS.border2 }}>
+                <div style={{ fontSize:14, fontWeight:700, color:DS.green }}>€{(stats?.earnings||0).toFixed(0)}</div>
+                <div style={{ fontSize:9, color:DS.t3, textTransform:'uppercase' }}>Today</div>
+              </div>
+              <div style={{ background:DS.surface2, borderRadius:DS.r1, padding:'8px 6px', textAlign:'center', border:'1px solid '+DS.border2 }}>
+                <div style={{ fontSize:14, fontWeight:700, color:DS.blue }}>{stats?.deliveries||0}</div>
+                <div style={{ fontSize:9, color:DS.t3, textTransform:'uppercase' }}>Runs</div>
+              </div>
+            </div>
+          </div>
+          <nav style={{ flex:1, padding:'8px 0' }}>
+            {TABS.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 16px', background:activeTab===tab.id?DS.accentDim:'transparent', border:'none', borderLeft:'3px solid '+(activeTab===tab.id?DS.accent:'transparent'), cursor:'pointer', transition:'all 0.15s' }}>
+                <span style={{ fontSize:18 }}>{tab.icon}</span>
+                <span style={{ fontSize:13, color:activeTab===tab.id?DS.accent:DS.t2, fontWeight:activeTab===tab.id?700:400, fontFamily:DS.f }}>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+          <div style={{ padding:'12px 16px', borderTop:'1px solid '+DS.border, display:'flex', flexDirection:'column', gap:8 }}>
+            <button onClick={toggleOnline} style={{ width:'100%', padding:'10px', background:isOnline?DS.greenDim:DS.accentDim, border:'1px solid '+(isOnline?DS.greenBdr:DS.accentBdr), borderRadius:DS.r1, color:isOnline?DS.green:DS.accent, fontSize:12, fontWeight:700, cursor:'pointer' }}>
+              {isOnline ? 'Go offline' : 'Go online'}
+            </button>
+            <button onClick={() => setShowSOS(true)} style={{ width:'100%', padding:'10px', background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, color:DS.red, fontSize:12, fontWeight:700, cursor:'pointer' }}>
+              SOS Emergency
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main content */}
+      <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column' }}>
 
       {/* Header */}
       <div style={{ background:DS.surface, borderBottom:'1px solid '+DS.border, padding:'14px 16px 12px' }}>
@@ -1305,7 +1367,7 @@ export default function DriverApp() {
       </div>
 
       {/* Tab content */}
-      <div style={{ paddingBottom:80 }}>
+      <div style={{ paddingBottom:isWide?24:80 }}>
         {activeTab === 'home' && (
           <div style={{ padding:16 }}>
 
@@ -1425,8 +1487,8 @@ export default function DriverApp() {
         {activeTab === 'settings' && <SettingsTab profile={profile} stats={stats} onSignOut={clear} isDesktop={false} />}
       </div>
 
-      {/* Bottom tab bar */}
-      <div style={{ position:'fixed', bottom:0, left:0, right:0, background:DS.surface, borderTop:'1px solid '+DS.border, display:'flex', paddingBottom:'env(safe-area-inset-bottom)', zIndex:200 }}>
+      {/* Bottom tab bar - mobile only */}
+      {!isWide && <div style={{ position:'fixed', bottom:0, left:0, right:0, background:DS.surface, borderTop:'1px solid '+DS.border, display:'flex', paddingBottom:'env(safe-area-inset-bottom)', zIndex:200 }}>
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             style={{ flex:1, padding:'12px 0 8px', background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
@@ -1434,6 +1496,7 @@ export default function DriverApp() {
             <span style={{ fontSize:10, color:activeTab===tab.id?DS.accent:DS.t3, fontWeight:activeTab===tab.id?700:400 }}>{tab.label}</span>
           </button>
         ))}
+      </div>}
       </div>
     </div>
   )
