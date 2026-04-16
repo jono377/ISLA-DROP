@@ -736,7 +736,7 @@ function EarningsTab({ stats, isDesktop }) {
   const total = history.reduce((s,e) => s+(e.amount||0), 0)
 
   return (
-    <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%' }}>
+    <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
 
       {/* Summary */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
@@ -867,7 +867,7 @@ function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
   const earnedBadges = BADGES.filter(b=>b.req(deliveries,rating))
 
   return (
-    <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%' }}>
+    <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
 
       {/* Metrics */}
       <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12, fontFamily:DS.f }}>Performance</div>
@@ -947,7 +947,7 @@ function SettingsTab({ profile, stats, onSignOut, isDesktop }) {
   const toggleBreak = () => { setBreakMode(b=>!b); toast(breakMode?'Back to work! 🛵':'Break started ☕',{duration:3000}) }
 
   return (
-    <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%' }}>
+    <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
 
       {/* Profile card */}
       <Card style={{ padding:20, marginBottom:16 }}>
@@ -1234,7 +1234,7 @@ export default function DriverApp() {
   ]
 
   return (
-    <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f, display:'flex' }}>
+    <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f, display:'flex', overflow:'hidden', width:'100%' }}>
 
       {/* ── OVERLAYS ── */}
       {showMap   && currentOrder && <DeliveryMap order={currentOrder} driverPos={driverPos} onClose={() => setShowMap(false)} />}
@@ -1324,26 +1324,25 @@ export default function DriverApp() {
       )}
 
       {/* ── MAIN CONTENT COLUMN ── */}
-      <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', maxWidth:isDesktop?'none':'100vw' }}>
+      <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', width:0 }}>
 
       {/* Status bar */}
       <StatusBar gpsAccuracy={gpsAccuracy} isOffline={isOffline} />
 
       {/* ── HEADER ── */}
       <div style={{ background:DS.surface, borderBottom:'1px solid '+DS.border, padding:'14px 16px 0' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-          <div>
-            <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1 }}>Hey, {name}</div>
-            <div style={{ fontSize:12, color:isOnline?DS.green:DS.t3, marginTop:2, display:'flex', alignItems:'center', gap:5 }}>
-              <div style={{ width:7, height:7, borderRadius:'50%', background:isOnline?DS.green:DS.border2, boxShadow:isOnline?'0 0 6px '+DS.green:'none' }} />
-              {isOnline ? 'Online · '+fmt(shiftSecs) : 'Offline · tap to go online'}
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, minWidth:0 }}>
+          <div style={{ flex:1, minWidth:0, overflow:'hidden' }}>
+            <div style={{ fontFamily:DS.fh, fontSize:20, color:DS.t1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Hey, {name} 👋</div>
+            <div style={{ fontSize:11, color:isOnline?DS.green:DS.t3, marginTop:2, display:'flex', alignItems:'center', gap:4 }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:isOnline?DS.green:DS.border2, flexShrink:0 }} />
+              <span style={{ whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{isOnline ? 'Online · '+fmt(shiftSecs) : 'Offline'}</span>
             </div>
           </div>
-          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            <button onClick={() => setShowEmergency(true)} style={{ height:40, width:40, borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:18, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>🚑</button>
-            <button onClick={() => setShowSOS(true)} style={{ height:40, padding:'0 14px', borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:13, fontWeight:700, cursor:'pointer' }}>🆘 SOS</button>
-            <button onClick={toggleOnline} style={{ height:40, padding:'0 16px', borderRadius:99, background:isOnline?DS.greenDim:DS.accentDim, border:'1px solid '+(isOnline?DS.greenBdr:DS.accentBdr), color:isOnline?DS.green:DS.accent, fontSize:13, fontWeight:700, cursor:'pointer' }}>
-              {isOnline?'● Online':'○ Go online'}
+          <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
+            <button onClick={() => setShowSOS(true)} style={{ height:36, width:36, borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>🆘</button>
+            <button onClick={toggleOnline} style={{ height:36, padding:'0 12px', borderRadius:99, background:isOnline?DS.greenDim:DS.accentDim, border:'1px solid '+(isOnline?DS.greenBdr:DS.accentBdr), color:isOnline?DS.green:DS.accent, fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}>
+              {isOnline?'● Online':'○ Online'}
             </button>
           </div>
         </div>
@@ -1367,7 +1366,7 @@ export default function DriverApp() {
 
       {/* ── HOME TAB ── */}
       {activeTab==='home' && (
-        <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%' }}>
+        <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
 
           {/* Weather + quick actions */}
           <div style={{ marginBottom:12 }}>
