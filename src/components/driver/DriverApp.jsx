@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import {
   getAvailableOrders, acceptOrder, updateOrderStatus,
@@ -1262,381 +1262,178 @@ export default function DriverApp() {
   }, [])
 
   return (
-    <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f, display:'flex', overflow:'hidden', width:'100%' }}>
+    <div style={{ minHeight:'100vh', background:DS.bg, color:DS.t1, fontFamily:DS.f }}>
 
-      {/* ── OVERLAYS ── */}
-      {showMap   && currentOrder && <DeliveryMap order={currentOrder} driverPos={driverPos} onClose={() => setShowMap(false)} />}
-      {showChat  && currentOrder && <CustomerChat order={currentOrder} driverId={user?.id} onClose={() => setShowChat(false)} />}
-      {showPin   && currentOrder && <PinEntry order={currentOrder} onSuccess={() => { setShowPin(false); setCurrentOrder(null); setActiveTab('home') }} onCancel={() => setShowPin(false)} />}
+      {showMap && currentOrder && <DeliveryMap order={currentOrder} driverPos={driverPos} onClose={() => setShowMap(false)} />}
+      {showChat && currentOrder && <CustomerChat order={currentOrder} driverId={user?.id} onClose={() => setShowChat(false)} />}
+      {showPin && currentOrder && <PinEntry order={currentOrder} onSuccess={() => { setShowPin(false); setCurrentOrder(null); setActiveTab('home') }} onCancel={() => setShowPin(false)} />}
       {showIssue && currentOrder && <IssueReport order={currentOrder} onClose={() => setShowIssue(false)} />}
-      {showSOS        && <SosPanel driverPos={driverPos} onClose={() => setShowSOS(false)} />}
-      {showScanner    && currentOrder && <BarcodeScanner order={currentOrder} onComplete={() => { setShowScanner(false); toast.success('Items verified! Start delivery 🛵') }} onClose={() => setShowScanner(false)} />}
-      {showSignature  && currentOrder && <SignaturePad order={currentOrder} onComplete={() => setShowSignature(false)} onSkip={() => setShowSignature(false)} />}
-      {showExpenses   && <ExpenseLogger onClose={() => setShowExpenses(false)} />}
-      {showPayslip    && <PayslipGenerator profile={profile} onClose={() => setShowPayslip(false)} />}
-      {showIncident   && <IncidentReport driverPos={driverPos} onClose={() => setShowIncident(false)} />}
-      {showBonus      && <BonusTracker stats={stats} onClose={() => setShowBonus(false)} />}
-      {showHeatmap    && <ZoneHeatmap onClose={() => setShowHeatmap(false)} />}
-      {showHistory    && <RouteHistory onClose={() => setShowHistory(false)} />}
-      {showNotifSetup && <NotificationSetup onClose={() => setShowNotifSetup(false)} />}
-      {showDispatch   && <DispatchMessages driverId={user?.id} onClose={() => { setShowDispatch(false); setDispatchUnread(0) }} />}
-      {appLocked        && <AppLock onUnlock={() => setAppLocked(false)} />}
-      {showCrashAlert   && <CrashAlert driverPos={driverPos} onDismiss={() => { haptic.light(); setShowCrashAlert(false) }} onConfirmSOS={() => { setShowCrashAlert(false); setShowSOS(true) }} />}
-      {showFeedback     && <CustomerFeedback onClose={() => setShowFeedback(false)} />}
-      {showVoice && currentOrder && <VoiceMessage order={currentOrder} driverId={user?.id} onClose={() => setShowVoice(false)} />}
-      {showEmergency    && <EmergencyCall onClose={() => setShowEmergency(false)} />}
-      {newOrder  && !currentOrder && <NewOrderAlert order={newOrder} onAccept={handleAccept} onDecline={() => setNewOrder(null)} loading={accepting} />}
+      {showSOS && <SosPanel driverPos={driverPos} onClose={() => setShowSOS(false)} />}
+      {newOrder && !currentOrder && <NewOrderAlert order={newOrder} onAccept={handleAccept} onDecline={() => setNewOrder(null)} loading={accepting} />}
 
-      {/* ── DESKTOP SIDEBAR (768px+) ── */}
-      {isDesktop && (
-        <div style={{ width:240, flexShrink:0, background:DS.surface, borderRight:'1px solid '+DS.border, display:'flex', flexDirection:'column', position:'sticky', top:0, height:'100vh', overflowY:'auto' }}>
-          {/* Logo */}
-          <div style={{ padding:'24px 20px 20px', borderBottom:'1px solid '+DS.border }}>
-            <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1 }}>Isla Drop</div>
-            <div style={{ fontSize:11, color:DS.t3, marginTop:2, fontFamily:DS.f }}>Driver Dashboard</div>
-          </div>
-
-          {/* Driver info */}
-          <div style={{ padding:'16px 20px', borderBottom:'1px solid '+DS.border }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:40, height:40, borderRadius:'50%', background:DS.accentDim, border:'1px solid '+DS.accentBdr, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>🛵</div>
-              <div>
-                <div style={{ fontSize:13, fontWeight:700, color:DS.t1, fontFamily:DS.f }}>{profile?.full_name||'Driver'}</div>
-                <div style={{ fontSize:11, color:isOnline?DS.green:DS.t3, display:'flex', alignItems:'center', gap:4, marginTop:2 }}>
-                  <div style={{ width:6, height:6, borderRadius:'50%', background:isOnline?DS.green:DS.border2 }} />
-                  {isOnline ? 'Online' : 'Offline'}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div style={{ padding:'12px 20px', borderBottom:'1px solid '+DS.border }}>
-            {[
-              { icon:'💰', val:'€'+(stats?.earnings||0).toFixed(0), label:'Today' },
-              { icon:'📦', val:stats?.deliveries||0, label:'Deliveries' },
-              { icon:'⭐', val:(stats?.rating||5.0).toFixed(1), label:'Rating' },
-              { icon:'🕐', val:fmt(shiftSecs).slice(0,5), label:'Shift' },
-            ].map(s => (
-              <div key={s.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 0', borderBottom:'1px solid '+DS.border }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <span style={{ fontSize:14 }}>{s.icon}</span>
-                  <span style={{ fontSize:12, color:DS.t2, fontFamily:DS.f }}>{s.label}</span>
-                </div>
-                <span style={{ fontSize:13, fontWeight:700, color:DS.t1, fontFamily:DS.f }}>{s.val}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Nav links */}
-          <nav style={{ flex:1, padding:'8px 0' }}>
-            {TABS.map(tab => (
-              <button key={tab.id} onClick={() => { setActiveTab(tab.id); haptic.light() }}
-                style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'12px 20px', background:activeTab===tab.id?DS.accentDim:'transparent', border:'none', borderLeft:'3px solid '+(activeTab===tab.id?DS.accent:'transparent'), cursor:'pointer', transition:'all 0.15s' }}>
-                <span style={{ fontSize:18 }}>{tab.icon}</span>
-                <span style={{ fontSize:14, color:activeTab===tab.id?DS.accent:DS.t2, fontWeight:activeTab===tab.id?700:400, fontFamily:DS.f }}>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-
-          {/* Online toggle */}
-          <div style={{ padding:'16px 20px', borderTop:'1px solid '+DS.border }}>
-            <button onClick={toggleOnline} style={{ width:'100%', padding:'11px', background:isOnline?DS.greenDim:DS.accentDim, border:'1px solid '+(isOnline?DS.greenBdr:DS.accentBdr), borderRadius:DS.r1, color:isOnline?DS.green:DS.accent, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:DS.f }}>
-              {isOnline ? '● Go offline' : '○ Go online'}
-            </button>
-            <button onClick={() => setShowSOS(true)} style={{ width:'100%', marginTop:8, padding:'11px', background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, color:DS.red, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:DS.f }}>
-              🆘 SOS Emergency
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── MAIN CONTENT COLUMN ── */}
-      <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column', overflow:'hidden', width:0 }}>
-
-      {/* Status bar */}
-      <StatusBar gpsAccuracy={gpsAccuracy} isOffline={isOffline} />
-
-      {/* ── HEADER ── */}
+      {/* Header */}
       <div style={{ background:DS.surface, borderBottom:'1px solid '+DS.border, padding:'14px 16px 12px' }}>
-        {/* Row 1: Name */}
         <div style={{ marginBottom:10 }}>
-          <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1 }}>Hey, {name} 👋</div>
-          <div style={{ fontSize:12, color:isOnline?DS.green:DS.t3, marginTop:3, display:'flex', alignItems:'center', gap:5 }}>
-            <div style={{ width:7, height:7, borderRadius:'50%', background:isOnline?DS.green:DS.border2, flexShrink:0 }} />
-            {isOnline ? 'Online · '+fmt(shiftSecs) : 'Offline · tap to go online'}
+          <div style={{ fontFamily:DS.fh, fontSize:20, color:DS.t1 }}>Hey, {name}</div>
+          <div style={{ fontSize:11, color:isOnline?DS.green:DS.t3, marginTop:2, display:'flex', alignItems:'center', gap:5 }}>
+            <div style={{ width:6, height:6, borderRadius:'50%', background:isOnline?DS.green:DS.border2 }} />
+            {isOnline ? 'Online' : 'Offline'}
           </div>
         </div>
-        {/* Row 2: Action buttons */}
-        <div style={{ display:'flex', gap:8, width:'100%' }}>
-          <button onClick={() => setShowSOS(true)}
-            style={{ flex:1, height:38, borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-            🆘 SOS
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={() => setShowSOS(true)} style={{ flex:1, height:38, borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+            SOS
           </button>
-          <button onClick={toggleOnline}
-            style={{ flex:2, height:38, borderRadius:DS.r1, background:isOnline?DS.greenDim:DS.accentDim, border:'1px solid '+(isOnline?DS.greenBdr:DS.accentBdr), color:isOnline?DS.green:DS.accent, fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-            {isOnline ? '● Go offline' : '○ Go online'}
-          </button>
-          <button onClick={() => setShowEmergency(true)}
-            style={{ flex:1, height:38, borderRadius:DS.r1, background:DS.redDim, border:'1px solid '+DS.redBdr, color:DS.red, fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
-            🚑 112
+          <button onClick={toggleOnline} style={{ flex:2, height:38, borderRadius:DS.r1, background:isOnline?DS.greenDim:DS.accentDim, border:'1px solid '+(isOnline?DS.greenBdr:DS.accentBdr), color:isOnline?DS.green:DS.accent, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+            {isOnline ? 'Go offline' : 'Go online'}
           </button>
         </div>
-      </div>
-
-        {/* Stats strip */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', borderTop:'1px solid '+DS.border }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', marginTop:10, borderTop:'1px solid '+DS.border, paddingTop:8 }}>
           {[
             { icon:'💰', val:'€'+(stats?.earnings||0).toFixed(0), label:'Today' },
-            { icon:'📦', val:stats?.deliveries||0,                 label:'Runs' },
-            { icon:'⭐', val:(stats?.rating||5.0).toFixed(1),      label:'Rating' },
-            { icon:'🕐', val:fmt(shiftSecs).slice(0,5),            label:'Shift' },
+            { icon:'📦', val:stats?.deliveries||0, label:'Runs' },
+            { icon:'⭐', val:(stats?.rating||5.0).toFixed(1), label:'Rating' },
+            { icon:'🕐', val:fmt(shiftSecs).slice(0,5), label:'Shift' },
           ].map(s => (
-            <div key={s.label} style={{ padding:'10px 4px', textAlign:'center' }}>
-              <div style={{ fontSize:14, marginBottom:2 }}>{s.icon}</div>
-              <div style={{ fontSize:16, fontWeight:800, color:DS.t1, lineHeight:1 }}>{s.val}</div>
-              <div style={{ fontSize:9, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.4px', marginTop:3 }}>{s.label}</div>
+            <div key={s.label} style={{ textAlign:'center' }}>
+              <div style={{ fontSize:13 }}>{s.icon}</div>
+              <div style={{ fontSize:14, fontWeight:700 }}>{s.val}</div>
+              <div style={{ fontSize:9, color:DS.t3, textTransform:'uppercase' }}>{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── HOME TAB ── */}
-      {activeTab==='home' && (
-        <div style={{ padding:isDesktop?24:16, paddingBottom:isDesktop?24:90, maxWidth:isDesktop?900:'none', margin:isDesktop?'0 auto':'0', width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
+      {/* Tab content */}
+      <div style={{ paddingBottom:80 }}>
+        {activeTab === 'home' && (
+          <div style={{ padding:16 }}>
 
-          {/* Weather + quick actions */}
-          <div style={{ marginBottom:12 }}>
-            <WeatherWidget />
-          </div>
-
-          {/* Quick action bar */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginBottom:16 }}>
-            {[
-              { icon:'📍', label:'Demand', action:()=>setShowHeatmap(true), color:DS.blue },
-              { icon:'🎯', label:'Bonuses', action:()=>setShowBonus(true), color:DS.yellow },
-              { icon:'📢', label:'Dispatch'+(dispatchUnread>0?' ('+dispatchUnread+')':''), action:()=>setShowDispatch(true), color:DS.purple },
-              { icon:'📊', label:'Insights', action:()=>setShowHistory(true), color:DS.teal },
-            ].map(qa => (
-              <button key={qa.label} onClick={qa.action} style={{ padding:'10px 4px', background:DS.surface, border:'1px solid '+DS.border, borderRadius:DS.r1, cursor:'pointer', textAlign:'center' }}>
-                <div style={{ fontSize:18, marginBottom:3 }}>{qa.icon}</div>
-                <div style={{ fontSize:9, color:qa.color, fontWeight:600, fontFamily:DS.f, lineHeight:1.2 }}>{qa.label}</div>
-              </button>
-            ))}
-          </div>
-
-          {/* PWA install banner */}
-          {canInstall && showPWABanner && <PWAInstallBanner onInstall={() => { install(); setShowPWABanner(false) }} onDismiss={() => setShowPWABanner(false)} />}
-
-          {/* Update banner */}
-          {updateAvailable && <UpdateBanner onUpdate={refresh} onDismiss={() => {}} />}
-
-          {/* Offline banner */}
-          {isOffline && <OfflineBanner />}
-
-          {/* Earnings forecast */}
-          {isOnline && (stats?.deliveries||0) > 0 && <EarningsForecast stats={stats} shiftSecs={shiftSecs} />}
-
-          {/* Streak badge */}
-          <StreakBadge />
-
-          {/* Multi-order panel */}
-          {multiOrders.length > 1 && <MultiOrderPanel orders={multiOrders} activeOrderIndex={activeOrderIdx} onSwitch={setActiveOrderIdx} onClose={() => setMultiOrders([])} />}
-
-          {/* Active order card */}
-          {currentOrder && cfg && (
-            <Card accent={cfg.color} style={{ marginBottom:16 }}>
-
-              {/* Status header */}
-              <div style={{ background:cfg.color+'14', borderBottom:'1px solid '+cfg.color+'30', padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <Pill color={cfg.color}>{cfg.icon} {cfg.label}</Pill>
-                <div style={{ textAlign:'right' }}>
-                  <div style={{ fontSize:12, color:DS.t3 }}>#{currentOrder.order_number}</div>
-                  <div style={{ fontSize:12, color:orderTimer>1800?DS.red:orderTimer>900?DS.yellow:DS.t3, fontWeight:orderTimer>900?700:400, marginTop:1 }}>
-                    ⏱ {fmtShort(orderTimer)}
-                  </div>
+            {currentOrder && cfg && (
+              <Card accent={cfg.color} style={{ marginBottom:16 }}>
+                <div style={{ background:cfg.color+'14', borderBottom:'1px solid '+cfg.color+'30', padding:'12px 16px', display:'flex', justifyContent:'space-between' }}>
+                  <Pill color={cfg.color}>{cfg.icon} {cfg.label}</Pill>
+                  <span style={{ fontSize:11, color:DS.t3 }}>#{currentOrder.order_number}</span>
                 </div>
-              </div>
 
-              {/* Progress stepper */}
-              <div style={{ padding:'16px 16px 12px', display:'flex', alignItems:'center' }}>
-                {STEPS.map((step,i) => {
-                  const curr = STEPS.indexOf(currentOrder.status)
-                  const done = i<curr, active = i===curr
-                  return (
-                    <div key={step} style={{ display:'flex', alignItems:'center', flex:i<STEPS.length-1?1:0 }}>
-                      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                        <div style={{ width:30, height:30, borderRadius:'50%', background:done?DS.green:active?cfg.color:DS.border2, border:'2px solid '+(done?DS.green:active?cfg.color:DS.border2), display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, color:done||active?'#0D0D0D':DS.t3, transition:'all 0.3s' }}>
-                          {done?'✓':i+1}
+                <div style={{ padding:'12px 16px 8px', display:'flex', alignItems:'center', gap:4 }}>
+                  {STEPS.map((step, i) => {
+                    const curr = STEPS.indexOf(currentOrder.status)
+                    return (
+                      <React.Fragment key={step}>
+                        <div style={{ width:24, height:24, borderRadius:'50%', background:i<curr?DS.green:i===curr?cfg.color:DS.border2, border:'2px solid '+(i<curr?DS.green:i===curr?cfg.color:DS.border2), display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:'#0D0D0D', flexShrink:0 }}>
+                          {i<curr?'✓':i+1}
                         </div>
-                        <div style={{ fontSize:8, color:active?cfg.color:done?DS.green:DS.t3, textTransform:'uppercase', letterSpacing:'0.3px', whiteSpace:'nowrap' }}>{STEP_LABELS[i]}</div>
+                        {i < STEPS.length-1 && <div style={{ flex:1, height:2, background:i<curr?DS.green:DS.border2 }} />}
+                      </React.Fragment>
+                    )
+                  })}
+                </div>
+
+                <div style={{ padding:'0 16px 16px' }}>
+                  <div style={{ fontSize:15, fontWeight:700, color:DS.t1, marginBottom:4 }}>
+                    {currentOrder.delivery_address || 'Delivery address'}
+                  </div>
+                  {currentOrder.what3words && <div style={{ fontSize:12, color:DS.green, marginBottom:6 }}>
+                    {currentOrder.what3words}
+                  </div>}
+                  {currentOrder.delivery_notes && (
+                    <div style={{ background:DS.yellowDim, border:'1px solid '+DS.yellowBdr, borderRadius:DS.r1, padding:'8px 12px', marginBottom:10, fontSize:12, color:DS.yellow }}>
+                      {currentOrder.delivery_notes}
+                    </div>
+                  )}
+
+                  <div style={{ background:DS.surface2, borderRadius:DS.r1, padding:'10px 12px', marginBottom:14, border:'1px solid '+DS.border2 }}>
+                    <div style={{ fontSize:10, color:DS.t3, textTransform:'uppercase', marginBottom:6 }}>Items</div>
+                    {(currentOrder.order_items||[]).map((item,i) => (
+                      <div key={i} style={{ fontSize:13, color:DS.t1, marginBottom:3 }}>
+                        x{item.quantity||1} {item.product?.name||item.products?.name||'Item'}
                       </div>
-                      {i<STEPS.length-1 && <div style={{ flex:1, height:2, background:done?DS.green:DS.border2, margin:'0 4px', marginBottom:14, transition:'background 0.3s' }} />}
-                    </div>
-                  )
-                })}
-              </div>
-
-              <div style={{ padding:'0 16px 16px' }}>
-                {/* Address */}
-                <div style={{ fontSize:16, fontWeight:700, color:DS.t1, marginBottom:4 }}>📍 {currentOrder.delivery_address||'Delivery address'}</div>
-                {currentOrder.what3words && <div style={{ fontSize:13, color:DS.green, marginBottom:8, fontFamily:DS.f }}>/// {currentOrder.what3words}</div>}
-
-                {/* Delivery notes */}
-                {currentOrder.delivery_notes && (
-                  <div style={{ background:DS.yellowDim, border:'1px solid '+DS.yellowBdr, borderRadius:DS.r1, padding:'10px 12px', marginBottom:12, display:'flex', gap:8, alignItems:'flex-start' }}>
-                    <span style={{ fontSize:16, flexShrink:0 }}>📝</span>
-                    <span style={{ fontSize:13, color:DS.yellow, lineHeight:1.4 }}>{currentOrder.delivery_notes}</span>
+                    ))}
                   </div>
-                )}
 
-                {/* Items */}
-                <div style={{ background:DS.surface2, borderRadius:DS.r1, padding:'12px', marginBottom:14, border:'1px solid '+DS.border2 }}>
-                  <div style={{ fontSize:10, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:8 }}>Items to deliver</div>
-                  {(currentOrder.order_items||[]).map((item,i) => (
-                    <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:i<(currentOrder.order_items.length-1)?6:0 }}>
-                      <span style={{ fontSize:12, color:DS.t3, minWidth:20 }}>×{item.quantity||1}</span>
-                      <span style={{ fontSize:13, color:DS.t1, flex:1 }}>{item.product?.name||item.products?.name||'Item'}</span>
-                      {(item.product?.age_restricted||item.products?.age_restricted) && (
-                        <span style={{ fontSize:10, color:DS.red, fontWeight:700, background:DS.redDim, borderRadius:4, padding:'1px 6px', border:'1px solid '+DS.redBdr }}>18+</span>
-                      )}
+                  {currentOrder.status === 'en_route' && currentOrder.delivery_pin && (
+                    <div style={{ background:DS.accentDim, border:'1px solid '+DS.accentBdr, borderRadius:DS.r1, padding:'12px 14px', marginBottom:14, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                      <div>
+                        <div style={{ fontSize:10, color:DS.t3, textTransform:'uppercase', marginBottom:4 }}>Customer PIN</div>
+                        <div style={{ fontSize:28, fontWeight:900, color:DS.t1, letterSpacing:10 }}>{currentOrder.delivery_pin}</div>
+                      </div>
+                      <span style={{ fontSize:24 }}>🔐</span>
                     </div>
-                  ))}
-                </div>
+                  )}
 
-                {/* Age check */}
-                {ageCheck && currentOrder.status==='en_route' && (
-                  <div style={{ background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, padding:'12px 14px', marginBottom:14, display:'flex', gap:10, alignItems:'center' }}>
-                    <span style={{ fontSize:22, flexShrink:0 }}>🪪</span>
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:700, color:DS.red }}>ID check required</div>
-                      <div style={{ fontSize:11, color:DS.t2, marginTop:2 }}>Order contains age-restricted items. Check ID before handing over.</div>
-                    </div>
+                  <div style={{ display:'flex', gap:8, marginBottom:8 }}>
+                    <button onClick={() => setShowMap(true)} style={{ flex:1, padding:'12px', background:DS.blueDim, border:'1px solid '+DS.blueBdr, borderRadius:DS.r1, color:DS.blue, fontSize:13, fontWeight:600, cursor:'pointer' }}>Map</button>
+                    <button onClick={() => setShowChat(true)} style={{ flex:1, padding:'12px', background:'rgba(168,85,247,0.12)', border:'1px solid rgba(168,85,247,0.3)', borderRadius:DS.r1, color:'#A855F7', fontSize:13, fontWeight:600, cursor:'pointer' }}>Chat</button>
+                    {cfg.next && (
+                      <button onClick={handleAdvance} style={{ flex:2, padding:'12px', background:cfg.color, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:13, fontWeight:800, cursor:'pointer' }}>{cfg.nextLabel}</button>
+                    )}
                   </div>
-                )}
 
-                {/* PIN display */}
-                {currentOrder.status==='en_route' && currentOrder.delivery_pin && (
-                  <div style={{ background:DS.accentDim, border:'1px solid '+DS.accentBdr, borderRadius:DS.r1, padding:'14px', marginBottom:14, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                    <div>
-                      <div style={{ fontSize:10, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Customer PIN</div>
-                      <div style={{ fontSize:32, fontWeight:900, color:DS.t1, letterSpacing:12, fontFamily:DS.f }}>{currentOrder.delivery_pin}</div>
-                    </div>
-                    <div style={{ fontSize:32 }}>🔐</div>
-                  </div>
-                )}
-
-                {/* Primary actions */}
-                <div style={{ display:'grid', gridTemplateColumns:cfg.next?'1fr 1fr 2fr':'1fr 1fr', gap:8, marginBottom:8 }}>
-                  <button onClick={() => setShowMap(true)} style={{ padding:'12px 8px', background:DS.blueDim, border:'1px solid '+DS.blueBdr, borderRadius:DS.r1, color:DS.blue, fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
-                    🗺 Map
-                  </button>
-                  {currentOrder.status==='assigned' && (
-                    <button onClick={() => setShowScanner(true)} style={{ padding:'12px 8px', background:DS.tealDim||'rgba(20,184,166,0.12)', border:'1px solid rgba(20,184,166,0.3)', borderRadius:DS.r1, color:DS.teal||'#14B8A6', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
-                      📦 Scan
+                  {currentOrder.status === 'en_route' && (
+                    <button onClick={() => setShowPin(true)} style={{ width:'100%', padding:'14px', background:DS.green, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:15, fontWeight:800, cursor:'pointer', marginBottom:8 }}>
+                      Enter delivery PIN
                     </button>
                   )}
-                  <button onClick={() => setShowChat(true)} style={{ padding:'12px 8px', background:'rgba(168,85,247,0.12)', border:'1px solid rgba(168,85,247,0.3)', borderRadius:DS.r1, color:DS.purple, fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
-                    💬 Chat
-                  </button>
-                  {cfg.next && (
-                    <button onClick={handleAdvance} style={{ padding:'12px', background:cfg.color, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:13, fontWeight:800, cursor:'pointer' }}>
-                      {cfg.nextLabel}
-                    </button>
-                  )}
-                </div>
 
-                {/* Enter PIN (en route) */}
-                {currentOrder.status==='en_route' && (
-                  <button onClick={() => setShowPin(true)} style={{ width:'100%', padding:'14px', background:DS.green, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:15, fontWeight:800, cursor:'pointer', marginBottom:8 }}>
-                    🔐 Enter delivery PIN
-                  </button>
-                )}
-
-                {/* Running late */}
-                {currentOrder.status === 'en_route' && <RunningLateButton order={currentOrder} driverPos={driverPos} />}
-
-                {/* Report issue + voice */}
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:0 }}>
-                  <button onClick={() => setShowIssue(true)} style={{ padding:'10px', background:'transparent', border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t3, fontSize:12, cursor:'pointer' }}>
-                    ⚠️ Report issue
-                  </button>
-                  <button onClick={() => setShowSignature(true)} style={{ padding:'10px', background:'transparent', border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t3, fontSize:12, cursor:'pointer' }}>
-                    ✍️ Sign
-                  </button>
-                  <button onClick={() => setShowVoice(true)} style={{ padding:'10px', background:'transparent', border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t3, fontSize:12, cursor:'pointer' }}>
-                    🎤 Voice
+                  <button onClick={() => setShowIssue(true)} style={{ width:'100%', padding:'10px', background:'transparent', border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t3, fontSize:12, cursor:'pointer' }}>
+                    Report issue
                   </button>
                 </div>
-              </div>
-            </Card>
-          )}
-
-          {/* No active order */}
-          {!currentOrder && (
-            isOnline ? (
-              <Card style={{ padding:'40px 20px', textAlign:'center', marginBottom:16 }}>
-                <div style={{ fontSize:56, marginBottom:14 }}>🛵</div>
-                <div style={{ fontFamily:DS.fh, fontSize:24, color:DS.t1, marginBottom:8 }}>Ready for deliveries</div>
-                <div style={{ fontSize:14, color:DS.t2, lineHeight:1.5 }}>New orders appear automatically. You have 30 seconds to accept each one.</div>
               </Card>
-            ) : (
-              <Card style={{ padding:'40px 20px', textAlign:'center', marginBottom:16 }}>
-                <div style={{ fontSize:56, marginBottom:14 }}>😴</div>
-                <div style={{ fontFamily:DS.fh, fontSize:24, color:DS.t1, marginBottom:8 }}>You are offline</div>
-                <div style={{ fontSize:14, color:DS.t2, marginBottom:28, lineHeight:1.5 }}>Go online to start receiving delivery requests</div>
-                <button onClick={toggleOnline} style={{ padding:'16px 40px', background:DS.green, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:16, fontWeight:800, cursor:'pointer' }}>Go online</button>
-              </Card>
-            )
-          )}
+            )}
 
-          {/* Available orders list */}
-          {isOnline && !currentOrder && availableOrders.length>0 && !newOrder && (
-            <div>
-              <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12 }}>
-                {availableOrders.length} order{availableOrders.length!==1?'s':''} available
-              </div>
-              {availableOrders.slice(0,3).map(order => (
-                <Card key={order.id} style={{ padding:16, marginBottom:10 }} accent={DS.green}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-                    <div>
-                      <div style={{ fontSize:16, fontWeight:700, color:DS.t1 }}>#{order.order_number}</div>
-                      <div style={{ fontSize:11, color:DS.t3, marginTop:2 }}>{new Date(order.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
-                    </div>
-                    <div style={{ textAlign:'right' }}>
-                      <div style={{ fontSize:20, fontWeight:800, color:DS.green }}>€{(order.delivery_fee||3.5).toFixed(2)}</div>
-                      {order.distance_km && <div style={{ fontSize:11, color:DS.t3, marginTop:2 }}>{order.distance_km.toFixed(1)} km</div>}
-                    </div>
-                  </div>
-                  <div style={{ fontSize:13, color:DS.t2, marginBottom:12 }}>📍 {order.delivery_address}</div>
-                  <ActionBtn onClick={() => handleAccept(order)} disabled={accepting} color={DS.green}>
-                    {accepting?'Accepting...':'Accept order'}
-                  </ActionBtn>
+            {!currentOrder && (
+              isOnline ? (
+                <Card style={{ padding:'40px 20px', textAlign:'center', marginBottom:16 }}>
+                  <div style={{ fontSize:52, marginBottom:12 }}>🛵</div>
+                  <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1, marginBottom:6 }}>Ready for deliveries</div>
+                  <div style={{ fontSize:14, color:DS.t2 }}>New orders appear automatically</div>
                 </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              ) : (
+                <Card style={{ padding:'40px 20px', textAlign:'center', marginBottom:16 }}>
+                  <div style={{ fontSize:52, marginBottom:12 }}>😴</div>
+                  <div style={{ fontFamily:DS.fh, fontSize:22, color:DS.t1, marginBottom:6 }}>You are offline</div>
+                  <div style={{ fontSize:14, color:DS.t2, marginBottom:24 }}>Go online to receive orders</div>
+                  <button onClick={toggleOnline} style={{ padding:'14px 36px', background:DS.green, border:'none', borderRadius:DS.r1, color:'#0D0D0D', fontSize:16, fontWeight:800, cursor:'pointer' }}>Go online</button>
+                </Card>
+              )
+            )}
 
-      {activeTab==='earnings'    && <EarningsTab stats={stats} isDesktop={isDesktop} />}
-      {activeTab==='performance' && <PerformanceTab stats={stats} onShowFeedback={() => setShowFeedback(true)} isDesktop={isDesktop} />}
-      {activeTab==='settings'    && <SettingsTab profile={profile} stats={stats} onSignOut={clear} isDesktop={isDesktop} />}
+            {isOnline && !currentOrder && availableOrders.length > 0 && !newOrder && (
+              <div>
+                <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>
+                  {availableOrders.length} order{availableOrders.length!==1?'s':''} waiting
+                </div>
+                {availableOrders.slice(0,3).map(order => (
+                  <Card key={order.id} style={{ padding:16, marginBottom:10 }} accent={DS.green}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+                      <div style={{ fontSize:14, fontWeight:700 }}>#{order.order_number}</div>
+                      <div style={{ fontSize:16, fontWeight:700, color:DS.green }}>€{(order.delivery_fee||3.5).toFixed(2)}</div>
+                    </div>
+                    <div style={{ fontSize:12, color:DS.t2, marginBottom:10 }}>📍 {order.delivery_address}</div>
+                    <ActionBtn onClick={() => handleAccept(order)} disabled={accepting} color={DS.green} full>Accept</ActionBtn>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
+        {activeTab === 'earnings' && <EarningsTab stats={stats} isDesktop={false} />}
+        {activeTab === 'performance' && <PerformanceTab stats={stats} onShowFeedback={() => {}} isDesktop={false} />}
+        {activeTab === 'settings' && <SettingsTab profile={profile} stats={stats} onSignOut={clear} isDesktop={false} />}
+      </div>
 
-      {/* ── BOTTOM TAB BAR (mobile only) ── */}
-      {!isDesktop && <div style={{ position:'fixed', bottom:0, left:0, right:0, background:DS.surface, borderTop:'1px solid '+DS.border, display:'flex', paddingBottom:'env(safe-area-inset-bottom)', zIndex:200 }}>
+      {/* Bottom tab bar */}
+      <div style={{ position:'fixed', bottom:0, left:0, right:0, background:DS.surface, borderTop:'1px solid '+DS.border, display:'flex', paddingBottom:'env(safe-area-inset-bottom)', zIndex:200 }}>
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            style={{ flex:1, padding:'12px 0 8px', background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, position:'relative' }}>
-
-            <span style={{ fontSize:21 }}>{tab.icon}</span>
-            <span style={{ fontSize:10, color:activeTab===tab.id?DS.accent:DS.t3, fontWeight:activeTab===tab.id?700:400, fontFamily:DS.f }}>{tab.label}</span>
-
+            style={{ flex:1, padding:'12px 0 8px', background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+            <span style={{ fontSize:20 }}>{tab.icon}</span>
+            <span style={{ fontSize:10, color:activeTab===tab.id?DS.accent:DS.t3, fontWeight:activeTab===tab.id?700:400 }}>{tab.label}</span>
           </button>
         ))}
-      </div>}
-
       </div>
     </div>
   )
