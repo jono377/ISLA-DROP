@@ -5,7 +5,14 @@ import { supabase, getProfile } from './lib/supabase'
 import CustomerApp from './components/customer/CustomerApp'
 import DriverApp from './components/driver/DriverApp'
 import OpsApp from './components/ops/OpsApp'
+import AuthScreen from './components/shared/AuthScreen'
 
+// ── Detect subdomain ──────────────────────────────────────────
+const hostname = window.location.hostname  // e.g. ops.isladrop.net
+const isOps    = hostname.startsWith('ops.')
+const isDriver = hostname.startsWith('driver.')
+
+// ── Error boundary ────────────────────────────────────────────
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null } }
   static getDerivedStateFromError(error) { return { error } }
@@ -36,11 +43,59 @@ const toastCfg = {
   }
 }
 
+// ── Ops login screen ──────────────────────────────────────────
+function OpsLogin() {
+  const { user, profile, setUser, setProfile } = useAuthStore()
+
+  if (user && profile) {
+    if (['ops', 'admin'].includes(profile.role)) return <OpsApp />
+    // Signed in but wrong role
+    return (
+      <div style={{ minHeight: '100vh', background: '#0A2A38', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ textAlign: 'center', color: 'white', maxWidth: 360 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
+          <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 24, marginBottom: 8 }}>Access denied</div>
+          <div style={{ fontSize: 14, opacity: 0.6, marginBottom: 24 }}>
+            This account ({profile.role}) does not have ops access.
+          </div>
+          <button onClick={() => supabase.auth.signOut()} style={{ padding: '12px 24px', background: '#C4683A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Not signed in — show ops-branded login
+  return <AuthScreen portalType="ops" />
+}
+
+// ── Driver login screen ───────────────────────────────────────
+function DriverLogin() {
+  const { user, profile } = useAuthStore()
+  if (user && profile?.role === 'driver') return <DriverApp />
+  if (user && profile) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ textAlign: 'center', color: 'white', maxWidth: 360 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
+          <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 24, marginBottom: 8 }}>Access denied</div>
+          <div style={{ fontSize: 14, opacity: 0.6, marginBottom: 24 }}>This account does not have driver access.</div>
+          <button onClick={() => supabase.auth.signOut()} style={{ padding: '12px 24px', background: '#FF6B35', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    )
+  }
+  return <AuthScreen portalType="driver" />
+}
+
+// ── Main app ──────────────────────────────────────────────────
 function AppInner() {
   const { user, profile, setUser, setProfile, clear } = useAuthStore()
 
   useEffect(() => {
-    // Restore session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user)
@@ -60,13 +115,11 @@ function AppInner() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Ops dashboard — full width, no mobile constraint
-  if (user && profile?.role === 'ops') return <OpsApp />
+  // ── Subdomain routing ─────────────────────────────────────
+  if (isOps)    return <OpsLogin />
+  if (isDriver) return <DriverLogin />
 
-  // Driver app — mobile width
-  if (user && profile?.role === 'driver') return <DriverApp />
-
-  // Customer app — mobile width  
+  // ── Main customer app ─────────────────────────────────────
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', position: 'relative' }}>
       <CustomerApp />
