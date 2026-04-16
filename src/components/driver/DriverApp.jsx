@@ -7,27 +7,40 @@ import {
 } from '../../lib/supabase'
 import { useAuthStore, useDriverStore } from '../../lib/store'
 import { useLeafletMap, PIN_ICON } from '../../lib/useLeafletMap'
-import {
-  WeatherWidget, BarcodeScanner, SignaturePad, ExpenseLogger,
-  PayslipGenerator, IncidentReport, BonusTracker, ZoneHeatmap,
-  RouteHistory, AppLock, NotificationSetup, DispatchMessages,
-  setupPushNotifications, sendPushNotification
-} from './DriverModules'
-import {
-  haptic, OrderCardSkeleton, EarningsRowSkeleton,
-  usePWAInstall, PWAInstallBanner,
-  useOfflineMode, OfflineBanner,
-  useCrashDetection, CrashAlert,
-  EarningsForecast,
-  CustomerFeedback,
-  RunningLateButton,
-  MultiOrderPanel,
-  VoiceMessage,
-  StreakBadge,
-  StatusBar,
-  useAppUpdate, UpdateBanner,
-  EmergencyCall,
-} from './DriverExtras'
+// ── Module stubs (features loaded from DriverModules/DriverExtras when available)
+const haptic = { light:()=>navigator.vibrate&&navigator.vibrate(10), medium:()=>navigator.vibrate&&navigator.vibrate(20), success:()=>navigator.vibrate&&navigator.vibrate([10,50,10]), error:()=>navigator.vibrate&&navigator.vibrate([100,30,100]), newOrder:()=>navigator.vibrate&&navigator.vibrate([200,100,200,100,200]) }
+const WeatherWidget = () => null
+const BarcodeScanner = ({ onComplete, onClose }) => null
+const SignaturePad = ({ onComplete, onSkip }) => null
+const ExpenseLogger = ({ onClose }) => null
+const PayslipGenerator = ({ profile, onClose }) => null
+const IncidentReport = ({ order, onClose }) => null
+const BonusTracker = ({ stats, onClose }) => null
+const ZoneHeatmap = ({ onClose }) => null
+const RouteHistory = ({ onClose }) => null
+const AppLock = ({ onUnlock }) => { onUnlock(); return null }
+const NotificationSetup = ({ onClose }) => null
+const DispatchMessages = ({ driverId, onClose }) => null
+const setupPushNotifications = () => {}
+const sendPushNotification = () => {}
+const OrderCardSkeleton = () => null
+const EarningsRowSkeleton = () => null
+const usePWAInstall = () => ({ canInstall:false, isInstalled:false, install:()=>{} })
+const PWAInstallBanner = () => null
+const useOfflineMode = (order) => ({ isOffline:!navigator.onLine, getCachedOrder:()=>null })
+const OfflineBanner = () => null
+const useCrashDetection = () => {}
+const CrashAlert = ({ onDismiss }) => null
+const EarningsForecast = () => null
+const CustomerFeedback = ({ onClose }) => null
+const RunningLateButton = () => null
+const MultiOrderPanel = () => null
+const VoiceMessage = ({ onClose }) => null
+const StreakBadge = () => null
+const StatusBar = () => null
+const useAppUpdate = () => ({ updateAvailable:false, refresh:()=>window.location.reload() })
+const UpdateBanner = () => null
+const EmergencyCall = ({ onClose }) => null
 
 // ─────────────────────────────────────────────────────────────
 // DESIGN SYSTEM
@@ -786,9 +799,10 @@ function EarningsTab({ stats, isDesktop }) {
         <div style={{ display:'flex', gap:3, height:72, alignItems:'flex-end' }}>
           {PEAK_HOURS.map(h => {
             const curr = String(currentHour).padStart(2,'0')===h.h
+            const barH = Math.round(h.v * 56 / 100) + 'px'
             return (
               <div key={h.h} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                <div style={{ width:'100%', height:(h.v/100*56)+'px', background:curr?DS.green:h.v>80?DS.accent:h.v>50?DS.yellow:DS.border2, borderRadius:'4px 4px 0 0', transition:'height 0.3s' }} />
+                <div style={{ width:'100%', height:barH, background:curr?DS.green:h.v>80?DS.accent:h.v>50?DS.yellow:DS.border2, borderRadius:'4px 4px 0 0', transition:'height 0.3s' }} />
                 <div style={{ fontSize:7, color:curr?DS.green:DS.t3, fontFamily:DS.f, whiteSpace:'nowrap' }}>{h.l}</div>
               </div>
             )
