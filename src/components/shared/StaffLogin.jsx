@@ -47,53 +47,67 @@ function SignInForm({ role, onSuccess, onForgot, onCreateAccount }) {
     setLoading(true)
     try {
       const { supabase, getProfile } = await import('../../lib/supabase')
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+
+      // Sign in
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password
+      })
       if (error) throw error
+
+      // Load profile — create if missing
       let profile = await getProfile(data.user.id).catch(() => null)
-      
-      // Profile missing — create it
       if (!profile) {
-        const { data: np, error: pe } = await supabase
+        const { data: np } = await supabase
           .from('profiles')
-          .upsert({ 
-            id: data.user.id, 
-            full_name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User', 
-            role: role || 'ops' 
+          .upsert({
+            id: data.user.id,
+            full_name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
+            role: role || 'customer',
+            status: 'active'
           }, { onConflict: 'id' })
           .select().single()
-        if (!pe && np) {
-          profile = np
-        } else {
-          // Try fetching again in case upsert succeeded but select failed
-          profile = await getProfile(data.user.id).catch(() => null)
-        }
-        if (!profile) {
-          throw new Error('Could not load your profile. Please contact ops@isladrop.net')
-        }
+        profile = np || await getProfile(data.user.id).catch(() => null)
       }
 
-      // Strict role check — no auto-upgrades
+      if (!profile) {
+        throw new Error('Could not load your account. Please contact ops@isladrop.net')
+      }
+
+      // Role check — ops portal requires ops or admin role
       if (role === 'ops' && !['ops', 'admin'].includes(profile.role)) {
         await supabase.auth.signOut()
-        throw new Error('This account does not have ops access. Sign up through the Management Portal or contact your administrator.')
+        throw new Error('This account does not have ops access. Contact your administrator.')
       }
       if (role === 'driver' && profile.role !== 'driver') {
         await supabase.auth.signOut()
         throw new Error('This account does not have driver access. Contact your administrator.')
       }
 
+      // Status check — blocked accounts cannot sign in
+      if (profile.status === 'blocked') {
+        await supabase.auth.signOut()
+        throw new Error('This account has been suspended. Contact ops@isladrop.net')
+      }
+
+      // All good
       setUser(data.user)
       setProfile(profile)
-      toast.success('Welcome back!')
+      toast.success('Welcome back, ' + (profile.full_name?.split(' ')[0] || 'there') + '!')
       onSuccess?.()
     } catch(err) {
       const msg = err.message || 'Sign in failed'
-      if (msg.includes('Invalid login')) toast.error('Incorrect email or password')
-      else if (msg.includes('Email not confirmed')) toast.error('Please confirm your email first')
-      else toast.error(msg)
+      if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
+        toast.error('Incorrect email or password')
+      } else if (msg.includes('Email not confirmed')) {
+        toast.error('Please confirm your email first, then sign in')
+      } else {
+        toast.error(msg)
+      }
     }
     setLoading(false)
   }
+
 
   return (
     <div>
