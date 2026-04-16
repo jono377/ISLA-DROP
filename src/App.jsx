@@ -45,7 +45,14 @@ const toastCfg = {
 
 // ── Ops login screen ──────────────────────────────────────────
 function OpsLogin() {
-  const { user, profile, setUser, setProfile } = useAuthStore()
+  const { user, profile, setUser, setProfile, clear } = useAuthStore()
+
+  // Clear any stale driver/customer session when landing on ops subdomain
+  useEffect(() => {
+    if (user && profile && !['ops', 'admin'].includes(profile.role)) {
+      supabase.auth.signOut().then(() => clear())
+    }
+  }, [user, profile])
 
   if (user && profile) {
     if (['ops', 'admin'].includes(profile.role)) return <OpsApp />
@@ -72,7 +79,15 @@ function OpsLogin() {
 
 // ── Driver login screen ───────────────────────────────────────
 function DriverLogin() {
-  const { user, profile } = useAuthStore()
+  const { user, profile, clear } = useAuthStore()
+
+  // Clear any stale ops/customer session when landing on driver subdomain
+  useEffect(() => {
+    if (user && profile && profile.role !== 'driver') {
+      supabase.auth.signOut().then(() => clear())
+    }
+  }, [user, profile])
+
   if (user && profile?.role === 'driver') return <DriverApp />
   if (user && profile) {
     return (
