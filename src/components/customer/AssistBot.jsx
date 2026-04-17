@@ -203,11 +203,17 @@ function fuzzyMatch(str, query) {
 // ═══════════════════════════════════════════════════════════════
 // MAIN ASSISTBOT
 // ═══════════════════════════════════════════════════════════════
-export default function AssistBot({ onClose, onConcierge }) {
+export default function AssistBot({ onClose, onConcierge, initialQuery }) {
   const { user } = useAuthStore()
   const cart = useCartStore()
   const { addItem } = useCartStore()
   const [messages, setMessages] = useState(() => {
+    // If launched from search with a query, start fresh for that query
+    if (initialQuery) return [{
+      role:'assistant',
+      content: "Hey! I'm Isla 🌴 I can see you're thinking about \"" + initialQuery + "\" — let me build the perfect selection for you!",
+      products:[]
+    }]
     try {
       const saved = sessionStorage.getItem('isla_chat')
       if (saved) return JSON.parse(saved)
@@ -231,7 +237,13 @@ export default function AssistBot({ onClose, onConcierge }) {
   }, [messages])
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:'smooth' }) }, [messages, loading])
-  useEffect(() => { setTimeout(()=>inputRef.current?.focus(), 400) }, [])
+  useEffect(() => {
+    setTimeout(()=>inputRef.current?.focus(), 400)
+    // Auto-send the search query that launched Isla
+    if (initialQuery && initialQuery.trim()) {
+      setTimeout(()=>send(initialQuery.trim()), 600)
+    }
+  }, [])
 
   const { listening, toggle: toggleVoice } = useVoiceInput((text) => {
     setInput(text)

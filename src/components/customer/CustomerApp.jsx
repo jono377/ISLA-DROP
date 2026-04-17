@@ -103,19 +103,30 @@ function TabBar({ view, setView, cartCount }) {
 }
 
 // ── Mini product card ─────────────────────────────────────────
-function MiniCard({ product, t }) {
+function MiniCard({ product, t, onDetail }) {
   const qty = useCartStore(s=>s.items.find(i=>i.product.id===product.id)?.quantity??0)
   const { addItem, updateQuantity } = useCartStore()
+  const handleAdd = (e) => {
+    e.stopPropagation()
+    addItem(product)
+    navigator.vibrate && navigator.vibrate(25)
+    toast.success(product.emoji+' Added!',{duration:800})
+  }
   return (
-    <div style={{ background:C.card, border:'0.5px solid '+C.cardBorder, borderRadius:14, overflow:'hidden', minWidth:134, maxWidth:134, flexShrink:0, position:'relative' }}>
+    <div
+      onClick={()=>onDetail&&onDetail(product)}
+      onTouchStart={e=>{e.currentTarget.style.transform='scale(0.96)'}}
+      onTouchEnd={e=>{e.currentTarget.style.transform='scale(1)'}}
+      style={{ background:C.card, border:'0.5px solid '+C.cardBorder, borderRadius:14, overflow:'hidden', minWidth:134, maxWidth:134, flexShrink:0, position:'relative', cursor:'pointer', transition:'transform 0.1s' }}>
       <div style={{ position:'relative' }}>
         <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="mini" style={{ height:100 }} />
+        {product.popular && qty===0 && <div style={{ position:'absolute',top:5,left:5,background:'rgba(0,0,0,0.55)',borderRadius:8,padding:'2px 6px',fontSize:9,color:'rgba(255,255,255,0.9)',fontWeight:600 }}>🔥</div>}
         {qty===0
-          ? <button onClick={()=>{addItem(product);toast.success(product.emoji+' Added!',{duration:900})}} style={{ position:'absolute',top:7,right:7,width:28,height:28,background:'#C4683A',border:'2px solid white',borderRadius:'50%',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,0.18)',lineHeight:1 }}>+</button>
+          ? <button onClick={handleAdd} style={{ position:'absolute',top:7,right:7,width:28,height:28,background:'#C4683A',border:'2px solid white',borderRadius:'50%',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,0.18)',lineHeight:1 }}>+</button>
           : <div style={{ position:'absolute',top:6,right:6,display:'flex',alignItems:'center',gap:3,background:'rgba(255,255,255,0.96)',borderRadius:20,padding:'2px 7px',boxShadow:'0 1px 5px rgba(0,0,0,0.12)' }}>
-              <button onClick={()=>updateQuantity(product.id,qty-1)} style={{ width:18,height:18,background:'#E8E0D0',border:'none',borderRadius:'50%',cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',color:'#2A2318' }}>−</button>
+              <button onClick={e=>{e.stopPropagation();updateQuantity(product.id,qty-1)}} style={{ width:18,height:18,background:'#E8E0D0',border:'none',borderRadius:'50%',cursor:'pointer',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',color:'#2A2318' }}>−</button>
               <span style={{ fontSize:11,fontWeight:500,minWidth:12,textAlign:'center',color:'#2A2318' }}>{qty}</span>
-              <button onClick={()=>updateQuantity(product.id,qty+1)} style={{ width:18,height:18,background:'#C4683A',border:'none',borderRadius:'50%',cursor:'pointer',fontSize:12,color:'white',display:'flex',alignItems:'center',justifyContent:'center' }}>+</button>
+              <button onClick={e=>{e.stopPropagation();updateQuantity(product.id,qty+1);navigator.vibrate&&navigator.vibrate(15)}} style={{ width:18,height:18,background:'#C4683A',border:'none',borderRadius:'50%',cursor:'pointer',fontSize:12,color:'white',display:'flex',alignItems:'center',justifyContent:'center' }}>+</button>
             </div>
         }
       </div>
@@ -128,19 +139,68 @@ function MiniCard({ product, t }) {
 }
 
 // ── Basket ────────────────────────────────────────────────────
+function PromoCodeEntry({ onApply }) {
+  const [code, setCode] = useState('')
+  const [applied, setApplied] = useState(false)
+  const apply = () => {
+    if (!code.trim()) return
+    setApplied(true)
+    toast.success('Promo code applied!')
+    onApply(code)
+  }
+  if (applied) return (
+    <div style={{ display:'flex',alignItems:'center',gap:8,padding:'10px 14px',background:'rgba(29,158,117,0.15)',border:'0.5px solid rgba(29,158,117,0.3)',borderRadius:10,marginBottom:10 }}>
+      <span style={{ fontSize:16 }}>✅</span>
+      <span style={{ fontSize:13,color:'#7EE8A2',flex:1 }}>Promo code <strong>{code}</strong> applied</span>
+      <button onClick={()=>{setApplied(false);setCode('')}} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:13 }}>✕</button>
+    </div>
+  )
+  return (
+    <div style={{ display:'flex',gap:8,marginBottom:10 }}>
+      <input value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="Promo code"
+        style={{ flex:1,padding:'11px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:10,color:'white',fontSize:13,fontFamily:'DM Sans,sans-serif',outline:'none',letterSpacing:1 }} />
+      <button onClick={apply} disabled={!code.trim()}
+        style={{ padding:'11px 16px',background:code.trim()?'rgba(196,104,58,0.3)':'rgba(255,255,255,0.06)',border:'0.5px solid rgba(196,104,58,0.3)',borderRadius:10,color:code.trim()?'#E8A070':'rgba(255,255,255,0.3)',fontSize:13,cursor:code.trim()?'pointer':'default',fontFamily:'DM Sans,sans-serif',fontWeight:600 }}>
+        Apply
+      </button>
+    </div>
+  )
+}
+
 function BasketView({ t, onCheckout }) {
   const cart = useCartStore()
-  const { updateQuantity } = useCartStore()
+  const { updateQuantity, addItem } = useCartStore()
   if (cart.getItemCount()===0) return (
-    <div style={{ display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:40,minHeight:'60vh' }}>
-      <div style={{ fontSize:52,marginBottom:14 }}>🛒</div>
-      <div style={{ fontFamily:'DM Serif Display,serif',fontSize:22,color:'rgba(255,255,255,0.85)',marginBottom:6 }}>Your basket is empty</div>
-      <div style={{ fontSize:14,color:'rgba(255,255,255,0.45)' }}>Add something delicious</div>
+    <div style={{ padding:24 }}>
+      <div style={{ textAlign:'center',padding:'32px 0 24px' }}>
+        <div style={{ fontSize:52,marginBottom:14 }}>🛒</div>
+        <div style={{ fontFamily:'DM Serif Display,serif',fontSize:22,color:'rgba(255,255,255,0.85)',marginBottom:6 }}>Your basket is empty</div>
+        <div style={{ fontSize:14,color:'rgba(255,255,255,0.45)',marginBottom:24 }}>Add something to get started</div>
+      </div>
+      <div style={{ fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.5)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:12 }}>Popular right now</div>
+      <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
+        {BEST_SELLERS.slice(0,4).map(p=>(
+          <div key={p.id} style={{ background:'rgba(255,255,255,0.07)',border:'0.5px solid rgba(255,255,255,0.1)',borderRadius:14,overflow:'hidden' }}>
+            <div style={{ position:'relative' }}>
+              <ProductImage productId={p.id} emoji={p.emoji} category={p.category} alt={p.name} size="card" style={{ height:90 }} />
+              <button onClick={()=>{cart.addItem(p);toast.success(p.emoji+' Added!',{duration:800})}}
+                style={{ position:'absolute',top:7,right:7,width:28,height:28,background:'#C4683A',border:'2px solid white',borderRadius:'50%',color:'white',fontSize:17,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer' }}>+</button>
+            </div>
+            <div style={{ padding:'8px 10px' }}>
+              <div style={{ fontSize:11,color:'white',marginBottom:3 }}>{p.name}</div>
+              <div style={{ fontSize:12,fontWeight:600,color:'#E8A070' }}>€{p.price.toFixed(2)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
   return (
     <div style={{ padding:'16px 16px 20px' }}>
-      <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:16 }}>{t.viewCart}</div>
+      <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16 }}>
+        <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white' }}>{t.viewCart}</div>
+        <div style={{ fontSize:12,color:'rgba(255,255,255,0.45)',background:'rgba(255,255,255,0.08)',padding:'4px 10px',borderRadius:20 }}>{cart.getItemCount()} item{cart.getItemCount()!==1?'s':''}</div>
+      </div>
       {cart.items.map(({product,quantity})=>(
         <div key={product.id} style={{ display:'flex',gap:12,alignItems:'center',padding:'12px 0',borderBottom:'0.5px solid rgba(255,255,255,0.08)' }}>
           <div style={{ width:52,height:52,borderRadius:10,overflow:'hidden',flexShrink:0 }}>
@@ -167,8 +227,13 @@ function BasketView({ t, onCheckout }) {
           <span>🆔</span><span>ID required at delivery for age-restricted items</span>
         </div>
       )}
-      <button onClick={onCheckout} style={{ width:'100%',padding:'16px',background:'#C4683A',color:'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:'pointer',boxShadow:'0 4px 20px rgba(196,104,58,0.4)' }}>
+      <PromoCodeEntry onApply={()=>{}} />
+      <button onClick={onCheckout} style={{ width:'100%',padding:'16px',background:'#C4683A',color:'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:'pointer',boxShadow:'0 4px 20px rgba(196,104,58,0.4)',marginBottom:10 }}>
         {t.checkout} →
+      </button>
+      <button onClick={()=>{ if(window.confirm('Clear your basket?')) cart.clearCart() }}
+        style={{ width:'100%',padding:'12px',background:'transparent',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:13,color:'rgba(255,255,255,0.4)',cursor:'pointer' }}>
+        🗑 Clear basket
       </button>
     </div>
   )
@@ -245,36 +310,79 @@ function CategoriesView({ onSelect }) {
   )
 }
 
+// ── AI intent detector — is this a product search or a vibe request? ──
+const AI_TRIGGERS = [
+  'beach','pool','party','night','day','boat','villa','club','date','birthday',
+  'hangover','cocktail','sundowner','romantic','celebrate','vip','premium',
+  'lady','ladies','boys','gentleman','arrivals','arrival','landed','landing',
+  'gift','surprise','snack board','charcuterie','picnic','brunch','breakfast',
+  'wellness','recovery','morning','afternoon','evening','sunset','sunrise',
+  '4th','friends','family','wedding','anniversary','engagement','hen','stag',
+  'plan','help','suggest','recommend','what','need','should','give me','build',
+]
+function looksLikeAIQuery(q) {
+  const lower = q.toLowerCase().trim()
+  if (lower.length < 3) return false
+  // If it matches a product name closely, treat as product search
+  const productHit = PRODUCTS.some(p => p.name.toLowerCase().includes(lower) && lower.length > 3)
+  if (productHit) return false
+  return AI_TRIGGERS.some(kw => lower.includes(kw))
+}
+
 // ── Search view ───────────────────────────────────────────────
-function SearchView({ t }) {
+function SearchView({ t, onAssist }) {
   const [query, setQuery] = useState('')
+  const [showIslaPrompt, setShowIslaPrompt] = useState(false)
   const { addItem } = useCartStore()
-  const results = query.length>1 ? PRODUCTS.filter(p=>p.name.toLowerCase().includes(query.toLowerCase())).slice(0,40) : []
+
+  // Fuzzy + partial match
+  const results = query.length>1 ? PRODUCTS.filter(p=>{
+    const n=p.name.toLowerCase(); const q=query.toLowerCase()
+    if(n.includes(q)) return true
+    let qi=0; for(let i=0;i<n.length&&qi<q.length;i++){if(n[i]===q[qi])qi++}
+    return qi===q.length
+  }).slice(0,40) : []
+
+  const isAI = query.length>2 && looksLikeAIQuery(query)
+
+  const handleIsla = () => {
+    onAssist(query)
+  }
+
   return (
     <div style={{ padding:'16px 16px 0' }}>
-      <div style={{ display:'flex',gap:8,marginBottom:16 }}>
+      <div style={{ display:'flex',gap:8,marginBottom:14 }}>
         <div style={{ flex:1,display:'flex',alignItems:'center',background:'rgba(255,255,255,0.1)',borderRadius:12,padding:'10px 14px',gap:8,border:'0.5px solid rgba(255,255,255,0.1)' }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder={t.searchPlaceholder} style={{ flex:1,border:'none',background:'none',fontFamily:'DM Sans,sans-serif',fontSize:14,color:'white',outline:'none' }}/>
+          <input autoFocus value={query} onChange={e=>setQuery(e.target.value)}
+            onKeyDown={e=>{ if(e.key==='Enter'&&isAI) handleIsla() }}
+            placeholder="Search products or ask Isla anything..." style={{ flex:1,border:'none',background:'none',fontFamily:'DM Sans,sans-serif',fontSize:14,color:'white',outline:'none' }}/>
           {query&&<button onClick={()=>setQuery('')} style={{ border:'none',background:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:15,padding:0 }}>✕</button>}
         </div>
-        <button
-          onClick={() => {/* handled by parent */}}
-          title="Ask Isla AI"
-          style={{ width:44, height:44, background:'rgba(255,255,255,0.09)', border:'0.5px solid rgba(255,255,255,0.14)', borderRadius:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#E8A070" stroke="#E8A070" strokeWidth="1">
-            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
-          </svg>
-        </button>
       </div>
+
+      {/* Isla AI prompt — shown when query looks like a vibe not a product */}
+      {isAI && (
+        <button onClick={handleIsla}
+          style={{ width:'100%',marginBottom:14,padding:'14px 16px',background:'linear-gradient(135deg,rgba(196,104,58,0.25),rgba(43,122,139,0.25))',border:'0.5px solid rgba(196,104,58,0.4)',borderRadius:14,cursor:'pointer',display:'flex',alignItems:'center',gap:12,textAlign:'left' }}>
+          <div style={{ width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,#C4683A,#E8854A)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:13,fontWeight:600,color:'white',marginBottom:2 }}>Ask Isla AI about "{query}"</div>
+            <div style={{ fontSize:11,color:'rgba(255,255,255,0.5)' }}>Isla will curate the perfect selection for you →</div>
+          </div>
+        </button>
+      )}
+
+      {/* Product results */}
       {query.length>1 && results.length>0 && (
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
           {results.map(p=>(
             <div key={p.id} style={{ background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.1)',borderRadius:14,overflow:'hidden',position:'relative' }}>
               <div style={{ position:'relative' }}>
                 <ProductImage productId={p.id} emoji={p.emoji} category={p.category} alt={p.name} size="card" style={{ height:110 }} />
-                <button onClick={()=>{addItem(p);toast.success(p.emoji+' Added!',{duration:900})}} style={{ position:'absolute',top:7,right:7,width:28,height:28,background:'#C4683A',border:'2px solid white',borderRadius:'50%',color:'white',fontSize:17,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',lineHeight:1 }}>+</button>
+                <button onClick={()=>{addItem(p);navigator.vibrate&&navigator.vibrate(25);toast.success(p.emoji+' Added!',{duration:900})}} style={{ position:'absolute',top:7,right:7,width:28,height:28,background:'#C4683A',border:'2px solid white',borderRadius:'50%',color:'white',fontSize:17,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',lineHeight:1 }}>+</button>
               </div>
               <div style={{ padding:'9px 10px 11px' }}>
                 <div style={{ fontSize:11,fontWeight:500,color:'white',lineHeight:1.3,marginBottom:4 }}>{p.name}</div>
@@ -284,8 +392,21 @@ function SearchView({ t }) {
           ))}
         </div>
       )}
-      {query.length===0&&<div style={{ textAlign:'center',padding:'40px 0',color:'rgba(255,255,255,0.35)',fontSize:14 }}><div style={{ fontSize:36,marginBottom:10 }}>🔍</div>Search 150+ products</div>}
-      {query.length>1&&results.length===0&&<div style={{ textAlign:'center',padding:'30px',color:'rgba(255,255,255,0.4)',fontSize:14 }}>No results for "{query}"</div>}
+      {query.length===0 && (
+        <div style={{ textAlign:'center',padding:'32px 0 20px',color:'rgba(255,255,255,0.35)',fontSize:14 }}>
+          <div style={{ fontSize:36,marginBottom:10 }}>🔍</div>
+          <div style={{ marginBottom:20 }}>Search 150+ products or ask Isla anything</div>
+          <div style={{ display:'flex',flexWrap:'wrap',gap:8,justifyContent:'center' }}>
+            {['Beach day','Hangover cure','Date night','Sundowner','Boat trip','Birthday'].map(s=>(
+              <button key={s} onClick={()=>setQuery(s)}
+                style={{ padding:'7px 14px',background:'rgba(255,255,255,0.07)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,color:'rgba(255,255,255,0.7)',fontSize:12,cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {query.length>1&&results.length===0&&!isAI&&<div style={{ textAlign:'center',padding:'30px',color:'rgba(255,255,255,0.4)',fontSize:14 }}>No results for "{query}"</div>}
     </div>
   )
 }
@@ -322,7 +443,9 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
         <div style={{ display:'flex',gap:8 }}>
           <div style={{ flex:1,display:'flex',alignItems:'center',background:'rgba(255,255,255,0.09)',borderRadius:12,padding:'10px 14px',gap:8,border:'0.5px solid rgba(255,255,255,0.1)' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder={t.searchPlaceholder} style={{ flex:1,border:'none',background:'none',fontFamily:'DM Sans,sans-serif',fontSize:14,color:'white',outline:'none' }}/>
+            <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}
+              onKeyDown={e=>{ if(e.key==='Enter'&&looksLikeAIQuery(searchQuery)) onAssist() }}
+              placeholder={t.searchPlaceholder} style={{ flex:1,border:'none',background:'none',fontFamily:'DM Sans,sans-serif',fontSize:14,color:'white',outline:'none' }}/>
             {searchQuery&&<button onClick={()=>setSearchQuery('')} style={{ border:'none',background:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:15,padding:0 }}>✕</button>}
           </div>
           <button
@@ -340,6 +463,18 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
       {/* Search results */}
       {searchQuery.length>1 && (
         <div style={{ padding:'12px 16px' }}>
+          {looksLikeAIQuery(searchQuery) && (
+            <button onClick={()=>onAssist()}
+              style={{ width:'100%',marginBottom:12,padding:'12px 14px',background:'linear-gradient(135deg,rgba(196,104,58,0.2),rgba(43,122,139,0.2))',border:'0.5px solid rgba(196,104,58,0.35)',borderRadius:12,cursor:'pointer',display:'flex',alignItems:'center',gap:10,textAlign:'left' }}>
+              <div style={{ width:30,height:30,borderRadius:'50%',background:'linear-gradient(135deg,#C4683A,#E8854A)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+              </div>
+              <div>
+                <div style={{ fontSize:12,fontWeight:600,color:'white' }}>Ask Isla about "{searchQuery}"</div>
+                <div style={{ fontSize:10,color:'rgba(255,255,255,0.45)' }}>Get a curated selection →</div>
+              </div>
+            </button>
+          )}
           <div style={{ fontSize:12,color:'rgba(255,255,255,0.45)',marginBottom:10 }}>{searchResults.length} results for "{searchQuery}"</div>
           <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
             {searchResults.map(p=>(
@@ -365,7 +500,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           {prevItems.length>0 && (
             <div style={{ paddingTop:20,marginBottom:22 }}>
               <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,padding:'0 16px',marginBottom:12,color:'white' }}>🔄 {t.orderAgain}</div>
-              <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{prevItems.slice(0,8).map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
+              <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{prevItems.slice(0,8).map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail}/>)}</div>
             </div>
           )}
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
@@ -373,14 +508,14 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
               <button onClick={onBest} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
             </div>
-            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{BEST_SELLERS.map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
+            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{BEST_SELLERS.map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail}/>)}</div>
           </div>
           <div style={{ marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onNewIn} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>✨ {t.newIn}</button>
               <button onClick={onNewIn} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
             </div>
-            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{NEW_IN.slice(0,10).map(p=><MiniCard key={p.id} product={p} t={t}/>)}</div>
+            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{NEW_IN.slice(0,10).map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail}/>)}</div>
           </div>
           {/* ── Design Your Experience ─────────────────────── */}
           <div style={{ margin:'4px 16px 22px' }}>
@@ -429,7 +564,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
                   <button onClick={()=>onCategorySelect(cat.key)} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
                 </div>
                 <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>
-                  {catProducts.map(p=><MiniCard key={p.id} product={p} t={t}/>)}
+                  {catProducts.map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail}/>)}
                 </div>
               </div>
             )
@@ -443,6 +578,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 // ── Root App ──────────────────────────────────────────────────
 export default function CustomerApp() {
   const [view, setView]               = useState(VIEWS.SPLASH)
+  const [assistQuery, setAssistQuery] = useState('')
   const [lang, setLang]               = useState('en')
   const [categoryKey, setCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
@@ -579,10 +715,10 @@ export default function CustomerApp() {
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
       {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={()=>setView(VIEWS.ASSIST)} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} />}
-      {view===VIEWS.SEARCH   && <SearchView t={t} />}
+      {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
-      {view===VIEWS.ASSIST   && <AssistBot onClose={()=>setView(VIEWS.HOME)} />}
+      {view===VIEWS.ASSIST   && <AssistBot initialQuery={assistQuery} onClose={()=>{ setAssistQuery(''); setView(VIEWS.HOME) }} />}
       {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.PARTY_DAY   && <PartyBuilder initialType="design_day"   onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.ARRIVAL     && <ArrivalPackage onBack={()=>setView(VIEWS.HOME)} />}
