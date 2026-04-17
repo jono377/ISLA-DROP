@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { ProductReviews } from './CustomerFeatures_world'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { supabase } from '../../lib/supabase'
 import { PRODUCTS, BEST_SELLERS } from '../../lib/products'

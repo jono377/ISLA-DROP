@@ -42,6 +42,16 @@ import {
   FreeDeliveryBar, EarnStampsLine, DeleteAccountSheet,
   ChangeCredentialsSheet, HotelDeliverySheet, shareProduct,
 } from './CustomerFeatures_extra'
+import {
+  useSavedCard, SavedCardRow, AddressAutocomplete,
+  useNotifications, NotificationBell, NotificationCentre,
+  sendWhatsAppConfirmation, ProductReviews, ProductRatingBadge,
+  useTrending, TrendingRow, LoyaltyRedemptionRow,
+  useDietaryPrefs, DietaryFilterBar, DIETARY_TAGS,
+  detectUsualOrder, YourUsualCard, GiftMessageToggle, SubstitutionPreference,
+  LoyaltyHeaderBadge, useLoyaltyStamps, useMorningAfterKit, MorningAfterKitBanner,
+  PreArrivalSheet, PoolPartyMode,
+} from './CustomerFeatures_world'
 // supabase imported dynamically inside functions to prevent blank screen
 
 // ── Flash sale hook ──────────────────────────────────────────
@@ -66,7 +76,7 @@ function useCountdown(endsAt) {
   return secs>0?(h>0?h+'h ':'')+m+'m '+s+'s':null
 }
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation', CONCIERGE:'concierge', ONBOARDING:'onboarding' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation', CONCIERGE:'concierge', ONBOARDING:'onboarding', NOTIFICATIONS_CENTRE:'notif_centre' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -298,6 +308,8 @@ function BasketView({ t, onCheckout }) {
       )}
       {/* Feature 6: Upsell suggestions */}
       <BasketUpsell cartItems={cart.items} />
+      {/* Feature 7: Loyalty redemption */}
+      <LoyaltyRedemptionRow redeemed={loyaltyRedeemed} onRedeem={()=>setLoyaltyRedeemed(true)} onRemove={()=>setLoyaltyRedeemed(false)} />
       <PromoCodeEntry onApply={()=>{}} />
       {/* Feature 7: Show warning if no address set */}
       {!cart.deliveryAddress && <NoAddressWarning onSetAddress={()=>toast('Set your address in checkout',{icon:'📍'})} />}
@@ -415,6 +427,7 @@ function SearchView({ t, onAssist }) {
   const [query, setQuery] = useState('')
   const [historyVer, setHistoryVer] = useState(0)
   const { addItem } = useCartStore()
+  const { prefs: dietPrefs, toggle: toggleDiet } = useDietaryPrefs()
 
   // Fuzzy + partial match
   const results = query.length>1 ? PRODUCTS.filter(p=>{
@@ -443,6 +456,10 @@ function SearchView({ t, onAssist }) {
       </div>
 
       {/* Isla AI prompt — shown when query looks like a vibe not a product */}
+      {/* Feature 8: Dietary filter bar */}
+      <div style={{ padding:'8px 16px 0' }}>
+        <DietaryFilterBar prefs={dietPrefs} onToggle={toggleDiet} />
+      </div>
       {/* Feature 4: Search history when empty */}
       {!query && <SearchHistoryPanel onSelect={q=>{setQuery(q)}} onClear={()=>setHistoryVer(v=>v+1)} />}
       {/* Feature 4: Live suggestions as you type */}
@@ -498,7 +515,7 @@ function SearchView({ t, onAssist }) {
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -524,6 +541,8 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             <div style={{ fontSize:10,color:'rgba(255,255,255,0.45)',marginTop:3,letterSpacing:'1.5px',textTransform:'uppercase' }}>{t.tagline}</div>
           </div>
           <div style={{ display:'flex',gap:7,alignItems:'center' }}>
+            {loyaltyStamps > 0 && <LoyaltyHeaderBadge stamps={loyaltyStamps} onClick={()=>setView(VIEWS.LOYALTY)} />}
+            <NotificationBell unread={unread} onClick={()=>setShowNotifCentre(true)} />
             <div style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'#7EE8A2',display:'inline-block',animation:'pulse 1.5s infinite' }}/>Open 24/7
             </div>
@@ -600,6 +619,10 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           {/* Feature 5: Last order shortcut */}
           <LastOrderShortcut onReorder={onReorder} />
 
+          {/* Feature 13: Morning after kit */}
+          {showMorningKit && <MorningAfterKitBanner onAddKit={()=>{}} onDismiss={dismissMorningKit} />}
+          {/* Feature 9: Your usual order */}
+          <YourUsualCard productIds={[]} onAddAll={()=>setView(VIEWS.BASKET)} />
           {/* POINT 7: Recently viewed */}
           <RecentlyViewedRow onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
 
@@ -709,6 +732,18 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Boat delivery</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Marina, berth, superyacht</div>
             </button>
+            <button onClick={onShowPreArrival}
+              style={{ padding:'14px', background:'linear-gradient(135deg,rgba(200,168,75,0.25),rgba(196,104,58,0.2))', border:'0.5px solid rgba(200,168,75,0.35)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
+              <div style={{ fontSize:22, marginBottom:4 }}>✈️</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Pre-arrival</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Order before you land</div>
+            </button>
+            <button onClick={onShowPoolParty}
+              style={{ padding:'14px', background:'linear-gradient(135deg,rgba(43,122,139,0.4),rgba(20,80,100,0.5))', border:'0.5px solid rgba(43,122,139,0.4)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
+              <div style={{ fontSize:22, marginBottom:4 }}>🏊</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Pool party mode</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Bulk ordering for groups</div>
+            </button>
           </div>
 
           {/* ── Just Landed in Ibiza ────────────────────────────── */}
@@ -782,6 +817,19 @@ export default function CustomerApp() {
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [showHotelDelivery, setShowHotelDelivery] = useState(false)
   const { user } = useAuthStore()
+  const savedCard = useSavedCard()
+  const { notifs, unread, add: addNotif, markRead, markAllRead, clear: clearNotifs } = useNotifications()
+  const [showNotifCentre, setShowNotifCentre] = useState(false)
+  const [showPreArrival, setShowPreArrival] = useState(false)
+  const [showPoolParty, setShowPoolParty] = useState(false)
+  const [giftEnabled, setGiftEnabled] = useState(false)
+  const [giftMessage, setGiftMessage] = useState('')
+  const [substitution, setSubstitution] = useState('substitute')
+  const [loyaltyRedeemed, setLoyaltyRedeemed] = useState(false)
+  const loyaltyStamps = useLoyaltyStamps()
+  const { show: showMorningKit, dismiss: dismissMorningKit } = useMorningAfterKit()
+  const { prefs: dietaryPrefs, toggle: toggleDietary } = useDietaryPrefs()
+  const [showDietaryFilter, setShowDietaryFilter] = useState(false)
   const cart = useCartStore()
   const t    = useT(lang)
   const estimatedMins = cart.deliveryAddress ? 18 : null
@@ -825,7 +873,10 @@ export default function CustomerApp() {
         deliveryNotes:cart.deliveryNotes, what3words:cart.what3words, subtotal:cart.getSubtotal(), total:cart.getTotal(), paymentIntentId,
       })
       cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION)
-      const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');sub.unsubscribe()} })
+      addNotif({ type:'order', title:'Order confirmed! 🛵', body:'Order #'+order.order_number+' is being prepared. Estimated arrival: '+(order.estimated_minutes||18)+' min.' })
+      const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');addNotif({type:'order',title:'Delivered! 🎉',body:'Your order #'+u.order_number+' has been delivered.'});sub.unsubscribe()} })
+      // Feature 4: WhatsApp confirmation
+      if (user?.phone) sendWhatsAppConfirmation({ phone:user.phone, orderNumber:order.order_number, items:cart.items, total:order.total?.toFixed(2), etaMins:18 })
     } catch(err){ toast.error('Order failed: '+err.message) }
   }
 
@@ -854,7 +905,9 @@ export default function CustomerApp() {
           <button onClick={()=>setView(VIEWS.BASKET)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:14,cursor:'pointer',fontFamily:'DM Sans,sans-serif',marginBottom:12 }}>← Back to basket</button>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:20 }}>{t.checkout}</div>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>Delivery location</div>
-          <div style={{ borderRadius:14,overflow:'hidden',marginBottom:20 }}>
+          {/* Feature 2: Address autocomplete */}
+          <AddressAutocomplete placeholder="Search villa, hotel, beach or club..." onSelect={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null); toast.success('📍 '+loc.address.slice(0,30)+'...') }} />
+          <div style={{ borderRadius:14,overflow:'hidden',marginBottom:14 }}>
             <DeliveryMap onLocationSet={()=>setLocationSet(true)} />
           </div>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>Order summary</div>
@@ -901,6 +954,10 @@ export default function CustomerApp() {
             <span style={{ fontWeight:800 }}>///</span> Use what3words for precise location
           </button>
 
+          {/* Feature 10: Gift message */}
+          <GiftMessageToggle enabled={giftEnabled} message={giftMessage} onToggle={()=>setGiftEnabled(e=>!e)} onMessageChange={setGiftMessage} />
+          {/* Feature 11: Substitution preference */}
+          <SubstitutionPreference value={substitution} onChange={setSubstitution} />
           {/* POINT 4: Driver tip */}
           <TipSelector onTipChange={setDriverTipAmount} />
 
@@ -1002,7 +1059,7 @@ export default function CustomerApp() {
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);setSelectedProduct(p)}} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} /></FadeIn>}
+      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} onShowPreArrival={()=>setShowPreArrival(true)} onShowPoolParty={()=>setShowPoolParty(true)} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} /></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} onShowLoyalty={()=>setView(VIEWS.LOYALTY)} onShowReferral={()=>setView(VIEWS.REFERRAL)} onShowWishlist={()=>setView(VIEWS.WISHLIST)} onShowNotifications={()=>setView(VIEWS.NOTIFICATIONS)} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} /></FadeIn>}
@@ -1045,6 +1102,12 @@ export default function CustomerApp() {
       {showIssue && <ReportIssueSheet order={showIssue} onClose={()=>setShowIssue(null)} />}
       {/* POINT 15: PWA install */}
       <PWAInstallPrompt />
+      {/* Feature 3: Notification centre */}
+      {showNotifCentre && <NotificationCentre notifs={notifs} onMarkRead={markRead} onMarkAll={markAllRead} onClear={clearNotifs} onClose={()=>setShowNotifCentre(false)} />}
+      {/* Feature 14: Pre-arrival order */}
+      {showPreArrival && <PreArrivalSheet onClose={()=>setShowPreArrival(false)} onSchedule={s=>{ cart.setDeliveryNotes&&cart.setDeliveryNotes('PRE-ARRIVAL: '+s.villa+' at '+s.arrivalTime+' on '+s.arrivalDate+(s.flightNum?' flight '+s.flightNum:'')); toast.success('Pre-arrival order scheduled!') }} />}
+      {/* Feature 15: Pool party mode */}
+      {showPoolParty && <PoolPartyMode onClose={()=>setShowPoolParty(false)} onAddAll={()=>setView(VIEWS.BASKET)} />}
       {/* Feature 5: Guest checkout */}
       {showGuestCheckout && <GuestCheckoutModal onClose={()=>setShowGuestCheckout(false)} onContinue={g=>{ setGuestUser(g); setShowGuestCheckout(false); setView(VIEWS.CHECKOUT) }} />}
       {/* Feature 12: Delete account */}
