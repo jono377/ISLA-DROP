@@ -61,6 +61,16 @@ import {
   useIbizaEvents, EventCalendarBanner, InstagramStoryShare,
   SplitBillButton, TaxiUpsellCard, NetworkErrorBanner,
 } from './CustomerFeatures_polish'
+import {
+  useSlideOut, LiveCheckoutTotal, PayButton, ConfirmedAddressCard,
+  FloatingBasketBar, PushNotificationToggle, useReferralFromURL,
+  useQuantityGuard, QuantityLimitBadge, usePaginatedOrders,
+  VariantSelector, CorporateBillingToggle, OfflineBanner,
+  isInIbizaZone, DeliveryZoneWarning, Analytics,
+  BeachGPSButton, VillaPresetsPanel, useRealtimeDriverLocation,
+  DOBAgeGate, useOnlineStatus, usePushNotifications,
+  registerServiceWorker, callAIProxy, generateLocalizedReceipt,
+} from './CustomerFeatures_final'
 // supabase imported dynamically inside functions to prevent blank screen
 
 // ── Flash sale hook ──────────────────────────────────────────
@@ -181,6 +191,7 @@ function MiniCard({ product, t, onDetail }) {
     e.stopPropagation()
     addItem(product)
     haptic('medium')
+    Analytics.addToCart(product)
     toast.success(product.emoji+' Added!',{duration:800})
   }
   return (
@@ -241,6 +252,7 @@ function PromoCodeEntry({ onApply }) {
 function BasketView({ t, onCheckout }) {
   const cart = useCartStore()
   const { updateQuantity, addItem } = useCartStore()
+  const { removing, animateRemove } = useSlideOut()
   const [notes, setNotes] = useState(cart.deliveryNotes||'')
   const MIN = 15
   const sub = cart.getSubtotal()
@@ -279,7 +291,11 @@ function BasketView({ t, onCheckout }) {
         <div style={{ fontSize:12,color:'rgba(255,255,255,0.45)',background:'rgba(255,255,255,0.08)',padding:'4px 10px',borderRadius:20 }}>{cart.getItemCount()} item{cart.getItemCount()!==1?'s':''}</div>
       </div>
       {cart.items.map(({product,quantity})=>(
-        <div key={product.id} style={{ display:'flex',gap:12,alignItems:'center',padding:'12px 0',borderBottom:'0.5px solid rgba(255,255,255,0.08)' }}>
+        <div key={product.id}
+          style={{ display:'flex',gap:12,alignItems:'center',padding:'12px 0',borderBottom:'0.5px solid rgba(255,255,255,0.08)',
+            transition:'opacity 0.22s ease, transform 0.22s ease',
+            opacity: removing[product.id] ? 0 : 1,
+            transform: removing[product.id] ? 'translateX(-24px)' : 'translateX(0)' }}>
           <div style={{ width:52,height:52,borderRadius:10,overflow:'hidden',flexShrink:0 }}>
             <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="list" style={{ height:52,width:52 }} />
           </div>
@@ -288,7 +304,7 @@ function BasketView({ t, onCheckout }) {
             <div style={{ fontSize:13,color:'#E8A070',fontWeight:500 }}>€{(product.price*quantity).toFixed(2)}</div>
           </div>
           <div style={{ display:'flex',alignItems:'center',gap:8 }}>
-            <button onClick={()=>updateQuantity(product.id,quantity-1)} style={{ width:26,height:26,background:'rgba(255,255,255,0.1)',border:'none',borderRadius:'50%',cursor:'pointer',fontSize:14,color:'white',display:'flex',alignItems:'center',justifyContent:'center' }}>−</button>
+            <button onClick={()=>{ if(quantity<=1) animateRemove(product.id,()=>updateQuantity(product.id,0)); else updateQuantity(product.id,quantity-1) }} style={{ width:26,height:26,background:'rgba(255,255,255,0.1)',border:'none',borderRadius:'50%',cursor:'pointer',fontSize:14,color:'white',display:'flex',alignItems:'center',justifyContent:'center' }}>−</button>
             <span style={{ fontSize:13,fontWeight:500,color:'white',minWidth:16,textAlign:'center' }}>{quantity}</span>
             <button onClick={()=>updateQuantity(product.id,quantity+1)} style={{ width:26,height:26,background:'rgba(255,255,255,0.12)',border:'none',borderRadius:'50%',cursor:'pointer',fontSize:14,color:'white',display:'flex',alignItems:'center',justifyContent:'center' }}>+</button>
           </div>
@@ -325,7 +341,7 @@ function BasketView({ t, onCheckout }) {
       {!cart.deliveryAddress && <NoAddressWarning onSetAddress={()=>toast('Set your address in checkout',{icon:'📍'})} />}
       <button onClick={onCheckout} disabled={belowMin}
         style={{ width:'100%',padding:'16px',background:belowMin?'rgba(255,255,255,0.1)':'#C4683A',color:belowMin?'rgba(255,255,255,0.3)':'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:belowMin?'not-allowed':'pointer',boxShadow:belowMin?'none':'0 4px 20px rgba(196,104,58,0.4)',marginBottom:10 }}>
-        {belowMin?'Add €'+(MIN-sub).toFixed(2)+' to unlock checkout':(t.checkout||'Order now')+' →'}
+        {belowMin?'Add €'+(MIN-sub).toFixed(2)+' more to checkout →':(t.checkout||'Order now')+' →'}
       </button>
       <button onClick={()=>{ if(window.confirm('Clear your basket?')) cart.clearCart() }}
         style={{ width:'100%',padding:'12px',background:'transparent',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:13,color:'rgba(255,255,255,0.4)',cursor:'pointer' }}>
@@ -359,6 +375,7 @@ function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile, onS
             { icon:'🔗', label:'Refer a friend',   sub:'Share code, earn €10',          action:onShowReferral },
             { icon:'❤️', label:'Favourites',       sub:'Your saved products',            action:onShowWishlist },
             { icon:'🔔', label:'Notifications',    sub:'Push, email and SMS settings',  action:onShowNotifications },
+            { icon:'📲', label:'Enable push alerts',  sub:'Get order updates when app is closed', action:()=>toast('Enable in Notifications settings') },
             { icon:'💬', label:'WhatsApp support', sub:'+34 971 000 000', action:()=>window.open('https://wa.me/34971000000','_blank') },
             { icon:'🌍', label:'Language',         sub:'Change display language',        action:()=>toast('Use the flag in the top-right of the home screen') },
             { icon:'❓', label:'Help & FAQ',       sub:'Delivery, payments and more',   action:()=>toast('Support: support@isladrop.net') },
@@ -538,6 +555,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
   const { greeting, vibe } = useTimeGreeting()
   const weather = useWeatherSuggestion()
   const searchResults = searchQuery.length>1 ? PRODUCTS.filter(p=>p.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0,30) : []
+  useEffect(()=>{ if(searchQuery.length>2) Analytics.search(searchQuery, searchResults.length) },[searchQuery])
 
   return (
     <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
@@ -608,7 +626,10 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <div style={{ fontSize:12,color:'rgba(255,255,255,0.45)',marginBottom:10 }}>{searchResults.length} results for "{searchQuery}"</div>
           <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
             {searchResults.map(p=>(
-              <div key={p.id} style={{ background:'rgba(255,255,255,0.07)',border:'0.5px solid rgba(255,255,255,0.1)',borderRadius:14,overflow:'hidden',position:'relative' }}>
+              <div key={p.id}
+                onTouchStart={e=>{haptic('light');e.currentTarget.style.transform='scale(0.97)'}}
+                onTouchEnd={e=>{e.currentTarget.style.transform='scale(1)'}}
+                style={{ background:'rgba(255,255,255,0.07)',border:'0.5px solid rgba(255,255,255,0.1)',borderRadius:14,overflow:'hidden',position:'relative',transition:'transform 0.1s cubic-bezier(0.34,1.56,0.64,1)' }}>
                 <div style={{ position:'relative' }}>
                   <ProductImage productId={p.id} emoji={p.emoji} category={p.category} alt={p.name} size="card" style={{ height:110 }} />
                   <button onClick={()=>{addItem(p);toast.success(p.emoji+' Added!',{duration:900})}} style={{ position:'absolute',top:7,right:7,width:28,height:28,background:'#C4683A',border:'2px solid white',borderRadius:'50%',color:'white',fontSize:17,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',lineHeight:1 }}>+</button>
@@ -632,6 +653,8 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 
           {/* Feature 13: Morning after kit */}
           {showMorningKit && <MorningAfterKitBanner onAddKit={()=>{}} onDismiss={dismissMorningKit} />}
+          {/* Feature 22: Villa presets */}
+          <VillaPresetsPanel onAddAll={()=>setView(VIEWS.BASKET)} />
           {/* Feature 9: Your usual order */}
           <YourUsualCard productIds={[]} onAddAll={()=>setView(VIEWS.BASKET)} />
           {/* POINT 7: Recently viewed */}
@@ -824,6 +847,10 @@ export default function CustomerApp() {
   const weather = useWeatherSuggestion()
   const { show: showRatingPrompt, dismiss: dismissRatingPrompt } = useAppRatingPrompt()
   const { show: showOnboarding, finish: finishOnboarding } = useOnboarding()
+  const [payLoading, setPayLoading] = useState(false)
+  const [corporateBilling, setCorporateBilling] = useState(false)
+  const [corporateDetails, setCorporateDetails] = useState({})
+  useReferralFromURL()
   const { tip: driverTipAmount, setTip: setDriverTipAmount } = useCartTip()
   const [showGuestCheckout, setShowGuestCheckout] = useState(false)
   const [guestUser, setGuestUser] = useState(null)
@@ -845,6 +872,8 @@ export default function CustomerApp() {
   const liveOrderCount = useLiveOrderCount()
   const events = useIbizaEvents()
   const { checkStreak } = useOrderStreak()
+  const { supported: pushSupported, subscribe: subscribePush } = usePushNotifications ? usePushNotifications() : {}
+  useEffect(() => { if (typeof registerServiceWorker === 'function') registerServiceWorker() }, [])
   const [showDeliveryZone, setShowDeliveryZone] = useState(false)
   const [hasError, setHasError] = useState(false)
   const { show: showMorningKit, dismiss: dismissMorningKit } = useMorningAfterKit()
@@ -877,6 +906,7 @@ export default function CustomerApp() {
   },[activeOrder?.status])
 
   const handleCheckoutStart = () => {
+    Analytics.checkoutStart(cart.getSubtotal())
     if (!user && !guestUser) { setShowGuestCheckout(true); return }
     if (cart.getSubtotal() < 15) { toast.error('Minimum order is €15'); return }
     if (!hasValidAddress(cart)) { toast.error('Please set a delivery address first',{icon:'📍'}); return }
@@ -885,6 +915,7 @@ export default function CustomerApp() {
   }
 
   const handlePaymentSuccess = async (paymentIntentId) => {
+    setPayLoading(true)
     try {
       const subToOrder = subscribeToOrder
       const order = await createOrder({
@@ -893,12 +924,14 @@ export default function CustomerApp() {
         deliveryNotes:cart.deliveryNotes, what3words:cart.what3words, subtotal:cart.getSubtotal(), total:cart.getTotal(), paymentIntentId,
       })
       cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION)
+      Analytics.checkoutComplete(order.total||cart.getTotal())
       addNotif({ type:'order', title:'Order confirmed! 🛵', body:'Order #'+order.order_number+' is being prepared. Estimated arrival: '+(order.estimated_minutes||18)+' min.' })
       const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');addNotif({type:'order',title:'Delivered! 🎉',body:'Your order #'+u.order_number+' has been delivered.'});sub.unsubscribe()} })
       if (user?.id) checkStreak(user.id)
       // Feature 4: WhatsApp confirmation
       if (user?.phone) sendWhatsAppConfirmation({ phone:user.phone, orderNumber:order.order_number, items:cart.items, total:order.total?.toFixed(2), etaMins:18 })
     } catch(err){ toast.error('Order failed: '+err.message) }
+    setPayLoading(false)
   }
 
   // ── SPLASH — absolutely no tab bar ───────────────────────
@@ -912,7 +945,7 @@ export default function CustomerApp() {
       <div style={{ position:'fixed',inset:0,background:'rgba(10,25,35,0.75)',zIndex:200,display:'flex',alignItems:'flex-end',justifyContent:'center' }} onClick={()=>setView(VIEWS.BASKET)}>
         <div style={{ background:'#FEFCF9',borderRadius:'24px 24px 0 0',padding:'28px 24px 40px',width:'100%',maxWidth:480 }} onClick={e=>e.stopPropagation()}>
           <div style={{ width:36,height:4,background:'rgba(42,35,24,0.15)',borderRadius:2,margin:'0 auto 20px' }}/>
-          <AgeVerification onVerified={()=>setView(VIEWS.CHECKOUT)} onClose={()=>setView(VIEWS.BASKET)} />
+          <DOBAgeGate onVerified={()=>setView(VIEWS.CHECKOUT)} onClose={()=>setView(VIEWS.BASKET)} />
         </div>
       </div>
     )
@@ -926,24 +959,21 @@ export default function CustomerApp() {
           <button onClick={()=>setView(VIEWS.BASKET)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:14,cursor:'pointer',fontFamily:'DM Sans,sans-serif',marginBottom:12 }}>← Back to basket</button>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:20 }}>{t.checkout}</div>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>Delivery location</div>
+          {/* Feature 6: Confirmed address display */}
+          {cart.deliveryAddress && <ConfirmedAddressCard address={cart.deliveryAddress} onClear={()=>cart.setDeliveryLocation(0,0,null,null)} />}
           {/* Feature 2: Address autocomplete */}
           <AddressAutocomplete placeholder="Search villa, hotel, beach or club..." onSelect={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null); toast.success('📍 '+loc.address.slice(0,30)+'...') }} />
+          {/* Feature 21: Beach GPS */}
+          <BeachGPSButton onSet={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null) }} />
+          {/* Feature 17: Zone validation */}
+          <DeliveryZoneWarning lat={cart.deliveryLat} lng={cart.deliveryLng} />
           <div style={{ borderRadius:14,overflow:'hidden',marginBottom:14 }}>
             <DeliveryMap onLocationSet={()=>setLocationSet(true)} />
           </div>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>Order summary</div>
           <div style={{ background:'rgba(255,255,255,0.07)',borderRadius:14,padding:16,marginBottom:20 }}>
-            {cart.items.map(({product,quantity})=>(
-              <div key={product.id} style={{ display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:8,color:'rgba(255,255,255,0.82)' }}>
-                <span>{product.emoji} {product.name} × {quantity}</span>
-                <span style={{ fontWeight:500 }}>€{(product.price*quantity).toFixed(2)}</span>
-              </div>
-            ))}
-            <div style={{ borderTop:'0.5px solid rgba(255,255,255,0.1)',paddingTop:10,marginTop:6 }}>
-              <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:5 }}><span>Subtotal</span><span>€{cart.getSubtotal().toFixed(2)}</span></div>
-              <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:10 }}><span>{t.delivery}</span><span>€3.50</span></div>
-              <div style={{ display:'flex',justifyContent:'space-between',fontSize:15,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{cart.getTotal().toFixed(2)}</span></div>
-            </div>
+            {/* Feature 4: Live checkout total — reads from live cart */}
+            <LiveCheckoutTotal tipAmount={driverTipAmount} />
             {cart.getHasAgeRestricted() && (
               <div style={{ marginTop:10,padding:'8px 12px',background:'rgba(196,104,58,0.18)',borderRadius:8,fontSize:11,color:'#E8C090',display:'flex',gap:6 }}>
                 <span>🆔</span><span>ID required at delivery for age-restricted items</span>
@@ -982,7 +1012,11 @@ export default function CustomerApp() {
           {/* POINT 4: Driver tip */}
           <TipSelector onTipChange={setDriverTipAmount} />
 
+          {/* Feature 15: Corporate billing */}
+          <CorporateBillingToggle enabled={corporateBilling} onToggle={()=>setCorporateBilling(b=>!b)} details={corporateDetails} onDetailsChange={setCorporateDetails} />
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:16 }}>Payment</div>
+          {/* Feature 5: Pay button with loading state */}
+          <PayButton total={cart.getTotal()+(driverTipAmount||0)} loading={payLoading} onPay={()=>handlePaymentSuccess('manual')} />
           {/* Feature 10: Apple/Google Pay */}
           <NativePayButton total={cart.getTotal()} onSuccess={handlePaymentSuccess} />
           <StripeCheckout onSuccess={handlePaymentSuccess} onCancel={()=>setView(VIEWS.BASKET)} />
@@ -995,6 +1029,8 @@ export default function CustomerApp() {
 
   // ── TRACKING ──────────────────────────────────────────────
   if (view===VIEWS.TRACKING && activeOrder) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const realtimeDriverLoc = useRealtimeDriverLocation(activeOrder.driver_id, !!activeOrder.driver_id)
     const STEPS=['confirmed','preparing','assigned','picked_up','en_route','delivered']
     const LABELS={confirmed:'Confirmed',preparing:'Preparing',assigned:'Driver assigned',picked_up:'Picked up',en_route:'On the way',delivered:'Delivered!'}
     const idx=STEPS.indexOf(activeOrder.status)
@@ -1085,10 +1121,10 @@ export default function CustomerApp() {
     <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
 
       {view===VIEWS.CATEGORY && categoryKey && (
-        <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);setSelectedProduct(p)}} />
+        <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} onShowPreArrival={()=>setShowPreArrival(true)} onShowPoolParty={()=>setShowPoolParty(true)} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} /></FadeIn>}
+      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} onShowPreArrival={()=>setShowPreArrival(true)} onShowPoolParty={()=>setShowPoolParty(true)} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} /></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} onShowLoyalty={()=>setView(VIEWS.LOYALTY)} onShowReferral={()=>setView(VIEWS.REFERRAL)} onShowWishlist={()=>setView(VIEWS.WISHLIST)} onShowNotifications={()=>setView(VIEWS.NOTIFICATIONS)} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} /></FadeIn>}
@@ -1097,20 +1133,11 @@ export default function CustomerApp() {
       {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.PARTY_DAY   && <PartyBuilder initialType="design_day"   onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.ARRIVAL     && <ArrivalPackage onBack={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>setView(VIEWS.HOME)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} />}
-      {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>setView(VIEWS.HOME)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} />}
+      {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>setView(VIEWS.HOME)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />}
+      {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>setView(VIEWS.HOME)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />}
 
-      {/* Floating cart bar on home only */}
-      {view===VIEWS.HOME && cart.getItemCount()>0 && (
-        <div onClick={()=>setView(VIEWS.BASKET)}
-          style={{ position:'sticky',bottom:68,margin:'0 16px',background:'#C4683A',borderRadius:14,padding:'13px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer',boxShadow:'0 4px 24px rgba(196,104,58,0.5)' }}>
-          <div style={{ color:'white' }}>
-            <div style={{ fontSize:11,opacity:0.8 }}>{cart.getItemCount()} {cart.getItemCount()===1?t.item:t.items}</div>
-            <div style={{ fontSize:15,fontWeight:500 }}>€{cart.getSubtotal().toFixed(2)} + €3.50 delivery</div>
-          </div>
-          <div style={{ color:'white',fontSize:13,fontWeight:500 }}>{t.viewCart} →</div>
-        </div>
-      )}
+      {/* Floating cart bar on home only — Feature 7: press state */}
+      {view===VIEWS.HOME && <FloatingBasketBar itemCount={cart.getItemCount()} subtotal={cart.getSubtotal()} onTap={()=>{haptic('medium');setView(VIEWS.BASKET)}} t={t} />}
 
       {/* Tab bar — ONLY in the main shell, never on splash/checkout/tracking */}
       <TabBar view={view} setView={handleTabChange} cartCount={cart.getItemCount()} />
@@ -1122,7 +1149,7 @@ export default function CustomerApp() {
       {/* NEW: Driver chat */}
       {showDriverChat && activeOrder && <DriverChat order={activeOrder} onClose={()=>setShowDriverChat(false)} />}
       {/* NEW: Order receipt */}
-      {showReceipt && <OrderReceiptSheet order={showReceipt} onClose={()=>setShowReceipt(null)} />}
+      {showReceipt && <OrderReceiptSheet order={showReceipt} lang={lang} onClose={()=>setShowReceipt(null)} />}
       {/* POINT 1: Product detail sheet */}
       {selectedProduct && <ProductDetailSheet product={selectedProduct} onClose={()=>setSelectedProduct(null)} />}
       {/* POINT 5: Rating sheet */}
@@ -1131,10 +1158,13 @@ export default function CustomerApp() {
       {showIssue && <ReportIssueSheet order={showIssue} onClose={()=>setShowIssue(null)} />}
       {/* POINT 15: PWA install */}
       <PWAInstallPrompt />
+      {/* Feature 16: Offline banner */}
+      <OfflineBanner />
       {/* Feature 14: Delivery zone */}
       {showDeliveryZone && <DeliveryZoneInfo onClose={()=>setShowDeliveryZone(false)} />}
       {/* Feature 3: Notification centre */}
       {showNotifCentre && <NotificationCentre notifs={notifs} onMarkRead={markRead} onMarkAll={markAllRead} onClear={clearNotifs} onClose={()=>setShowNotifCentre(false)} />}
+      {/* Push notification opt-in prompt (shown once) */}
       {/* Feature 14: Pre-arrival order */}
       {showPreArrival && <PreArrivalSheet onClose={()=>setShowPreArrival(false)} onSchedule={s=>{ cart.setDeliveryNotes&&cart.setDeliveryNotes('PRE-ARRIVAL: '+s.villa+' at '+s.arrivalTime+' on '+s.arrivalDate+(s.flightNum?' flight '+s.flightNum:'')); toast.success('Pre-arrival order scheduled!') }} />}
       {/* Feature 15: Pool party mode */}

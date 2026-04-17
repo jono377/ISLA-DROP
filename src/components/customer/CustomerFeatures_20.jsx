@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ProductReviews } from './CustomerFeatures_world'
+import { usePaginatedOrders, generateLocalizedReceipt } from './CustomerFeatures_final'
 import { BackInStockButton, PeopleViewingBadge } from './CustomerFeatures_polish'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { supabase } from '../../lib/supabase'
@@ -280,19 +281,10 @@ export function ReportIssueSheet({ order, onClose }) {
 }
 
 // ── POINT 7: Order History with re-order ─────────────────────
-export function OrderHistoryView({ onBack }) {
+export function OrderHistoryView({ onBack, lang='en' }) {
   const { user } = useAuthStore()
   const { addItem } = useCartStore()
-  const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(()=>{
-    if(!user){setLoading(false);return}
-    supabase.from('orders').select('*,order_items(*)')
-      .eq('customer_id',user.id).order('created_at',{ascending:false}).limit(20)
-      .then(({data})=>{setOrders(data||[]);setLoading(false)})
-      .catch(()=>setLoading(false))
-  },[user])
+  const { orders, loading, hasMore, loadMore } = usePaginatedOrders(user?.id, 10)
 
   const reorder = (order) => {
     const items = order.order_items||[]
@@ -356,6 +348,16 @@ export function OrderHistoryView({ onBack }) {
             </div>
           </div>
         ))}
+        {/* Feature 13: Load more */}
+        {hasMore && !loading && (
+          <button onClick={loadMore}
+            style={{ width:'100%',padding:'13px',background:'rgba(255,255,255,0.07)',border:'0.5px solid rgba(255,255,255,0.12)',borderRadius:12,color:'rgba(255,255,255,0.6)',fontSize:13,cursor:'pointer',fontFamily:'DM Sans,sans-serif',marginTop:4 }}>
+            Load more orders
+          </button>
+        )}
+        {loading && orders.length > 0 && (
+          <div style={{ textAlign:'center',padding:'16px',color:'rgba(255,255,255,0.4)',fontSize:13 }}>Loading...</div>
+        )}
       </div>
     </div>
   )
