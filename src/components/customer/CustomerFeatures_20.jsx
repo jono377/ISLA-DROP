@@ -449,12 +449,14 @@ export function EditProfileView({ onBack }) {
   const { user, profile, setProfile } = useAuthStore()
   const [name, setName] = useState(profile?.full_name||'')
   const [phone, setPhone] = useState(profile?.phone||'')
+  const [birthday, setBirthday] = useState(profile?.birthday||'')
   const [saving, setSaving] = useState(false)
 
   const save = async () => {
     if(!user) return
     setSaving(true)
-    const {data} = await supabase.from('profiles').update({full_name:name,phone}).eq('id',user.id).select().single()
+    const updates = {full_name:name, phone, birthday:birthday||null}
+    const {data} = await supabase.from('profiles').update(updates).eq('id',user.id).select().single()
     if(data) setProfile(data)
     toast.success('Profile updated!')
     setSaving(false)
@@ -483,6 +485,12 @@ export function EditProfileView({ onBack }) {
               style={{ width:'100%',padding:'14px 16px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.2)',borderRadius:12,color:'white',fontSize:15,fontFamily:F.sans,outline:'none',boxSizing:'border-box' }}/>
           </div>
         ))}
+        <div style={{ marginBottom:16 }}>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.5px', fontFamily:'DM Sans,sans-serif' }}>Birthday (optional)</div>
+          <input type="date" value={birthday} onChange={e=>setBirthday(e.target.value)}
+            style={{ width:'100%', padding:'14px 16px', background:'rgba(255,255,255,0.08)', border:'0.5px solid rgba(255,255,255,0.2)', borderRadius:12, color:'white', fontSize:15, fontFamily:'DM Sans,sans-serif', outline:'none', boxSizing:'border-box', colorScheme:'dark' }}/>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', marginTop:6 }}>We send you a birthday gift every year 🎂</div>
+        </div>
         <button onClick={save} disabled={saving}
           style={{ width:'100%',padding:'16px',background:'#C4683A',border:'none',borderRadius:14,color:'white',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:F.sans,marginTop:8 }}>
           {saving?'Saving...':'Save changes'}
