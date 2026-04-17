@@ -868,10 +868,10 @@ export default function CustomerApp() {
       {showReferral && <OverlayErrorBoundary onClose={()=>setShowReferral(false)}><ReferralShare onClose={()=>setShowReferral(false)} /></OverlayErrorBoundary>}
       {showDriverContact && activeOrder && <OverlayErrorBoundary onClose={()=>setShowDriverContact(false)}><DriverContact order={activeOrder} onClose={()=>setShowDriverContact(false)} /></OverlayErrorBoundary>}
       {showHistory && <OverlayErrorBoundary onClose={()=>setShowHistory(false)}><OrderHistory onClose={()=>setShowHistory(false)} /></OverlayErrorBoundary>}
-      {showAddresses && <OverlayErrorBoundary onClose={()=>setAddresses(false)}><SavedAddresses onClose={()=>setShowAddresses(false)} onSelect={addr=>{ cart.setDeliveryLocation(null,null,addr); setShowAddresses(false) }} />}
-      {showHelp && <OverlayErrorBoundary onClose={()=>setHelp(false)}><HelpSupport onClose={()=>setShowHelp(false)} />}
-      {showLoyalty && <OverlayErrorBoundary onClose={()=>setLoyalty(false)}><LoyaltyCard onClose={()=>setShowLoyalty(false)} />}
-      {showNotifications && <OverlayErrorBoundary onClose={()=>setNotifications(false)}><NotificationSettings onClose={()=>setShowNotifications(false)} />}
+      {showAddresses && <OverlayErrorBoundary onClose={()=>setShowAddresses(false)}><SavedAddresses onClose={()=>setShowAddresses(false)} onSelect={addr=>{ cart.setDeliveryLocation(null,null,addr); setShowAddresses(false) }} /></OverlayErrorBoundary>}
+      {showHelp && <OverlayErrorBoundary onClose={()=>setShowHelp(false)}><HelpSupport onClose={()=>setShowHelp(false)} /></OverlayErrorBoundary>}
+      {showLoyalty && <OverlayErrorBoundary onClose={()=>setShowLoyalty(false)}><LoyaltyCard onClose={()=>setShowLoyalty(false)} /></OverlayErrorBoundary>}
+      {showNotifications && <OverlayErrorBoundary onClose={()=>setShowNotifications(false)}><NotificationSettings onClose={()=>setShowNotifications(false)} /></OverlayErrorBoundary>}
       {showDetail && <ProductDetail product={showDetail} onClose={()=>setShowDetail(null)} onReviews={()=>setShowReviews(showDetail?.id)} />}
       {showReviews && <OverlayErrorBoundary onClose={()=>setShowReviews(null)}><ProductReviews productId={showReviews} onClose={()=>setShowReviews(null)} /></OverlayErrorBoundary>}
       {showRating && <RatingPrompt order={showRating} onClose={()=>setShowRating(null)} />}
@@ -883,7 +883,7 @@ export default function CustomerApp() {
       <PWAInstallPrompt />
       {showGroup && <OverlayErrorBoundary onClose={()=>setShowGroup(false)}><GroupOrderSheet onClose={()=>setShowGroup(false)} /></OverlayErrorBoundary>}
       {showLoyaltyTier && <OverlayErrorBoundary onClose={()=>setShowLoyaltyTier(false)}><LoyaltyTierView onClose={()=>setShowLoyaltyTier(false)} /></OverlayErrorBoundary>}
-      {showW3W && <W3WPicker onClose={()=>setShowW3W(false)} onSelect={r=>{ const {setDeliveryLocation}=useCartStore.getState(); setDeliveryLocation(r.lat,r.lng,'///'+r.words); setShowW3W(false); toast.success('///'+r.words+' set as delivery location') }} />}
+      {showW3W && <W3WPicker onClose={()=>setShowW3W(false)} onSelect={r=>{ useCartStore.getState().setDeliveryLocation(r.lat,r.lng,'///'+r.words); setShowW3W(false); toast.success('///'+r.words+' set as delivery location') }} />}
       {showReceipt && <OverlayErrorBoundary onClose={()=>setShowReceipt(null)}><OrderReceipt order={showReceipt} onClose={()=>setShowReceipt(null)} /></OverlayErrorBoundary>}
       {showRepeat && <OverlayErrorBoundary onClose={()=>setShowRepeat(null)}><RepeatOrderSetup order={showRepeat} onClose={()=>setShowRepeat(null)} /></OverlayErrorBoundary>}
       {/* Sign in overlay */}
