@@ -215,7 +215,7 @@ export function RepeatOrderSetup({ order, onClose }) {
         <div style={{ fontSize:56, marginBottom:16 }}>🔄</div>
         <div style={{ fontFamily:F.serif, fontSize:24, color:C.white, marginBottom:8 }}>Repeat order set!</div>
         <div style={{ fontSize:14, color:C.muted, marginBottom:24 }}>
-          We'll automatically re-order this for you every {frequency === 'daily' ? 'day' : frequency === 'weekly' ? 'week on '+day : frequency === 'biweekly' ? '2 weeks' : 'month'} at {time}
+          {'We’ll automatically re-order this for you every'} {frequency === 'daily' ? 'day' : frequency === 'weekly' ? 'week on '+day : frequency === 'biweekly' ? '2 weeks' : 'month'} {' at '} {time}
         </div>
         <button onClick={onClose} style={{ padding:'13px 32px', background:C.accent, border:'none', borderRadius:12, color:'white', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:F.sans }}>Done</button>
       </div>

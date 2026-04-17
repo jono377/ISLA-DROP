@@ -492,7 +492,7 @@ export function PhoneVerification({ onVerified, onClose }) {
           {step==='phone' ? '📱 Verify your number' : '💬 Enter code'}
         </div>
         <div style={{ fontSize:13, color:C.muted, marginBottom:24 }}>
-          {step==='phone' ? 'We'll send a 6-digit code to your phone' : 'Code sent to '+phone}
+          {step==='phone' ? "We'll send a 6-digit code to your phone" : 'Code sent to '+phone}
         </div>
 
         {step==='phone' ? (
