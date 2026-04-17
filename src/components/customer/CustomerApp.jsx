@@ -582,7 +582,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
   })
   const countdown = useCountdown(flashSale?.ends_at)
   const { greeting, vibe } = useTimeGreeting()
-  const weather = useWeatherSuggestion()
   const searchResults = searchQuery.length>1 ? PRODUCTS.filter(p=>p.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0,30) : []
   useEffect(()=>{ if(searchQuery.length>2) Analytics.search(searchQuery, searchResults.length) },[searchQuery])
 
@@ -877,14 +876,14 @@ function CustomerAppInner() {
   const [showBoatMode, setShowBoatMode] = useState(false)
   const { greeting, vibe } = useTimeGreeting()
   const weather = useWeatherSuggestion()
-  const { show: showRatingPrompt, dismiss: dismissRatingPrompt } = useAppRatingPrompt()
+  const { show: showAppRatingPrompt, dismiss: dismissRatingPrompt } = useAppRatingPrompt()
+  const [showRatingPrompt, setShowRatingPrompt] = useState(false)
   const { show: showOnboarding, finish: finishOnboarding } = useOnboarding()
   const { show: showCookieBanner, accept: acceptCookies, decline: declineCookies } = useCookieConsent()
   const { currency, setCurrency, format: formatPrice } = useCurrency()
   const collections = useCollections()
   const flash = useFlashProducts()
   const depot = useNearestDepot()
-  const [showRatingPrompt, setShowRatingPrompt] = useState(false)
   const { notes: itemNotes, setNote: setItemNote, clearNotes: clearItemNotes } = useItemNotes()
   const { saved: savedLater, save: saveForLater, remove: removeFromSaved } = useSaveForLater()
   const { flashing, flash: flashCard } = useAddedFlash()
@@ -1054,8 +1053,8 @@ function CustomerAppInner() {
             <button onClick={()=>setShowSchedule(true)} style={{ width:'100%',marginBottom:16,padding:'12px',background:'rgba(255,255,255,0.06)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:12,color:'rgba(255,255,255,0.6)',fontSize:13,cursor:'pointer',fontFamily:'DM Sans,sans-serif',textAlign:'left',display:'flex',alignItems:'center',gap:8 }}>
               <span>📅</span> Schedule for later (optional)
             </button>
-          <IbizaTimeNote />
           )}
+          <IbizaTimeNote />
 
           {/* Feature 15: Hotel delivery */}
           <button onClick={()=>setShowHotelDelivery(true)} style={{ width:'100%',marginBottom:10,padding:'11px',background:'rgba(43,122,139,0.08)',border:'0.5px solid rgba(43,122,139,0.25)',borderRadius:10,color:'rgba(43,170,180,0.8)',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif',display:'flex',alignItems:'center',gap:8 }}>
@@ -1250,7 +1249,7 @@ function CustomerAppInner() {
       {/* Feature 15: Hotel delivery */}
       {showHotelDelivery && <HotelDeliverySheet onClose={()=>setShowHotelDelivery(false)} onConfirm={d=>{ cart.setDeliveryLocation(0,0,d.address,null); cart.setDeliveryNotes(d.notes); toast.success('Hotel delivery set') }} />}
       {/* Feature 13: App rating prompt */}
-      {showRatingPrompt && <AppRatingPrompt onDismiss={dismissRatingPrompt} />}
+      {showAppRatingPrompt && <AppRatingPrompt onDismiss={dismissRatingPrompt} />}
       {/* Feature 15: Club presets */}
       {showClubPresets && <ClubPresetsSheet onClose={()=>setShowClubPresets(false)} onSelect={club=>{ if(cart.setDeliveryLocation) cart.setDeliveryLocation(club.lat,club.lng,club.name+', Ibiza',null); toast.success(club.name+' set as delivery location!') }} />}
       {/* Feature 16: Boat delivery */}
