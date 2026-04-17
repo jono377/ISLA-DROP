@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ProductReviews } from './CustomerFeatures_world'
+import { BackInStockButton, PeopleViewingBadge } from './CustomerFeatures_polish'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { supabase } from '../../lib/supabase'
 import { PRODUCTS, BEST_SELLERS } from '../../lib/products'
@@ -47,6 +48,10 @@ export function ProductDetailSheet({ product, onClose }) {
             <div style={{ fontFamily:F.serif,fontSize:28,color:'#E8A070',fontWeight:700,flexShrink:0 }}>
               {product.price!=null ? '€'+product.price.toFixed(2) : ''}
             </div>
+          </div>
+          {/* Feature 11: People viewing */}
+          <div style={{ marginBottom:10 }}>
+            <PeopleViewingBadge productId={product.id} />
           </div>
           {product.age_restricted && (
             <div style={{ display:'inline-flex',alignItems:'center',gap:6,background:'rgba(196,104,58,0.2)',border:'0.5px solid rgba(196,104,58,0.4)',borderRadius:20,padding:'4px 12px',fontSize:11,color:'#E8A070',marginBottom:12 }}>

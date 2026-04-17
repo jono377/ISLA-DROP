@@ -52,6 +52,15 @@ import {
   LoyaltyHeaderBadge, useLoyaltyStamps, useMorningAfterKit, MorningAfterKitBanner,
   PreArrivalSheet, PoolPartyMode,
 } from './CustomerFeatures_world'
+import {
+  haptic, PressableButton, AnimatedBadge, ErrorState, EmptyState,
+  FadeImage, useScrollMemory, TrustBadges, BackInStockButton,
+  useLiveOrderCount, LiveOrderCountBadge, usePeopleViewing, PeopleViewingBadge,
+  getLoyaltyTier, LoyaltyTierCard, useOrderStreak, StreakBadge,
+  DeliveryZoneInfo, TrackingShareButton, WeatherProductRow,
+  useIbizaEvents, EventCalendarBanner, InstagramStoryShare,
+  SplitBillButton, TaxiUpsellCard, NetworkErrorBanner,
+} from './CustomerFeatures_polish'
 // supabase imported dynamically inside functions to prevent blank screen
 
 // ── Flash sale hook ──────────────────────────────────────────
@@ -148,12 +157,13 @@ function TabBar({ view, setView, cartCount }) {
         const on = view === t.id
         return (
           <button key={t.id} onClick={()=>setView(t.id)}
+            onTouchStart={()=>haptic('light')}
             style={{ flex:1, padding:'11px 4px 9px', border:'none', background:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, fontFamily:'DM Sans,sans-serif', fontSize:10, color:on?'#7EE8C8':'rgba(150,220,200,0.35)', fontWeight:on?500:400, position:'relative', transition:'color 0.15s' }}>
             <div style={{ position:'relative' }}>
               <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={on?2:1.7}>
                 {t.search ? <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></> : t.concierge ? <><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></> : <path d={t.path}/>}
               </svg>
-              {t.badge>0 && <span style={{ position:'absolute',top:-5,right:-7,background:'#C4683A',color:'white',borderRadius:'50%',width:16,height:16,fontSize:9,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:600,border:'1.5px solid rgba(10,30,40,0.97)' }}>{t.badge>9?'9+':t.badge}</span>}
+              {t.badge>0 && <AnimatedBadge count={t.badge} />}
             </div>
             {t.label}
           </button>
@@ -170,7 +180,7 @@ function MiniCard({ product, t, onDetail }) {
   const handleAdd = (e) => {
     e.stopPropagation()
     addItem(product)
-    navigator.vibrate && navigator.vibrate(25)
+    haptic('medium')
     toast.success(product.emoji+' Added!',{duration:800})
   }
   return (
@@ -515,7 +525,7 @@ function SearchView({ t, onAssist }) {
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -542,10 +552,11 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           </div>
           <div style={{ display:'flex',gap:7,alignItems:'center' }}>
             {loyaltyStamps > 0 && <LoyaltyHeaderBadge stamps={loyaltyStamps} onClick={()=>setView(VIEWS.LOYALTY)} />}
+            {liveOrderCount > 0 && <LiveOrderCountBadge count={liveOrderCount} />}
             <NotificationBell unread={unread} onClick={()=>setShowNotifCentre(true)} />
-            <div style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white' }}>
+            <button onClick={onShowDeliveryZone} style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white',cursor:'pointer' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'#7EE8A2',display:'inline-block',animation:'pulse 1.5s infinite' }}/>Open 24/7
-            </div>
+            </button>
             <LanguagePicker lang={lang} setLang={setLang} />
           </div>
         </div>
@@ -649,6 +660,10 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
           )}
 
+          {/* Feature 17: Event calendar */}
+          <EventCalendarBanner events={events} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
+          {/* Feature 16: Weather-based product row */}
+          <WeatherProductRow weather={weather} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
@@ -827,6 +842,11 @@ export default function CustomerApp() {
   const [substitution, setSubstitution] = useState('substitute')
   const [loyaltyRedeemed, setLoyaltyRedeemed] = useState(false)
   const loyaltyStamps = useLoyaltyStamps()
+  const liveOrderCount = useLiveOrderCount()
+  const events = useIbizaEvents()
+  const { checkStreak } = useOrderStreak()
+  const [showDeliveryZone, setShowDeliveryZone] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const { show: showMorningKit, dismiss: dismissMorningKit } = useMorningAfterKit()
   const { prefs: dietaryPrefs, toggle: toggleDietary } = useDietaryPrefs()
   const [showDietaryFilter, setShowDietaryFilter] = useState(false)
@@ -875,6 +895,7 @@ export default function CustomerApp() {
       cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION)
       addNotif({ type:'order', title:'Order confirmed! 🛵', body:'Order #'+order.order_number+' is being prepared. Estimated arrival: '+(order.estimated_minutes||18)+' min.' })
       const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');addNotif({type:'order',title:'Delivered! 🎉',body:'Your order #'+u.order_number+' has been delivered.'});sub.unsubscribe()} })
+      if (user?.id) checkStreak(user.id)
       // Feature 4: WhatsApp confirmation
       if (user?.phone) sendWhatsAppConfirmation({ phone:user.phone, orderNumber:order.order_number, items:cart.items, total:order.total?.toFixed(2), etaMins:18 })
     } catch(err){ toast.error('Order failed: '+err.message) }
@@ -965,6 +986,8 @@ export default function CustomerApp() {
           {/* Feature 10: Apple/Google Pay */}
           <NativePayButton total={cart.getTotal()} onSuccess={handlePaymentSuccess} />
           <StripeCheckout onSuccess={handlePaymentSuccess} onCancel={()=>setView(VIEWS.BASKET)} />
+          {/* Feature 8: Trust badges */}
+          <TrustBadges />
         </div>
       </div>
     )
@@ -1037,7 +1060,13 @@ export default function CustomerApp() {
             </button>
           </div>
         )}
-        <button onClick={()=>setView(VIEWS.HOME)} style={{ width:'100%',padding:15,background:'#C4683A',color:'white',border:'none',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:15,cursor:'pointer' }}>Place another order</button>
+        {/* Feature 15: Share tracking */}
+        <TrackingShareButton order={activeOrder} />
+        {/* Feature 19: Split the bill (after delivery) */}
+        {activeOrder.status==='delivered' && <SplitBillButton order={activeOrder} />}
+        {/* Feature 18: Instagram story (after delivery) */}
+        {activeOrder.status==='delivered' && <InstagramStoryShare order={activeOrder} />}
+        <button onClick={()=>setView(VIEWS.HOME)} style={{ width:'100%',padding:15,background:'#C4683A',color:'white',border:'none',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:15,cursor:'pointer',marginTop:8 }}>Place another order</button>
       </div>
     )
   }
@@ -1059,7 +1088,7 @@ export default function CustomerApp() {
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);setSelectedProduct(p)}} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} onShowPreArrival={()=>setShowPreArrival(true)} onShowPoolParty={()=>setShowPoolParty(true)} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} /></FadeIn>}
+      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} onShowPreArrival={()=>setShowPreArrival(true)} onShowPoolParty={()=>setShowPoolParty(true)} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} /></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} onShowLoyalty={()=>setView(VIEWS.LOYALTY)} onShowReferral={()=>setView(VIEWS.REFERRAL)} onShowWishlist={()=>setView(VIEWS.WISHLIST)} onShowNotifications={()=>setView(VIEWS.NOTIFICATIONS)} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} /></FadeIn>}
@@ -1102,6 +1131,8 @@ export default function CustomerApp() {
       {showIssue && <ReportIssueSheet order={showIssue} onClose={()=>setShowIssue(null)} />}
       {/* POINT 15: PWA install */}
       <PWAInstallPrompt />
+      {/* Feature 14: Delivery zone */}
+      {showDeliveryZone && <DeliveryZoneInfo onClose={()=>setShowDeliveryZone(false)} />}
       {/* Feature 3: Notification centre */}
       {showNotifCentre && <NotificationCentre notifs={notifs} onMarkRead={markRead} onMarkAll={markAllRead} onClear={clearNotifs} onClose={()=>setShowNotifCentre(false)} />}
       {/* Feature 14: Pre-arrival order */}
@@ -1125,7 +1156,7 @@ export default function CustomerApp() {
       {/* Feature 16: Boat delivery */}
       {showBoatMode && <BoatDeliverySheet onClose={()=>setShowBoatMode(false)} onConfirm={details=>{ if(cart.setDeliveryNotes) cart.setDeliveryNotes(details.notes) }} />}
 
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes shimmer{0%,100%{opacity:1}50%{opacity:0.55}}`}</style>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes shimmer{0%,100%{opacity:1}50%{opacity:0.55}} @keyframes spin{to{transform:rotate(360deg)}} @keyframes gentleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}} @keyframes badgeBounce{0%{transform:scale(1)}40%{transform:scale(1.5)}70%{transform:scale(0.9)}100%{transform:scale(1)}}`}</style>
     </div>
   )
 }

@@ -5,6 +5,7 @@
 //   Driver Chat, W3W, Dark Mode, Referral, Notifications, Scheduled
 // ================================================================
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { LoyaltyTierCard, StreakBadge } from './CustomerFeatures_polish'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { supabase } from '../../lib/supabase'
 import { PRODUCTS } from '../../lib/products'
@@ -278,6 +279,8 @@ export function LoyaltyCard({ onBack }) {
               </div>
             </div>
 
+            {/* Feature 12: VIP tier card */}
+            <LoyaltyTierCard totalOrders={data?.total_orders||0} stamps={stamps} />
             {/* Stats */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:20 }}>
               {[
