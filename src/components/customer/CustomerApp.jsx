@@ -583,8 +583,8 @@ export default function CustomerApp() {
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <AccountView t={t} />}
       {view===VIEWS.ASSIST   && <AssistBot onClose={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="night" onBack={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.PARTY_DAY   && <PartyBuilder initialType="day"   onBack={()=>setView(VIEWS.HOME)} />}
+      {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>setView(VIEWS.HOME)} />}
+      {view===VIEWS.PARTY_DAY   && <PartyBuilder initialType="design_day"   onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.ARRIVAL     && <ArrivalPackage onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>setView(VIEWS.HOME)} />}

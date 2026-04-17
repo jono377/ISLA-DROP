@@ -251,10 +251,10 @@ export default function ArrivalPackage({ onBack }) {
       {/* Header */}
       <div style={{ padding: '20px 16px 16px', borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
         <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 13, fontFamily: 'DM Sans,sans-serif', padding: 0, marginBottom: 12 }}>
-          ← {t.back || 'Back'}
+          ← {(t.back || 'Back') || 'Back'}
         </button>
         <div style={{ fontFamily: 'DM Serif Display,serif', fontSize: 26, color: 'white' }}>
-          {t.welcomeWhiteIsle || 'Welcome to the White Isle'} 🌴
+          {(t.welcomeWhiteIsle || 'Welcome to the White Isle') || 'Welcome to the White Isle'} 🌴
         </div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 4, fontFamily: 'DM Sans,sans-serif' }}>
           Get everything delivered before you even unpack
@@ -294,7 +294,7 @@ export default function ArrivalPackage({ onBack }) {
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               <button onClick={addAll}
                 style={{ flex: 2, padding: '14px', background: '#C4683A', border: 'none', borderRadius: 12, color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
-                {t.addAllToBasket || 'Add all to basket'}
+                {(t.addAllToBasket || 'Add all to basket') || 'Add all to basket'}
               </button>
               <button onClick={() => setMode('customise')}
                 style={{ flex: 1, padding: '14px', background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.2)', borderRadius: 12, color: 'white', fontSize: 14, cursor: 'pointer', fontFamily: 'DM Sans,sans-serif' }}>
