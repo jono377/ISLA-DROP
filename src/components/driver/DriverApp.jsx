@@ -7,6 +7,21 @@ import {
 import { useAuthStore, useDriverStore } from '../../lib/store'
 import { useLeafletMap, PIN_ICON } from '../../lib/useLeafletMap'
 import { calculateETA } from '../../lib/eta'
+// DriverModules2 components - inline stubs until file is uploaded
+function ScheduleAvailabilityTab({ profile }) {
+  return <div style={{ padding:24, textAlign:'center', color:'#5A5A5A' }}>
+    <div style={{ fontSize:40, marginBottom:12 }}>📅</div>
+    <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, marginBottom:8 }}>Schedule coming soon</div>
+    <div style={{ fontSize:13 }}>Upload DriverModules2.jsx to enable scheduling</div>
+  </div>
+}
+function PayoutRequestTab({ profile }) {
+  return <div style={{ padding:24, textAlign:'center', color:'#5A5A5A' }}>
+    <div style={{ fontSize:40, marginBottom:12 }}>💰</div>
+    <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, marginBottom:8 }}>Payouts coming soon</div>
+    <div style={{ fontSize:13 }}>Upload DriverModules2.jsx to enable payouts</div>
+  </div>
+}
 // ── Utility stubs
 const haptic = { light:()=>navigator.vibrate&&navigator.vibrate(10), medium:()=>navigator.vibrate&&navigator.vibrate(20), success:()=>navigator.vibrate&&navigator.vibrate([10,50,10]), error:()=>navigator.vibrate&&navigator.vibrate([100,30,100]), newOrder:()=>navigator.vibrate&&navigator.vibrate([200,100,200,100,200]) }
 const setupPushNotifications = () => { if ('Notification' in window) Notification.requestPermission() }
