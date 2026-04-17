@@ -91,7 +91,7 @@ async function askIsla(messages, cartItems=[], userId=null) {
       'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY || '',
     },
     body: JSON.stringify({
-      model:'claude-sonnet-4-20250514', max_tokens:350, system,
+      model:'claude-haiku-4-5-20251001', max_tokens:350, system,
       messages: messages.map(m=>({ role:m.role, content:m.content }))
     })
   })
