@@ -3,10 +3,10 @@ import toast from 'react-hot-toast'
 import {
   getAvailableOrders, acceptOrder, updateOrderStatus,
   updateDriverLocation, setDriverOnlineStatus,
-  subscribeToAvailableOrders
-} from '../../lib/supabase'
+  subscribeToAvailableOrders, supabase } from '../../lib/supabase'
 import { useAuthStore, useDriverStore } from '../../lib/store'
 import { useLeafletMap, PIN_ICON } from '../../lib/useLeafletMap'
+import { calculateETA } from '../../lib/eta'
 // ── Utility stubs
 const haptic = { light:()=>navigator.vibrate&&navigator.vibrate(10), medium:()=>navigator.vibrate&&navigator.vibrate(20), success:()=>navigator.vibrate&&navigator.vibrate([10,50,10]), error:()=>navigator.vibrate&&navigator.vibrate([100,30,100]), newOrder:()=>navigator.vibrate&&navigator.vibrate([200,100,200,100,200]) }
 const setupPushNotifications = () => { if ('Notification' in window) Notification.requestPermission() }
@@ -725,7 +725,7 @@ function CustomerChat({ order, driverId, onClose }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const { supabase } = await import('../../lib/supabase')
+        // imports resolved statically
         const { data } = await supabase.from('order_messages').select('*').eq('order_id', order.id).order('created_at')
         if (data) setMsgs(data)
       } catch {}
@@ -733,7 +733,7 @@ function CustomerChat({ order, driverId, onClose }) {
     load()
     let sub
     const setup = async () => {
-      const { supabase } = await import('../../lib/supabase')
+      // imports resolved statically
       sub = supabase.channel('chat-'+order.id)
         .on('postgres_changes',{ event:'INSERT', schema:'public', table:'order_messages', filter:'order_id=eq.'+order.id },
           p => setMsgs(prev=>[...prev,p.new]))
@@ -750,7 +750,7 @@ function CustomerChat({ order, driverId, onClose }) {
     if (!msg) return
     setSending(true); setText('')
     try {
-      const { supabase } = await import('../../lib/supabase')
+      // imports resolved statically
       await supabase.from('order_messages').insert({ order_id:order.id, sender_id:driverId, sender_role:'driver', content:msg })
     } catch { toast.error('Message failed') }
     setSending(false)
@@ -826,7 +826,7 @@ function PhotoCapture({ order, onDone, onSkip }) {
     if (!photo) return
     setUploading(true)
     try {
-      const { supabase } = await import('../../lib/supabase')
+      // imports resolved statically
       const blob = await (await fetch(photo)).blob()
       const path = 'deliveries/'+order.id+'_'+Date.now()+'.jpg'
       await supabase.storage.from('delivery-photos').upload(path, blob, { upsert:true })
@@ -934,8 +934,8 @@ function IssueReport({ order, onClose }) {
     if (!type) { toast.error('Select an issue type'); return }
     setLoading(true)
     try {
-      const { supabase } = await import('../../lib/supabase')
-      const { useAuthStore } = await import('../../lib/store')
+      // imports resolved statically
+      // imports resolved statically
       const user = useAuthStore.getState().user
       await supabase.from('support_tickets').insert({
         user_id:user?.id, order_id:order?.id,
@@ -991,8 +991,8 @@ function SosPanel({ driverPos, onClose }) {
   const [sent, setSent] = useState(false)
   const sendSOS = async () => {
     try {
-      const { supabase } = await import('../../lib/supabase')
-      const { useAuthStore } = await import('../../lib/store')
+      // imports resolved statically
+      // imports resolved statically
       const user = useAuthStore.getState().user
       const loc = driverPos?'https://maps.google.com/?q='+driverPos[0]+','+driverPos[1]:'Unknown'
       await supabase.from('support_tickets').insert({
@@ -1111,20 +1111,16 @@ function EarningsTab({ stats, isDesktop }) {
 
   React.useEffect(() => {
     setLoading(true)
-    import('../../lib/supabase').then(({ supabase }) => {
-      import('../../lib/store').then(({ useAuthStore }) => {
-        const user = useAuthStore.getState().user
-        const now = new Date()
-        const from = new Date(now)
-        if (period === 'today') from.setHours(0, 0, 0, 0)
-        else if (period === 'week') from.setDate(now.getDate() - 7)
-        else from.setDate(now.getDate() - 30)
-        supabase.from('driver_earnings').select('*').eq('driver_id', user?.id)
-          .gte('created_at', from.toISOString()).order('created_at', { ascending: false })
-          .then(({ data }) => { if (data) setHistory(data); setLoading(false) })
-          .catch(() => setLoading(false))
-      })
-    }).catch(() => setLoading(false))
+    const user = useAuthStore.getState().user
+    const now = new Date()
+    const from = new Date(now)
+    if (period === 'today') from.setHours(0, 0, 0, 0)
+    else if (period === 'week') from.setDate(now.getDate() - 7)
+    else from.setDate(now.getDate() - 30)
+    supabase.from('driver_earnings').select('*').eq('driver_id', user?.id)
+      .gte('created_at', from.toISOString()).order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setHistory(data); setLoading(false) })
+      .catch(() => setLoading(false))
   }, [period])
 
   const PEAK = [
@@ -1243,8 +1239,8 @@ function PerformanceTab({ stats, onShowFeedback, isDesktop }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const { supabase } = await import('../../lib/supabase')
-        const { useAuthStore } = await import('../../lib/store')
+        // imports resolved statically
+        // imports resolved statically
         const user = useAuthStore.getState().user
         const today = new Date(); today.setHours(0,0,0,0)
         const { data } = await supabase.from('driver_earnings').select('driver_id,amount,profiles(full_name)').gte('created_at',today.toISOString())
@@ -1368,8 +1364,8 @@ function SettingsTab({ profile, stats, onSignOut, isDesktop, onExpenses, onPaysl
   const toggleBreak = async () => {
     setBreakMode(v => !v)
     try {
-      const { supabase } = await import('../../lib/supabase')
-      const { useAuthStore } = await import('../../lib/store')
+      // imports resolved statically
+      // imports resolved statically
       const user = useAuthStore.getState().user
       await supabase.from('profiles').update({ on_break: !breakMode }).eq('id', user?.id)
     } catch {}
@@ -1647,7 +1643,7 @@ export default function DriverApp() {
           toast('📍 Almost there — 300m away!',{duration:4000})
           // Auto-notify customer
           try {
-            const { supabase } = await import('../../lib/supabase')
+            // imports resolved statically
             await supabase.from('order_messages').insert({ order_id:currentOrder.id, sender_id:user.id, sender_role:'driver', content:'I am almost at your location — see you in 2 minutes! 🛵' })
           } catch {}
         }
@@ -1655,8 +1651,8 @@ export default function DriverApp() {
 
       if (currentOrder && ['warehouse_confirmed','en_route'].includes(currentOrder.status)) {
         try {
-          const { supabase } = await import('../../lib/supabase')
-          const { calculateETA } = await import('../../lib/eta')
+          // imports resolved statically
+          // imports resolved statically
           const eta = calculateETA({ driverLat:lat, driverLng:lng, orderStatus:currentOrder.status, deliveryLat:currentOrder.delivery_lat, deliveryLng:currentOrder.delivery_lng })
           await supabase.from('orders').update({ driver_lat:lat, driver_lng:lng, eta_minutes:eta?.totalMins||null }).eq('id',currentOrder.id)
         } catch {}
