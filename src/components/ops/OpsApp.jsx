@@ -44,6 +44,11 @@ import {
 import {
   CommissionDashboard, BookingConfirmationSender, PartnerPortalManager, ConciergeOverview
 } from './ConciergeOps'
+import {
+  OperatingHoursManager, SurgeManager, CategoryOrderManager,
+  PromoSettingsManager, SplashImageManager, BrandSettingsManager,
+  NotificationCopyEditor, ProductSpotlightManager, AppConfigOverview
+} from './OpsAppControls'
 
 
 
@@ -534,6 +539,17 @@ export default function OpsApp() {
       { id: 'referrals',   icon: '🔗', label: 'Referral Manager' },
       { id: 'inv_forecast',icon: '📈', label: 'Inv. Forecasting' },
     ]},
+    { group: 'App Config', items: [
+      { id: 'app_config',  icon: '🎛️', label: 'Config Centre' },
+      { id: 'hours',       icon: '🕐', label: 'Operating Hours' },
+      { id: 'surge',       icon: '🔥', label: 'Surge / ETA' },
+      { id: 'cat_order',   icon: '📋', label: 'Category Order' },
+      { id: 'promo_settings',icon:'🎁',label: 'Promo Settings' },
+      { id: 'splash_img',  icon: '🖼️', label: 'Splash Image' },
+      { id: 'brand',       icon: '🎨', label: 'Brand Settings' },
+      { id: 'notif_copy',  icon: '📣', label: 'Notification Copy' },
+      { id: 'spotlight',   icon: '📌', label: 'Product Spotlight' },
+    ]},
     { group: 'Tools', items: [
       { id: 'search',      icon: '🔍', label: 'Global Search' },
       { id: 'exports',     icon: '⬇️', label: 'Export Manager' },
@@ -705,6 +721,15 @@ export default function OpsApp() {
           {tab === 'inv_forecast'&& <InventoryForecasting />}
           {tab === 'search'      && <GlobalSearch onNavigate={(t)=>setTab(t)} />}
           {tab === 'exports'     && <ExportManager />}
+          {tab === 'app_config'  && <AppConfigOverview onNavigate={t=>setTab(t)} />}
+          {tab === 'hours'       && <OperatingHoursManager />}
+          {tab === 'surge'       && <SurgeManager />}
+          {tab === 'cat_order'   && <CategoryOrderManager />}
+          {tab === 'promo_settings'&&<PromoSettingsManager />}
+          {tab === 'splash_img'  && <SplashImageManager />}
+          {tab === 'brand'       && <BrandSettingsManager />}
+          {tab === 'notif_copy'  && <NotificationCopyEditor />}
+          {tab === 'spotlight'   && <ProductSpotlightManager />}
           {tab === 'settings'    && <OpsSettings />}
         </div>
       </div>
