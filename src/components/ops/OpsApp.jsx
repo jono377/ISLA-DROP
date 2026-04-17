@@ -183,7 +183,7 @@ function ConciergeBookings() {
 
   const loadBookings = async () => {
     try {
-      const { supabase } = await import('../../lib/supabase')
+      // imports resolved statically
       const { data } = await supabase
         .from('concierge_bookings')
         .select('*')
@@ -310,7 +310,7 @@ function DriverApprovals() {
 
   const load = async () => {
     try {
-      const { supabase } = await import('../../lib/supabase')
+      // imports resolved statically
       const { data } = await supabase
         .from('profiles')
         .select(`*, drivers(vehicle_type, vehicle_plate, licence_number, status)`)
@@ -327,7 +327,7 @@ function DriverApprovals() {
   const approve = async (driver) => {
     setActing(driver.id)
     try {
-      const { supabase } = await import('../../lib/supabase')
+      // imports resolved statically
       await supabase.from('profiles').update({ status: 'active' }).eq('id', driver.id)
       await supabase.from('drivers').update({ status: 'active' }).eq('id', driver.id)
       toast.success('Driver approved!')
@@ -340,7 +340,7 @@ function DriverApprovals() {
     if (!confirm('Reject this driver? This will delete their account.')) return
     setActing(driver.id)
     try {
-      const { supabase } = await import('../../lib/supabase')
+      // imports resolved statically
       await supabase.from('profiles').delete().eq('id', driver.id)
       toast.success('Application rejected')
       setPending(prev => prev.filter(d => d.id !== driver.id))
@@ -427,7 +427,7 @@ export default function OpsApp() {
   const { clear } = useAuthStore()
   const handleSignOut = async () => {
     try {
-      const { supabase } = await import('../../lib/supabase')
+      // imports resolved statically
       await supabase.auth.signOut()
     } catch {}
     clear()
@@ -772,7 +772,7 @@ function OverviewTab({ activeOrders, drivers, alerts }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const { supabase } = await import('../../lib/supabase')
+        // imports resolved statically
         const today = new Date().toISOString().slice(0, 10)
         const [ratingsRes, revenueRes] = await Promise.all([
           supabase.from('order_ratings').select('order_rating').gte('created_at', today + 'T00:00:00'),
