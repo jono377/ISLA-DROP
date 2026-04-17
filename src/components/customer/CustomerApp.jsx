@@ -26,6 +26,14 @@ import {
   useDarkMode, DarkModeToggle, ReferralView, NotificationPrefsView,
   ScheduledDeliverySheet
 } from './CustomerFeatures_15'
+import {
+  OrderConfirmationScreen, CategoryNavBar, ProductBadge,
+  addSearchHistory, clearSearchHistory, SearchHistoryPanel, SearchSuggestions,
+  LastOrderShortcut, BasketUpsell, hasValidAddress, NoAddressWarning,
+  useArrivalTime, NativePayButton, StaffPicksRow,
+  useTimeGreeting, TimeGreetingBanner, useAppRatingPrompt, AppRatingPrompt,
+  SeasonalBanner, ClubPresetsSheet, BoatDeliverySheet, useWeatherSuggestion,
+} from './CustomerFeatures_16'
 // supabase imported dynamically inside functions to prevent blank screen
 
 // ── Flash sale hook ──────────────────────────────────────────
@@ -50,7 +58,7 @@ function useCountdown(endsAt) {
   return secs>0?(h>0?h+'h ':'')+m+'m '+s+'s':null
 }
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -273,7 +281,11 @@ function BasketView({ t, onCheckout }) {
           <span>🆔</span><span>ID required at delivery for age-restricted items</span>
         </div>
       )}
+      {/* Feature 6: Upsell suggestions */}
+      <BasketUpsell cartItems={cart.items} />
       <PromoCodeEntry onApply={()=>{}} />
+      {/* Feature 7: Show warning if no address set */}
+      {!cart.deliveryAddress && <NoAddressWarning onSetAddress={()=>toast('Set your address in checkout',{icon:'📍'})} />}
       <button onClick={onCheckout} disabled={belowMin}
         style={{ width:'100%',padding:'16px',background:belowMin?'rgba(255,255,255,0.1)':'#C4683A',color:belowMin?'rgba(255,255,255,0.3)':'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:belowMin?'not-allowed':'pointer',boxShadow:belowMin?'none':'0 4px 20px rgba(196,104,58,0.4)',marginBottom:10 }}>
         {belowMin?'Add €'+(MIN-sub).toFixed(2)+' to unlock checkout':(t.checkout||'Order now')+' →'}
@@ -383,7 +395,7 @@ function looksLikeAIQuery(q) {
 // ── Search view ───────────────────────────────────────────────
 function SearchView({ t, onAssist }) {
   const [query, setQuery] = useState('')
-  const [showIslaPrompt, setShowIslaPrompt] = useState(false)
+  const [historyVer, setHistoryVer] = useState(0)
   const { addItem } = useCartStore()
 
   // Fuzzy + partial match
@@ -413,6 +425,11 @@ function SearchView({ t, onAssist }) {
       </div>
 
       {/* Isla AI prompt — shown when query looks like a vibe not a product */}
+      {/* Feature 4: Search history when empty */}
+      {!query && <SearchHistoryPanel onSelect={q=>{setQuery(q)}} onClear={()=>setHistoryVer(v=>v+1)} />}
+      {/* Feature 4: Live suggestions as you type */}
+      {query.length>=2 && !isAI && <SearchSuggestions query={query} />}
+
       {isAI && (
         <button onClick={handleIsla}
           style={{ width:'100%',marginBottom:14,padding:'14px 16px',background:'linear-gradient(135deg,rgba(196,104,58,0.25),rgba(43,122,139,0.25))',border:'0.5px solid rgba(196,104,58,0.4)',borderRadius:14,cursor:'pointer',display:'flex',alignItems:'center',gap:12,textAlign:'left' }}>
@@ -463,13 +480,15 @@ function SearchView({ t, onAssist }) {
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
   const prevItems = cart.previousItems || []
   const flashSale = useFlashSale()
   const countdown = useCountdown(flashSale?.ends_at)
+  const { greeting, vibe } = useTimeGreeting()
+  const weather = useWeatherSuggestion()
   const searchResults = searchQuery.length>1 ? PRODUCTS.filter(p=>p.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0,30) : []
 
   return (
@@ -489,6 +508,9 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           </div>
         </div>
         <AddressBar estimatedMins={estimatedMins} />
+        {/* Feature 12: Time greeting */}
+        <TimeGreetingBanner greeting={greeting} vibe={vibe} />
+        {weather && <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', padding:'2px 16px 8px' }}>{weather.text}</div>}
       </div>
 
       {/* Search + AssistBot — sticky */}
@@ -512,6 +534,8 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           </button>
         </div>
       </div>
+      {/* Feature 2: Category quick-scroll nav */}
+      <CategoryNavBar onCategorySelect={onCategorySelect} />
 
       {/* Search results */}
       {searchQuery.length>1 && (
@@ -550,6 +574,9 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
       {/* Scrolling content */}
       {!searchQuery && (
         <div style={{ paddingBottom:20 }}>
+          {/* Feature 5: Last order shortcut */}
+          <LastOrderShortcut onReorder={onReorder} />
+
           {/* POINT 7: Recently viewed */}
           <RecentlyViewedRow onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
 
@@ -559,6 +586,9 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{prevItems.slice(0,8).map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail}/>)}</div>
             </div>
           )}
+          {/* Feature 14: Seasonal banner */}
+          <SeasonalBanner />
+
           {flashSale && countdown && (
             <div style={{ margin:'16px 16px 4px',background:'linear-gradient(135deg,rgba(196,104,58,0.3),rgba(184,134,11,0.25))',border:'0.5px solid rgba(196,104,58,0.4)',borderRadius:16,padding:'14px 16px',display:'flex',alignItems:'center',gap:12 }}>
               <span style={{ fontSize:26,flexShrink:0 }}>⚡</span>
@@ -587,7 +617,10 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
             <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{NEW_IN.slice(0,10).map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail}/>)}</div>
           </div>
-          {/* ── POINT 11: Bundle deals ─────────────────────── */}
+          {/* Feature 11: Staff picks */}
+          <StaffPicksRow onDetail={onDetail} />
+
+          {/* ── Bundle deals ─────────────────────── */}
           <div style={{ margin:'0 16px 22px' }}>
             <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',marginBottom:12 }}>Bundle deals</div>
             <div style={{ display:'flex',gap:10,overflowX:'auto',scrollbarWidth:'none',paddingBottom:4 }}>
@@ -637,6 +670,22 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
                 <div style={{ marginTop:10,fontSize:11,color:'#7EE8C8',fontWeight:600 }}>AI-powered →</div>
               </button>
             </div>
+          </div>
+
+          {/* Features 15+16: Club + Boat delivery shortcuts */}
+          <div style={{ margin:'0 16px 14px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            <button onClick={onShowClub}
+              style={{ padding:'14px', background:'linear-gradient(135deg,rgba(90,30,120,0.4),rgba(30,60,120,0.4))', border:'0.5px solid rgba(150,80,200,0.4)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
+              <div style={{ fontSize:22, marginBottom:4 }}>🍒</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Club delivery</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Pacha, Ushuaia, DC-10...</div>
+            </button>
+            <button onClick={onShowBoat}
+              style={{ padding:'14px', background:'linear-gradient(135deg,rgba(20,80,140,0.5),rgba(10,50,100,0.5))', border:'0.5px solid rgba(43,122,200,0.4)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
+              <div style={{ fontSize:22, marginBottom:4 }}>⛵</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Boat delivery</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Marina, berth, superyacht</div>
+            </button>
           </div>
 
           {/* ── Just Landed in Ibiza ────────────────────────────── */}
@@ -695,6 +744,12 @@ export default function CustomerApp() {
   const [driverTip, setDriverTip] = useState(0)
   const [etaMins, setEtaMins] = useState(null)
   const { dark, toggle: toggleDark } = useDarkMode()
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [showClubPresets, setShowClubPresets] = useState(false)
+  const [showBoatMode, setShowBoatMode] = useState(false)
+  const { greeting, vibe } = useTimeGreeting()
+  const weather = useWeatherSuggestion()
+  const { show: showRatingPrompt, dismiss: dismissRatingPrompt } = useAppRatingPrompt()
   const { user } = useAuthStore()
   const cart = useCartStore()
   const t    = useT(lang)
@@ -725,6 +780,7 @@ export default function CustomerApp() {
   const handleCheckoutStart = () => {
     if (!user) { toast('Sign in to checkout',{icon:'👤'}); return }
     if (cart.getSubtotal() < 15) { toast.error('Minimum order is €15'); return }
+    if (!hasValidAddress(cart)) { toast.error('Please set a delivery address first',{icon:'📍'}); return }
     if (cart.getHasAgeRestricted()) { setView(VIEWS.AGE_VERIFY); return }
     setView(VIEWS.CHECKOUT)
   }
@@ -737,7 +793,7 @@ export default function CustomerApp() {
         deliveryLat:cart.deliveryLat, deliveryLng:cart.deliveryLng, deliveryAddress:cart.deliveryAddress,
         deliveryNotes:cart.deliveryNotes, what3words:cart.what3words, subtotal:cart.getSubtotal(), total:cart.getTotal(), paymentIntentId,
       })
-      cart.clearCart(); setActiveOrder(order); setView(VIEWS.TRACKING)
+      cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION)
       const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');sub.unsubscribe()} })
     } catch(err){ toast.error('Order failed: '+err.message) }
   }
@@ -813,6 +869,8 @@ export default function CustomerApp() {
           <TipSelector onTipChange={setDriverTip} />
 
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:16 }}>Payment</div>
+          {/* Feature 10: Apple/Google Pay */}
+          <NativePayButton total={cart.getTotal()} onSuccess={handlePaymentSuccess} />
           <StripeCheckout onSuccess={handlePaymentSuccess} onCancel={()=>setView(VIEWS.BASKET)} />
         </div>
       </div>
@@ -847,6 +905,7 @@ export default function CustomerApp() {
               <div style={{ fontSize:32,fontWeight:700,color:'white',fontFamily:'monospace' }}>
                 {etaMins!==null?etaMins+' min':(activeOrder.estimated_minutes||18)+' min'}
               </div>
+              <div style={{ fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:4 }}>Arrives around {(()=>{const t=new Date();t.setMinutes(t.getMinutes()+(etaMins||activeOrder.estimated_minutes||18));return t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})})()}</div>
             </div>
           </div>
         )}
@@ -913,7 +972,7 @@ export default function CustomerApp() {
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);setSelectedProduct(p)}} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} /></FadeIn>}
+      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} /></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} onShowLoyalty={()=>setView(VIEWS.LOYALTY)} onShowReferral={()=>setView(VIEWS.REFERRAL)} onShowWishlist={()=>setView(VIEWS.WISHLIST)} onShowNotifications={()=>setView(VIEWS.NOTIFICATIONS)} dark={dark} onToggleDark={toggleDark} /></FadeIn>}
@@ -955,6 +1014,12 @@ export default function CustomerApp() {
       {showIssue && <ReportIssueSheet order={showIssue} onClose={()=>setShowIssue(null)} />}
       {/* POINT 15: PWA install */}
       <PWAInstallPrompt />
+      {/* Feature 13: App rating prompt */}
+      {showRatingPrompt && <AppRatingPrompt onDismiss={dismissRatingPrompt} />}
+      {/* Feature 15: Club presets */}
+      {showClubPresets && <ClubPresetsSheet onClose={()=>setShowClubPresets(false)} onSelect={club=>{ if(cart.setDeliveryLocation) cart.setDeliveryLocation(club.lat,club.lng,club.name+', Ibiza',null); toast.success(club.name+' set as delivery location!') }} />}
+      {/* Feature 16: Boat delivery */}
+      {showBoatMode && <BoatDeliverySheet onClose={()=>setShowBoatMode(false)} onConfirm={details=>{ if(cart.setDeliveryNotes) cart.setDeliveryNotes(details.notes) }} />}
 
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes shimmer{0%,100%{opacity:1}50%{opacity:0.55}}`}</style>
     </div>
