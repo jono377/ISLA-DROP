@@ -115,7 +115,7 @@ function TabBar({ view, setView, cartCount }) {
               <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={view===t.id?2:1.7}>
                 {t.search ? <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></> : <path d={t.path}/>}
               </svg>
-              {t.badge>0 && <span style={{ position:'absolute', top:-5, right:-7, background:'#C4683A', color:'white', borderRadius:'50%', width:16, height:16, fontSize:9, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:600, border:'1.5px solid rgba(10,30,40,0.97)' }}>{t.badge>9?'9+':t.badge}</span>}
+              {t.badge>0 && <span key={t.badge} style={{ position:'absolute', top:-5, right:-7, background:'#C4683A', color:'white', borderRadius:'50%', width:16, height:16, fontSize:9, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:600, border:'1.5px solid rgba(10,30,40,0.97)', animation:'badgePop 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}>{t.badge>9?'9+':t.badge}</span>}
             </div>
             {t.label}
           </button>
@@ -130,7 +130,7 @@ function MiniCard({ product, t, onDetail }) {
   const { addItem, updateQuantity } = useCartStore()
   const outOfStock = product.stock_quantity === 0
   return (
-    <div style={{ background:C.card, border:'0.5px solid '+C.cardBorder, borderRadius:14, overflow:'hidden', minWidth:134, maxWidth:134, flexShrink:0, position:'relative', opacity:outOfStock?0.5:1 }}
+    <div style={{ background:C.card, border:'0.5px solid '+C.cardBorder, borderRadius:14, overflow:'hidden', minWidth:134, maxWidth:134, flexShrink:0, position:'relative', opacity:outOfStock?0.5:1, transition:'transform 0.1s', cursor:'pointer' }} onTouchStart={e=>{if(!outOfStock)e.currentTarget.style.transform='scale(0.97)'}} onTouchEnd={e=>{e.currentTarget.style.transform='scale(1)'}}
       onClick={() => !outOfStock && onDetail?.(product)}>
       <div style={{ position:'relative' }}>
         <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="mini" style={{ height:100 }} />
@@ -143,8 +143,8 @@ function MiniCard({ product, t, onDetail }) {
         ) : null}
         {!outOfStock && (
           qty===0 ?
-            <button onClick={e=>{e.stopPropagation();addItem(product);toast.success(product.emoji+' Added!',{duration:900})}}
-              style={{ position:'absolute', top:7, right:7, width:28, height:28, background:'#C4683A', border:'2px solid white', borderRadius:'50%', color:'white', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', lineHeight:1 }}>+</button>
+            <button onClick={e=>{e.stopPropagation();addItem(product);navigator.vibrate?.(25);toast.success(product.emoji+' Added!',{duration:900})}}
+              style={{ position:'absolute', top:7, right:7, width:28, height:28, background:'#C4683A', border:'2px solid white', borderRadius:'50%', color:'white', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 2px 8px rgba(0,0,0,0.18)', lineHeight:1, transition:'transform 0.1s', activeScale:0.92 }}>+</button>
             : <div onClick={e=>e.stopPropagation()} style={{ position:'absolute', top:6, right:6, display:'flex', alignItems:'center', gap:3, background:'rgba(255,255,255,0.96)', borderRadius:20, padding:'2px 7px', boxShadow:'0 1px 5px rgba(0,0,0,0.12)' }}>
                 <button onClick={()=>updateQuantity(product.id,qty-1)} style={{ width:18, height:18, background:'#E8E0D0', border:'none', borderRadius:'50%', cursor:'pointer', fontSize:12, display:'flex', alignItems:'center', justifyContent:'center', color:'#2A2318' }}>−</button>
                 <span style={{ fontSize:11, fontWeight:500, minWidth:12, textAlign:'center', color:'#2A2318' }}>{qty}</span>
@@ -375,8 +375,36 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
       .catch(() => setLoadingProducts(false))
   }, [])
 
+  // Pull-to-refresh
+  useEffect(() => {
+    let startY = 0; let pulling = false
+    const onTouchStart = (e) => { startY = e.touches[0].clientY; pulling = window.scrollY === 0 }
+    const onTouchEnd = (e) => {
+      if (!pulling) return
+      const dy = e.changedTouches[0].clientY - startY
+      if (dy > 80) {
+        setLoadingProducts(true)
+        supabase.from('products').select('*').eq('is_active',true).then(({data})=>{
+          if(data&&data.length>0) setLiveProducts(data)
+          setLoadingProducts(false)
+          toast('Products refreshed',{icon:'🔄',duration:1500})
+        })
+      }
+    }
+    window.addEventListener('touchstart',onTouchStart,{passive:true})
+    window.addEventListener('touchend',onTouchEnd,{passive:true})
+    return ()=>{ window.removeEventListener('touchstart',onTouchStart); window.removeEventListener('touchend',onTouchEnd) }
+  }, [])
+
   const displayProducts = liveProducts || PRODUCTS
-  const searchResults = searchQuery.length>1 ? displayProducts.filter(p=>p.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0,30) : []
+  const searchResults = searchQuery.length>1 ? displayProducts.filter(p=>{
+    const n=p.name.toLowerCase(); const q=searchQuery.toLowerCase()
+    if(n.includes(q)) return true
+    // Fuzzy: all query chars appear in order
+    let qi=0; for(let i=0;i<n.length&&qi<q.length;i++){if(n[i]===q[qi])qi++}; if(qi===q.length) return true
+    // Split word match
+    return q.split(' ').every(w=>n.includes(w))
+  }).slice(0,30) : []
 
   return (
     <div>
@@ -509,14 +537,25 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           })}
         </div>
       )}
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes badgePop{0%{transform:scale(0.5)}60%{transform:scale(1.3)}100%{transform:scale(1)}} @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes shimmer{0%,100%{opacity:0.4}50%{opacity:0.9}}`}</style>
     </div>
   )
 }
 
 // ─── Root ──────────────────────────────────────────────────────
 export default function CustomerApp() {
-  const [view, setView] = useState(VIEWS.SPLASH)
+  // Skip splash for returning users who have items or a saved address
+  const [view, setView] = useState(() => {
+    try {
+      const cart = JSON.parse(localStorage.getItem('cart-store')||'{}')
+      const hasAddress = cart?.state?.deliveryAddress
+      const hasItems = (cart?.state?.items||[]).length > 0
+      const lastVisit = localStorage.getItem('isla_last_visit')
+      const isReturning = lastVisit && (Date.now() - parseInt(lastVisit)) < 3600000 // 1 hour
+      if (isReturning || hasAddress || hasItems) return VIEWS.HOME
+    } catch {}
+    return VIEWS.SPLASH
+  })
   const [lang, setLang] = useState('en')
   const [categoryKey, setCategoryKey] = useState(null)
   const [activeOrder, setActiveOrder] = useState(null)
@@ -565,6 +604,11 @@ export default function CustomerApp() {
   // Push state on view change for back button
   useEffect(() => {
     if (view !== VIEWS.SPLASH) window.history.pushState({ view }, '', window.location.pathname)
+  }, [view])
+
+  // Track visit for returning user detection
+  useEffect(() => {
+    if (view === VIEWS.HOME) localStorage.setItem('isla_last_visit', Date.now().toString())
   }, [view])
 
   const goToCategory = (key) => { setCategoryKey(key); setView(VIEWS.CATEGORY) }
@@ -773,7 +817,7 @@ export default function CustomerApp() {
       {/* Floating cart */}
       {view===VIEWS.HOME && cart.getItemCount()>0 && (
         <div onClick={()=>setView(VIEWS.BASKET)}
-          style={{ position:'sticky', bottom:68, margin:'0 16px', background:'#C4683A', borderRadius:14, padding:'13px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', boxShadow:'0 4px 24px rgba(196,104,58,0.5)' }}>
+          style={{ position:'sticky', bottom:68, margin:'0 16px', background:'#C4683A', borderRadius:14, padding:'13px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', boxShadow:'0 4px 24px rgba(196,104,58,0.5)', animation:'slideUp 0.35s cubic-bezier(0.34,1.2,0.64,1)', transition:'transform 0.15s' }} onTouchStart={e=>e.currentTarget.style.transform='scale(0.98)'} onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}>
           <div style={{ color:'white' }}>
             <div style={{ fontSize:11, opacity:0.8 }}>{cart.getItemCount()} {cart.getItemCount()===1?t.item:t.items}</div>
             <div style={{ fontSize:15, fontWeight:500 }}>€{cart.getSubtotal().toFixed(2)} + €3.50 delivery</div>

@@ -223,11 +223,32 @@ export default function AddressBar({ estimatedMins }) {
       setShowSuggestions(true)
     }
 
-    // Real OSM map data after 350ms
+    // Mapbox Geocoding (primary) with Nominatim fallback after 350ms
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
-      const mapResults = await searchNominatim(val)
-      
+      let mapResults = []
+
+      const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN
+      if (mapboxToken) {
+        try {
+          const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/'
+            + encodeURIComponent(val + ' Ibiza Spain')
+            + '.json?access_token=' + mapboxToken
+            + '&country=es&proximity=1.4326,38.9067&bbox=1.15,38.82,1.75,39.15'
+            + '&limit=5&language=en&types=address,poi,place,neighborhood'
+          const res = await fetch(url)
+          const data = await res.json()
+          if (data.features) {
+            mapResults = data.features.map(f => ({
+              display: f.place_name.replace(', Spain', '').replace(', Balearic Islands', ''),
+              lat: f.center[1], lng: f.center[0], type: 'mapbox'
+            }))
+          }
+        } catch { mapResults = await searchNominatim(val) }
+      } else {
+        mapResults = await searchNominatim(val)
+      }
+
       // Merge: map results first, then local not already in results
       const seen = new Set()
       const merged = [...mapResults, ...local].filter(r => {
@@ -245,14 +266,20 @@ export default function AddressBar({ estimatedMins }) {
     }, 350)
   }, [])
 
-  const selectSuggestion = s => {
+  const selectSuggestion = useCallback(s => {
     setInput(s.display)
-    setDeliveryAddress(s.display)
+    if (s.lat && s.lng) {
+      const { setDeliveryLocation } = useCartStore.getState()
+      setDeliveryLocation(s.lat, s.lng, s.display)
+    } else {
+      setDeliveryAddress(s.display)
+    }
     setSuggestions([])
     setShowSuggestions(false)
     setEditing(false)
+    navigator.vibrate?.(15)
     toast.success('📍 ' + s.display.split(',')[0])
-  }
+  }, [setDeliveryAddress])
 
   const confirmAddress = () => {
     if (!input || input.trim().length < 3) {
