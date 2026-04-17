@@ -210,7 +210,7 @@ export function StaffUserManager() {
       load()
       alert('Invitation sent to ' + inviteEmail)
     } catch (err) {
-      alert('Could not send invite via admin API. Instead, ask ' + inviteEmail + ' to sign up at ops.isladrop.net, then run: UPDATE profiles SET role = '' + inviteRole + '' WHERE id = (SELECT id FROM auth.users WHERE email = '' + inviteEmail + '');')
+      alert("Could not send invite via admin API. Ask " + inviteEmail + " to sign up at ops.isladrop.net, then run this SQL: UPDATE profiles SET role = '" + inviteRole + "' WHERE id = (SELECT id FROM auth.users WHERE email = '" + inviteEmail + "');")
     }
     setSaving(false)
   }
