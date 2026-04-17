@@ -19,6 +19,13 @@ import {
   OrderHistoryView, SavedAddressesView, EditProfileView,
   PWAInstallPrompt
 } from './CustomerFeatures_20'
+import {
+  FadeIn, SHIMMER_STYLE, useWishlist, WishlistView, WishlistButton,
+  LoyaltyCard, TipSelector, trackView, RecentlyViewedRow,
+  OrderReceiptSheet, CancelOrderButton, DriverChat, W3WPicker,
+  useDarkMode, DarkModeToggle, ReferralView, NotificationPrefsView,
+  ScheduledDeliverySheet
+} from './CustomerFeatures_15'
 // supabase imported dynamically inside functions to prevent blank screen
 
 // ── Flash sale hook ──────────────────────────────────────────
@@ -43,7 +50,7 @@ function useCountdown(endsAt) {
   return secs>0?(h>0?h+'h ':'')+m+'m '+s+'s':null
 }
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -280,7 +287,7 @@ function BasketView({ t, onCheckout }) {
 }
 
 // ── Account ───────────────────────────────────────────────────
-function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile }) {
+function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile, onShowLoyalty, onShowReferral, onShowWishlist, onShowNotifications, dark, onToggleDark }) {
   const { user, profile, clear } = useAuthStore()
   const { clearCart } = useCartStore()
   return (
@@ -299,12 +306,10 @@ function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile }) {
             { icon:'📦', label:'Order history',    sub:'View and re-order past orders', action:onShowHistory },
             { icon:'📍', label:'Saved addresses',  sub:'Manage your delivery spots',    action:onShowAddresses },
             { icon:'✏️', label:'Edit profile',     sub:'Name and phone number',         action:onShowEditProfile },
-            { icon:'🌴', label:'Loyalty rewards',  sub:'Stamps, points and perks',      action:()=>toast('Loyalty programme coming soon!') },
-            { icon:'🔗', label:'Refer a friend',   sub:'Share code, earn €10',          action:()=>{
-                const code='ISLA'+(user?.id?.slice(0,4)||'DROP').toUpperCase()
-                if(navigator.share) navigator.share({title:'Isla Drop',text:'Use code '+code+' for €10 off!',url:'https://www.isladrop.net'}).catch(()=>{})
-                else { navigator.clipboard.writeText(code); toast.success('Code '+code+' copied!') }
-            }},
+            { icon:'🌴', label:'Loyalty rewards',  sub:'Stamps, points and perks',      action:onShowLoyalty },
+            { icon:'🔗', label:'Refer a friend',   sub:'Share code, earn €10',          action:onShowReferral },
+            { icon:'❤️', label:'Favourites',       sub:'Your saved products',            action:onShowWishlist },
+            { icon:'🔔', label:'Notifications',    sub:'Push, email and SMS settings',  action:onShowNotifications },
             { icon:'💬', label:'WhatsApp support', sub:'+34 971 000 000', action:()=>window.open('https://wa.me/34971000000','_blank') },
             { icon:'🌍', label:'Language',         sub:'Change display language',        action:()=>toast('Use the flag in the top-right of the home screen') },
             { icon:'❓', label:'Help & FAQ',       sub:'Delivery, payments and more',   action:()=>toast('Support: support@isladrop.net') },
@@ -320,6 +325,7 @@ function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile }) {
             </button>
           ))}
           {/* Sign out inside account settings */}
+          <DarkModeToggle dark={dark} onToggle={onToggleDark} />
           <button onClick={()=>{ supabase.auth.signOut(); clear(); clearCart&&clearCart() }}
             style={{ width:'100%',marginTop:16,padding:'13px',background:'rgba(196,104,58,0.12)',border:'0.5px solid rgba(196,104,58,0.3)',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:14,color:'#E8A070',cursor:'pointer' }}>
             Sign out
@@ -544,6 +550,9 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
       {/* Scrolling content */}
       {!searchQuery && (
         <div style={{ paddingBottom:20 }}>
+          {/* POINT 7: Recently viewed */}
+          <RecentlyViewedRow onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
+
           {prevItems.length>0 && (
             <div style={{ paddingTop:20,marginBottom:22 }}>
               <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,padding:'0 16px',marginBottom:12,color:'white' }}>🔄 {t.orderAgain}</div>
@@ -678,7 +687,14 @@ export default function CustomerApp() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [showRating, setShowRating] = useState(null)
   const [showIssue, setShowIssue] = useState(null)
+  const [showReceipt, setShowReceipt] = useState(null)
+  const [showDriverChat, setShowDriverChat] = useState(false)
+  const [showW3W, setShowW3W] = useState(false)
+  const [showSchedule, setShowSchedule] = useState(false)
+  const [scheduledDelivery, setScheduledDelivery] = useState(null)
+  const [driverTip, setDriverTip] = useState(0)
   const [etaMins, setEtaMins] = useState(null)
+  const { dark, toggle: toggleDark } = useDarkMode()
   const { user } = useAuthStore()
   const cart = useCartStore()
   const t    = useT(lang)
@@ -773,6 +789,29 @@ export default function CustomerApp() {
               </div>
             )}
           </div>
+          {/* POINT 15: Scheduled delivery */}
+          {scheduledDelivery ? (
+            <div style={{ marginBottom:16,padding:'12px 14px',background:'rgba(43,122,139,0.15)',border:'0.5px solid rgba(43,122,139,0.35)',borderRadius:12,display:'flex',justifyContent:'space-between',alignItems:'center' }}>
+              <div>
+                <div style={{ fontSize:12,fontWeight:600,color:'#7EE8C8' }}>Scheduled delivery</div>
+                <div style={{ fontSize:13,color:'white',marginTop:2 }}>{scheduledDelivery.label}</div>
+              </div>
+              <button onClick={()=>setScheduledDelivery(null)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:18 }}>×</button>
+            </div>
+          ) : (
+            <button onClick={()=>setShowSchedule(true)} style={{ width:'100%',marginBottom:16,padding:'12px',background:'rgba(255,255,255,0.06)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:12,color:'rgba(255,255,255,0.6)',fontSize:13,cursor:'pointer',fontFamily:'DM Sans,sans-serif',textAlign:'left',display:'flex',alignItems:'center',gap:8 }}>
+              <span>📅</span> Schedule for later (optional)
+            </button>
+          )}
+
+          {/* POINT 11: W3W */}
+          <button onClick={()=>setShowW3W(true)} style={{ width:'100%',marginBottom:16,padding:'11px',background:'rgba(229,0,26,0.08)',border:'0.5px solid rgba(229,0,26,0.25)',borderRadius:10,color:'rgba(229,0,26,0.8)',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif',display:'flex',alignItems:'center',gap:8 }}>
+            <span style={{ fontWeight:800 }}>///</span> Use what3words for precise location
+          </button>
+
+          {/* POINT 4: Driver tip */}
+          <TipSelector onTipChange={setDriverTip} />
+
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:16 }}>Payment</div>
           <StripeCheckout onSuccess={handlePaymentSuccess} onCancel={()=>setView(VIEWS.BASKET)} />
         </div>
@@ -827,6 +866,19 @@ export default function CustomerApp() {
             <OrderTrackingMap order={activeOrder} driverId={activeOrder.driver_id} />
           </div>
         )}
+        {/* POINT 9: Cancel order window */}
+        {['confirmed','preparing'].includes(activeOrder.status) && (
+          <CancelOrderButton order={activeOrder} onCancelled={()=>{ setActiveOrder(null); setView(VIEWS.HOME) }} />
+        )}
+
+        {/* POINT 10: Driver chat button */}
+        {activeOrder.driver_id && activeOrder.status!=='delivered' && (
+          <button onClick={()=>setShowDriverChat(true)}
+            style={{ width:'100%',marginBottom:14,padding:'13px',background:'rgba(43,122,139,0.2)',border:'0.5px solid rgba(43,122,139,0.4)',borderRadius:12,color:'#7EE8C8',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:8 }}>
+            💬 Chat with driver
+          </button>
+        )}
+
         {activeOrder.status==='delivered' && (
           <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12 }}>
             <button onClick={()=>setShowRating(activeOrder)}
@@ -845,28 +897,32 @@ export default function CustomerApp() {
   }
 
   // ── FULL-SCREEN VIEWS (no tab bar) ──────────────────────────
-  if (view===VIEWS.ORDER_HISTORY)   return <OrderHistoryView   onBack={()=>setView(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.ORDER_HISTORY)   return <OrderHistoryView   onBack={()=>setView(VIEWS.ACCOUNT)} onShowReceipt={o=>setShowReceipt(o)} />
   if (view===VIEWS.SAVED_ADDRESSES) return <SavedAddressesView onBack={()=>setView(VIEWS.ACCOUNT)} />
   if (view===VIEWS.EDIT_PROFILE)    return <EditProfileView    onBack={()=>setView(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.WISHLIST)        return <WishlistView onBack={()=>setView(VIEWS.ACCOUNT)} onDetail={p=>{trackView(p);setSelectedProduct(p);setView(VIEWS.HOME)}} />
+  if (view===VIEWS.LOYALTY)         return <LoyaltyCard  onBack={()=>setView(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.REFERRAL)        return <ReferralView onBack={()=>setView(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.NOTIFICATIONS)   return <NotificationPrefsView onBack={()=>setView(VIEWS.ACCOUNT)} />
 
   // ── MAIN SHELL — tab bar lives here only ──────────────────
   return (
     <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
 
       {view===VIEWS.CATEGORY && categoryKey && (
-        <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} />
+        <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);setSelectedProduct(p)}} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>setSelectedProduct(p)} />}
+      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} /></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
-      {view===VIEWS.ACCOUNT  && <AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} />}
+      {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} onShowLoyalty={()=>setView(VIEWS.LOYALTY)} onShowReferral={()=>setView(VIEWS.REFERRAL)} onShowWishlist={()=>setView(VIEWS.WISHLIST)} onShowNotifications={()=>setView(VIEWS.NOTIFICATIONS)} dark={dark} onToggleDark={toggleDark} /></FadeIn>}
       {view===VIEWS.ASSIST   && <AssistBot initialQuery={assistQuery} onClose={()=>{ setAssistQuery(''); setView(VIEWS.HOME) }} />}
       {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.PARTY_DAY   && <PartyBuilder initialType="design_day"   onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.ARRIVAL     && <ArrivalPackage onBack={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>setView(VIEWS.HOME)} />}
+      {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>setView(VIEWS.HOME)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} />}
+      {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>setView(VIEWS.HOME)} onDetail={p=>{trackView(p);setSelectedProduct(p)}} />}
 
       {/* Floating cart bar on home only */}
       {view===VIEWS.HOME && cart.getItemCount()>0 && (
@@ -883,6 +939,14 @@ export default function CustomerApp() {
       {/* Tab bar — ONLY in the main shell, never on splash/checkout/tracking */}
       <TabBar view={view} setView={handleTabChange} cartCount={cart.getItemCount()} />
 
+      {/* NEW: Scheduled delivery */}
+      {showSchedule && <ScheduledDeliverySheet onClose={()=>setShowSchedule(false)} onSchedule={s=>setScheduledDelivery(s)} />}
+      {/* NEW: W3W */}
+      {showW3W && <W3WPicker onClose={()=>setShowW3W(false)} onSelect={r=>{ cart.setDeliveryLocation(r.lat,r.lng,'///'+r.words,'///'+r.words); toast.success('///'+r.words+' set!') }} />}
+      {/* NEW: Driver chat */}
+      {showDriverChat && activeOrder && <DriverChat order={activeOrder} onClose={()=>setShowDriverChat(false)} />}
+      {/* NEW: Order receipt */}
+      {showReceipt && <OrderReceiptSheet order={showReceipt} onClose={()=>setShowReceipt(null)} />}
       {/* POINT 1: Product detail sheet */}
       {selectedProduct && <ProductDetailSheet product={selectedProduct} onClose={()=>setSelectedProduct(null)} />}
       {/* POINT 5: Rating sheet */}
@@ -892,7 +956,7 @@ export default function CustomerApp() {
       {/* POINT 15: PWA install */}
       <PWAInstallPrompt />
 
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes shimmer{0%,100%{opacity:1}50%{opacity:0.55}}`}</style>
     </div>
   )
 }
