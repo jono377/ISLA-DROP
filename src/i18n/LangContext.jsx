@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { T, LANGUAGES } from './translations'
+import { PRODUCTS, CATEGORIES } from '../lib/products'
 
 export const LangContext = createContext({
   lang: 'en', t: T.en, setLang: () => {},
@@ -127,7 +128,6 @@ async function translateUI(lang) {
 async function translateProductNames(lang) {
   if (productCache[lang]) return productCache[lang]
   try {
-    const { PRODUCTS } = await import('../lib/products')
     const langName = LANG_NAMES[lang]
     if (!langName) return {}
     const list = PRODUCTS.map(p => p.id + '|' + p.name).join('\n')
@@ -144,7 +144,6 @@ async function translateProductNames(lang) {
 async function translateCategoryLabels(lang) {
   if (categoryCache[lang]) return categoryCache[lang]
   try {
-    const { CATEGORIES } = await import('../lib/products')
     const langName = LANG_NAMES[lang]
     if (!langName) return {}
     const list = CATEGORIES.map(c => c.key + '|' + c.label).join('\n')
