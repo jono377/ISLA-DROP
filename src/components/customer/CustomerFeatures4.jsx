@@ -560,10 +560,8 @@ export function useDeepLink(onCategorySelect, onDetail) {
     const group = params.get('group')
     if (cat && onCategorySelect) { onCategorySelect(cat); window.history.replaceState({}, '', '/') }
     if (product) {
-      import('../../lib/products').then(({ PRODUCTS }) => {
-        const p = PRODUCTS.find(p=>p.id===product)
-        if (p && onDetail) { onDetail(p); window.history.replaceState({}, '', '/') }
-      })
+      const p = PRODUCTS.find(pr=>pr.id===product)
+      if (p && onDetail) { onDetail(p); window.history.replaceState({}, '', '/') }
     }
     return group
   }, [])

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { useCartStore, useAuthStore } from '../../lib/store'
-import { supabase } from '../../lib/supabase'
+import { supabase, createOrder, subscribeToOrder } from '../../lib/supabase'
 import { PRODUCTS, CATEGORIES, BEST_SELLERS, NEW_IN } from '../../lib/products'
 import { LANGUAGES, useT } from '../../i18n/translations'
 import AgeVerification from './AgeVerification'
@@ -666,7 +666,7 @@ export default function CustomerApp() {
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
-      const { createOrder, subscribeToOrder: subToOrder } = await import('../../lib/supabase')
+      const subToOrder = subscribeToOrder
       const order = await createOrder({
         customerId: user.id, items: cart.items.map(i=>({productId:i.product.id,quantity:i.quantity,price:i.product.price})),
         deliveryLat: cart.deliveryLat, deliveryLng: cart.deliveryLng,
