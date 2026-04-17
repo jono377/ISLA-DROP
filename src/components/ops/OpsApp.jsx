@@ -49,6 +49,10 @@ import {
   PromoSettingsManager, SplashImageManager, BrandSettingsManager,
   NotificationCopyEditor, ProductSpotlightManager, AppConfigOverview
 } from './OpsAppControls'
+import {
+  GDPRManager, CohortAnalysis, SupplierReorderManager,
+  ABTestManager, SLAEscalationManager, MultiLocationManager
+} from './OpsModules6'
 
 
 
@@ -533,11 +537,17 @@ export default function OpsApp() {
       { id: 'compliance',  icon: '⚖️', label: 'Compliance Log' },
       { id: 'driver_docs', icon: '📄', label: 'Driver Documents' },
       { id: 'staff',       icon: '👥', label: 'Staff Management' },
+      { id: 'gdpr',        icon: '🗑️', label: 'GDPR Deletion' },
+      { id: 'sla_rules',   icon: '⏱️', label: 'SLA Escalation' },
     ]},
     { group: 'Growth', items: [
       { id: 'ltv',         icon: '💎', label: 'Customer LTV' },
+      { id: 'cohorts',     icon: '📊', label: 'Cohort Analysis' },
+      { id: 'ab_tests',    icon: '🧪', label: 'A/B Tests' },
       { id: 'referrals',   icon: '🔗', label: 'Referral Manager' },
       { id: 'inv_forecast',icon: '📈', label: 'Inv. Forecasting' },
+      { id: 'sup_reorder', icon: '🏭', label: 'Supplier Reorder' },
+      { id: 'locations',   icon: '🌍', label: 'Multi-Location' },
     ]},
     { group: 'App Config', items: [
       { id: 'app_config',  icon: '🎛️', label: 'Config Centre' },
@@ -731,6 +741,12 @@ export default function OpsApp() {
           {tab === 'notif_copy'  && <NotificationCopyEditor />}
           {tab === 'spotlight'   && <ProductSpotlightManager />}
           {tab === 'settings'    && <OpsSettings />}
+          {tab === 'gdpr'        && <GDPRManager />}
+          {tab === 'sla_rules'   && <SLAEscalationManager />}
+          {tab === 'cohorts'     && <CohortAnalysis />}
+          {tab === 'ab_tests'    && <ABTestManager />}
+          {tab === 'sup_reorder' && <SupplierReorderManager />}
+          {tab === 'locations'   && <MultiLocationManager />}
         </div>
       </div>
     </div>
