@@ -71,6 +71,17 @@ import {
   DOBAgeGate, useOnlineStatus, usePushNotifications,
   registerServiceWorker, callAIProxy, generateLocalizedReceipt,
 } from './CustomerFeatures_final'
+import {
+  fuzzySearch, SearchWithFuzzy, useCollections, CollectionsRow,
+  useFlashProducts, FlashPriceBadge, FlashPrice,
+  FrequentlyBoughtTogether, AnimatedStampCard, SearchFilters,
+  AnimatedTrackingSteps, setupNotificationActions, useNearestDepot, DepotBadge,
+  TabIndicator, useAnimatedTotal, AddAllButton, CheckoutProgressBar, BackButton,
+  useSwipeToDismiss, RatingPromptSheet, LegalLinks, useCookieConsent, CookieConsentBanner,
+  FAQView, AllergenInfo, ResponsibleDrinkingBadge, CancellationPolicyNote,
+  detectDeviceLanguage, useCurrency, CurrencyToggle, shareProductBranded,
+  FlightStatusBanner, useProximityVenueSuggestion, VenueSuggestionBanner,
+} from './CustomerFeatures_getir'
 // supabase imported dynamically inside functions to prevent blank screen
 
 // ── Flash sale hook ──────────────────────────────────────────
@@ -95,7 +106,7 @@ function useCountdown(endsAt) {
   return secs>0?(h>0?h+'h ':'')+m+'m '+s+'s':null
 }
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation', CONCIERGE:'concierge', ONBOARDING:'onboarding', NOTIFICATIONS_CENTRE:'notif_centre' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation', CONCIERGE:'concierge', ONBOARDING:'onboarding', NOTIFICATIONS_CENTRE:'notif_centre', FAQ:'faq' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -352,7 +363,7 @@ function BasketView({ t, onCheckout }) {
 }
 
 // ── Account ───────────────────────────────────────────────────
-function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile, onShowLoyalty, onShowReferral, onShowWishlist, onShowNotifications, dark, onToggleDark, onDeleteAccount, onChangeEmail, onChangePassword }) {
+function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile, onShowLoyalty, onShowReferral, onShowWishlist, onShowNotifications, dark, onToggleDark, onDeleteAccount, onChangeEmail, onChangePassword, onShowFAQ }) {
   const { user, profile, clear } = useAuthStore()
   const { clearCart } = useCartStore()
   return (
@@ -378,7 +389,7 @@ function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile, onS
             { icon:'📲', label:'Enable push alerts',  sub:'Get order updates when app is closed', action:()=>toast('Enable in Notifications settings') },
             { icon:'💬', label:'WhatsApp support', sub:'+34 971 000 000', action:()=>window.open('https://wa.me/34971000000','_blank') },
             { icon:'🌍', label:'Language',         sub:'Change display language',        action:()=>toast('Use the flag in the top-right of the home screen') },
-            { icon:'❓', label:'Help & FAQ',       sub:'Delivery, payments and more',   action:()=>toast('Support: support@isladrop.net') },
+            { icon:'❓', label:'Help & FAQ',       sub:'Delivery, payments and more',   action:onShowFAQ },
             { icon:'🔑', label:'Change email',     sub:'Update your email address',      action:onChangeEmail },
             { icon:'🔒', label:'Change password',  sub:'Update your password',           action:onChangePassword },
             { icon:'🗑️', label:'Delete account',  sub:'Permanently remove your data',   action:onDeleteAccount },
@@ -395,8 +406,9 @@ function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile, onS
           ))}
           {/* Sign out inside account settings */}
           <DarkModeToggle dark={dark} onToggle={onToggleDark} />
+          <LegalLinks style={{ marginTop:16, marginBottom:8 }} />
           <button onClick={()=>{ supabase.auth.signOut(); clear(); clearCart&&clearCart() }}
-            style={{ width:'100%',marginTop:16,padding:'13px',background:'rgba(196,104,58,0.12)',border:'0.5px solid rgba(196,104,58,0.3)',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:14,color:'#E8A070',cursor:'pointer' }}>
+            style={{ width:'100%',marginTop:8,padding:'13px',background:'rgba(196,104,58,0.12)',border:'0.5px solid rgba(196,104,58,0.3)',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:14,color:'#E8A070',cursor:'pointer' }}>
             Sign out
           </button>
         </>
@@ -450,19 +462,16 @@ function looksLikeAIQuery(q) {
 }
 
 // ── Search view ───────────────────────────────────────────────
-function SearchView({ t, onAssist }) {
+function SearchView({ t, onAssist, onCategorySelect }) {
   const [query, setQuery] = useState('')
   const [historyVer, setHistoryVer] = useState(0)
   const { addItem } = useCartStore()
   const { prefs: dietPrefs, toggle: toggleDiet } = useDietaryPrefs()
 
   // Fuzzy + partial match
-  const results = query.length>1 ? PRODUCTS.filter(p=>{
-    const n=p.name.toLowerCase(); const q=query.toLowerCase()
-    if(n.includes(q)) return true
-    let qi=0; for(let i=0;i<n.length&&qi<q.length;i++){if(n[i]===q[qi])qi++}
-    return qi===q.length
-  }).slice(0,40) : []
+  const [filteredResults, setFilteredResults] = useState([])
+  const rawResults = query.length>1 ? fuzzySearch(query, PRODUCTS) : []
+  useEffect(()=>setFilteredResults(rawResults), [query])
 
   const isAI = query.length>2 && looksLikeAIQuery(query)
 
@@ -536,13 +545,13 @@ function SearchView({ t, onAssist }) {
           </div>
         </div>
       )}
-      {query.length>1&&results.length===0&&!isAI&&<div style={{ textAlign:'center',padding:'30px',color:'rgba(255,255,255,0.4)',fontSize:14 }}>No results for "{query}"</div>}
+
     </div>
   )
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -572,6 +581,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             {loyaltyStamps > 0 && <LoyaltyHeaderBadge stamps={loyaltyStamps} onClick={()=>setView(VIEWS.LOYALTY)} />}
             {liveOrderCount > 0 && <LiveOrderCountBadge count={liveOrderCount} />}
             <NotificationBell unread={unread} onClick={()=>setShowNotifCentre(true)} />
+            <CurrencyToggle currency={currency} onToggle={onToggleCurrency} />
             <button onClick={onShowDeliveryZone} style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white',cursor:'pointer' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'#7EE8A2',display:'inline-block',animation:'pulse 1.5s infinite' }}/>Open 24/7
             </button>
@@ -581,6 +591,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
         <AddressBar estimatedMins={estimatedMins} />
         {/* Feature 12: Time greeting */}
         <TimeGreetingBanner greeting={greeting} vibe={vibe} />
+        {depot && <div style={{ padding:'3px 16px 6px' }}><DepotBadge depot={depot} /></div>}
         {weather && <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', padding:'2px 16px 8px' }}>{weather.text}</div>}
       </div>
 
@@ -825,7 +836,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 export default function CustomerApp() {
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [assistQuery, setAssistQuery] = useState('')
-  const [lang, setLang]               = useState('en')
+  const [lang, setLang]               = useState(()=>{ try{return localStorage.getItem('isla_lang')||detectDeviceLanguage()}catch{return 'en'} })
   const [categoryKey, setCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
   const [activeOrder, setActiveOrder] = useState(null)
@@ -847,6 +858,13 @@ export default function CustomerApp() {
   const weather = useWeatherSuggestion()
   const { show: showRatingPrompt, dismiss: dismissRatingPrompt } = useAppRatingPrompt()
   const { show: showOnboarding, finish: finishOnboarding } = useOnboarding()
+  const { show: showCookieBanner, accept: acceptCookies, decline: declineCookies } = useCookieConsent()
+  const { currency, setCurrency, format: formatPrice } = useCurrency()
+  const collections = useCollections()
+  const flash = useFlashProducts()
+  const depot = useNearestDepot()
+  const [showRatingPrompt, setShowRatingPrompt] = useState(false)
+  const [ratingOrder, setRatingOrder] = useState(null)
   const [payLoading, setPayLoading] = useState(false)
   const [corporateBilling, setCorporateBilling] = useState(false)
   const [corporateDetails, setCorporateDetails] = useState({})
@@ -873,7 +891,16 @@ export default function CustomerApp() {
   const events = useIbizaEvents()
   const { checkStreak } = useOrderStreak()
   const { supported: pushSupported, subscribe: subscribePush } = usePushNotifications ? usePushNotifications() : {}
-  useEffect(() => { if (typeof registerServiceWorker === 'function') registerServiceWorker() }, [])
+  useEffect(() => {
+    if (typeof registerServiceWorker === 'function') registerServiceWorker()
+    setupNotificationActions()
+    window.addEventListener('isla:repeat_order', e => {
+      if (e.detail?.orderId) toast('Repeat order — add to basket from order history',{icon:'🛵'})
+    })
+    window.addEventListener('isla:track_order', e => {
+      if (activeOrder) setView(VIEWS.TRACKING)
+    })
+  }, [])
   const [showDeliveryZone, setShowDeliveryZone] = useState(false)
   const [hasError, setHasError] = useState(false)
   const { show: showMorningKit, dismiss: dismissMorningKit } = useMorningAfterKit()
@@ -900,8 +927,8 @@ export default function CustomerApp() {
 
   // Trigger rating after delivery
   useEffect(()=>{
-    if(activeOrder?.status==='delivered'&&!showRating){
-      setTimeout(()=>setShowRating(activeOrder),2500)
+    if(activeOrder?.status==='delivered'&&!showRating&&!ratingOrder){
+      setTimeout(()=>{ setRatingOrder(activeOrder); setShowRatingPrompt(true) }, 5000)
     }
   },[activeOrder?.status])
 
@@ -956,6 +983,7 @@ export default function CustomerApp() {
     return (
       <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:60 }}>
         <div style={{ padding:'16px 16px 20px' }}>
+          <CheckoutProgressBar step={2} />
           <button onClick={()=>setView(VIEWS.BASKET)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:14,cursor:'pointer',fontFamily:'DM Sans,sans-serif',marginBottom:12 }}>← Back to basket</button>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:20 }}>{t.checkout}</div>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>Delivery location</div>
@@ -965,6 +993,8 @@ export default function CustomerApp() {
           <AddressAutocomplete placeholder="Search villa, hotel, beach or club..." onSelect={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null); toast.success('📍 '+loc.address.slice(0,30)+'...') }} />
           {/* Feature 21: Beach GPS */}
           <BeachGPSButton onSet={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null) }} />
+          {/* D5: Proximity venue suggestion */}
+          {cart.deliveryLat && cart.deliveryLng && (()=>{const v=useProximityVenueSuggestion(cart.deliveryLat,cart.deliveryLng);return v?<VenueSuggestionBanner venue={v} onAccept={()=>{cart.setDeliveryLocation(v.lat,v.lng,v.name+', Ibiza',null);toast.success('Delivery to '+v.name+' set!')}} onDismiss={()=>{}} />:null})()}
           {/* Feature 17: Zone validation */}
           <DeliveryZoneWarning lat={cart.deliveryLat} lng={cart.deliveryLng} />
           <div style={{ borderRadius:14,overflow:'hidden',marginBottom:14 }}>
@@ -1022,6 +1052,10 @@ export default function CustomerApp() {
           <StripeCheckout onSuccess={handlePaymentSuccess} onCancel={()=>setView(VIEWS.BASKET)} />
           {/* Feature 8: Trust badges */}
           <TrustBadges />
+          {/* C5: Cancellation policy */}
+          <CancellationPolicyNote />
+          {/* C1: Legal links */}
+          <LegalLinks style={{ marginTop:12 }} />
         </div>
       </div>
     )
@@ -1038,17 +1072,7 @@ export default function CustomerApp() {
       <div style={{ background:C.bg, minHeight:'100vh', padding:'24px 16px 100px' }}>
         <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:4 }}>{activeOrder.status==='delivered'?'Delivered! 🎉':'On its way 🛵'}</div>
         <div style={{ fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20 }}>#{activeOrder.order_number}</div>
-        <div style={{ background:'rgba(255,255,255,0.07)',borderRadius:14,padding:16,marginBottom:20 }}>
-          {STEPS.map((s,i)=>(
-            <div key={s} style={{ display:'flex',alignItems:'center',gap:12,marginBottom:i<STEPS.length-1?14:0 }}>
-              <div style={{ width:28,height:28,borderRadius:'50%',flexShrink:0,background:i<=idx?(i===idx?'#C4683A':'#5A6B3A'):'rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center' }}>
-                {i<idx&&<svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
-                {i===idx&&<div style={{ width:8,height:8,borderRadius:'50%',background:'white' }}/>}
-              </div>
-              <span style={{ fontSize:14,fontWeight:i===idx?500:400,color:i>idx?'rgba(255,255,255,0.35)':'white' }}>{LABELS[s]}</span>
-            </div>
-          ))}
-        </div>
+        <AnimatedTrackingSteps steps={STEPS} labels={LABELS} currentStatus={activeOrder.status} />
         {activeOrder.status!=='delivered' && (
           <div style={{ background:'rgba(43,122,139,0.2)',border:'0.5px solid rgba(43,122,139,0.35)',borderRadius:14,padding:'16px',marginBottom:16,display:'flex',alignItems:'center',gap:16 }}>
             <span style={{ fontSize:36 }}>🛵</span>
@@ -1108,6 +1132,7 @@ export default function CustomerApp() {
   }
 
   // ── FULL-SCREEN VIEWS (no tab bar) ──────────────────────────
+  if (view===VIEWS.FAQ)             return <FAQView onBack={()=>setView(VIEWS.ACCOUNT)} />
   if (view===VIEWS.ORDER_HISTORY)   return <OrderHistoryView   onBack={()=>setView(VIEWS.ACCOUNT)} onShowReceipt={o=>setShowReceipt(o)} />
   if (view===VIEWS.SAVED_ADDRESSES) return <SavedAddressesView onBack={()=>setView(VIEWS.ACCOUNT)} />
   if (view===VIEWS.EDIT_PROFILE)    return <EditProfileView    onBack={()=>setView(VIEWS.ACCOUNT)} />
@@ -1124,10 +1149,10 @@ export default function CustomerApp() {
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} onShowPreArrival={()=>setShowPreArrival(true)} onShowPoolParty={()=>setShowPoolParty(true)} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} /></FadeIn>}
-      {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} />}
+      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} onShowPreArrival={()=>setShowPreArrival(true)} onShowPoolParty={()=>setShowPoolParty(true)} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} /></FadeIn>}
+      {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
-      {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} onShowLoyalty={()=>setView(VIEWS.LOYALTY)} onShowReferral={()=>setView(VIEWS.REFERRAL)} onShowWishlist={()=>setView(VIEWS.WISHLIST)} onShowNotifications={()=>setView(VIEWS.NOTIFICATIONS)} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} /></FadeIn>}
+      {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} onShowLoyalty={()=>setView(VIEWS.LOYALTY)} onShowReferral={()=>setView(VIEWS.REFERRAL)} onShowWishlist={()=>setView(VIEWS.WISHLIST)} onShowNotifications={()=>setView(VIEWS.NOTIFICATIONS)} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>setView(VIEWS.FAQ)} /></FadeIn>}
       {view===VIEWS.ASSIST   && <AssistBot initialQuery={assistQuery} onClose={()=>{ setAssistQuery(''); setView(VIEWS.HOME) }} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>setView(VIEWS.HOME)} />}
@@ -1158,6 +1183,10 @@ export default function CustomerApp() {
       {showIssue && <ReportIssueSheet order={showIssue} onClose={()=>setShowIssue(null)} />}
       {/* POINT 15: PWA install */}
       <PWAInstallPrompt />
+      {/* C2: Cookie consent */}
+      {showCookieBanner && <CookieConsentBanner onAccept={acceptCookies} onDecline={declineCookies} />}
+      {/* B10: Rating prompt with Rate later */}
+      {showRatingPrompt && ratingOrder && <RatingPromptSheet order={ratingOrder} onRate={()=>{ setShowRatingPrompt(false); setShowRating(ratingOrder) }} onLater={()=>setShowRatingPrompt(false)} onClose={()=>setShowRatingPrompt(false)} />}
       {/* Feature 16: Offline banner */}
       <OfflineBanner />
       {/* Feature 14: Delivery zone */}

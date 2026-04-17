@@ -6,6 +6,7 @@
 // ================================================================
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { LoyaltyTierCard, StreakBadge } from './CustomerFeatures_polish'
+import { AnimatedStampCard } from './CustomerFeatures_getir'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { supabase } from '../../lib/supabase'
 import { PRODUCTS } from '../../lib/products'
@@ -279,6 +280,8 @@ export function LoyaltyCard({ onBack }) {
               </div>
             </div>
 
+            {/* A6: Animated visual stamp card */}
+            <AnimatedStampCard stamps={stamps} maxStamps={10} />
             {/* Feature 12: VIP tier card */}
             <LoyaltyTierCard totalOrders={data?.total_orders||0} stamps={stamps} />
             {/* Stats */}
