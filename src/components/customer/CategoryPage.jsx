@@ -4,6 +4,9 @@ import { PRODUCTS, CATEGORIES } from '../../lib/products'
 import { useCartStore } from '../../lib/store'
 import ProductImage from '../shared/ProductImage'
 import { SortFilterBar, sortProducts, WishlistButton, trackView } from './CustomerFeatures_15'
+import { haptic } from './CustomerFeatures_polish'
+import { Analytics } from './CustomerFeatures_final'
+import { CategoryHeroImage, useInfiniteScroll, LazyImg } from './CustomerFeatures_v2'
 
 const C = {
   bg:'linear-gradient(170deg,#0A2A38 0%,#0D3545 35%,#1A5060 70%,#2B7A8B 100%)',
@@ -18,8 +21,10 @@ function ProductCard({ product, onDetail }) {
   const { addItem, updateQuantity } = useCartStore()
 
   return (
-    <div style={{ background:C.card, border:'0.5px solid '+C.border, borderRadius:14, overflow:'hidden', position:'relative', cursor:'pointer' }}
-      onClick={()=>{ trackView(product); onDetail&&onDetail(product) }}>
+    <div style={{ background:C.card, border:'0.5px solid '+C.border, borderRadius:14, overflow:'hidden', position:'relative', cursor:'pointer', transition:'transform 0.1s cubic-bezier(0.34,1.56,0.64,1)' }}
+      onClick={()=>{ trackView(product); Analytics.productView(product); onDetail&&onDetail(product) }}
+      onTouchStart={e=>{ haptic('light'); e.currentTarget.style.transform='scale(0.97)' }}
+      onTouchEnd={e=>{ e.currentTarget.style.transform='scale(1)' }}>
       <div style={{ position:'relative' }}>
         <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="card" style={{ height:120 }} />
         {/* Wishlist heart */}

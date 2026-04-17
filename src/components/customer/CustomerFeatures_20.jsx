@@ -3,6 +3,7 @@ import { ProductReviews } from './CustomerFeatures_world'
 import { usePaginatedOrders, generateLocalizedReceipt } from './CustomerFeatures_final'
 import { BackInStockButton, PeopleViewingBadge } from './CustomerFeatures_polish'
 import { AllergenInfo, ResponsibleDrinkingBadge, FrequentlyBoughtTogether } from './CustomerFeatures_getir'
+import { SmartReorderButton, CaloriesBadge } from './CustomerFeatures_v2'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { supabase } from '../../lib/supabase'
 import { PRODUCTS, BEST_SELLERS } from '../../lib/products'
@@ -341,10 +342,7 @@ export function OrderHistoryView({ onBack, lang='en' }) {
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center' }}>
               <div style={{ fontSize:14,fontWeight:600,color:'#E8A070' }}>€{order.total?.toFixed(2)||'0.00'}</div>
               {order.status==='delivered'&&(
-                <button onClick={()=>reorder(order)}
-                  style={{ padding:'8px 18px',background:'#C4683A',border:'none',borderRadius:10,color:'white',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:F.sans }}>
-                  Re-order
-                </button>
+                <SmartReorderButton order={order} onDone={onBack} />
               )}
             </div>
           </div>
