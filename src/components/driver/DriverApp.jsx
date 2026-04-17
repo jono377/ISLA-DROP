@@ -1696,6 +1696,7 @@ export default function DriverApp() {
   const TABS = [
     { id:'home',        icon:'🏠', label:'Home' },
     { id:'earnings',    icon:'💰', label:'Earnings' },
+    { id:'schedule',    icon:'📅', label:'Schedule' },
     { id:'performance', icon:'📊', label:'Stats' },
     { id:'settings',    icon:'⚙️', label:'Settings' },
   ]
@@ -1868,6 +1869,22 @@ export default function DriverApp() {
                     </div>
                   )}
 
+                  {/* Navigation app selector */}
+                  {currentOrder?.delivery_address && (
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6, marginBottom:10 }}>
+                      {[
+                        { label:'🗺️ Maps', fn:()=>{ const d=encodeURIComponent(currentOrder.delivery_address); if(/iPhone|iPad|Mac/i.test(navigator.userAgent)) window.open('maps://maps.apple.com/?daddr='+d+'&dirflg=d'); else window.open('https://maps.google.com/maps?daddr='+d+'&travelmode=driving') } },
+                        { label:'📍 Waze', fn:()=>{ const ll=currentOrder.delivery_lat+','+currentOrder.delivery_lng; window.open('waze://?ll='+ll+'&navigate=yes') } },
+                        { label:'🗺️ Google', fn:()=>{ const d=encodeURIComponent(currentOrder.delivery_address); window.open('https://www.google.com/maps/dir/?api=1&destination='+d+'&travelmode=driving') } },
+                      ].map(nav=>(
+                        <button key={nav.label} onClick={nav.fn}
+                          style={{ padding:'9px 4px', background:DS.surface2, border:'1px solid '+DS.border, borderRadius:DS.r1, color:DS.t2, fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:DS.f }}>
+                          {nav.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <div style={{ display:'flex', gap:8, marginBottom:8 }}>
                     <button onClick={() => setShowMap(true)} style={{ flex:1, padding:'12px', background:DS.blueDim, border:'1px solid '+DS.blueBdr, borderRadius:DS.r1, color:DS.blue, fontSize:13, fontWeight:600, cursor:'pointer' }}>Map</button>
                     <button onClick={() => setShowChat(true)} style={{ flex:1, padding:'12px', background:'rgba(168,85,247,0.12)', border:'1px solid rgba(168,85,247,0.3)', borderRadius:DS.r1, color:'#A855F7', fontSize:13, fontWeight:600, cursor:'pointer' }}>Chat</button>
@@ -1927,6 +1944,7 @@ export default function DriverApp() {
         )}
 
         {activeTab === 'earnings' && <EarningsTab stats={stats} isDesktop={isWide} />}
+        {activeTab === 'schedule' && <ScheduleAvailabilityTab profile={profile} />}
         {activeTab === 'performance' && <PerformanceTab stats={stats} onShowFeedback={() => setShowFeedback(true)} isDesktop={isWide} />}
         {activeTab === 'settings' && <SettingsTab profile={profile} stats={stats} onSignOut={clear} isDesktop={isWide} onExpenses={() => setShowExpenses(true)} onPayslip={() => setShowPayslip(true)} onIncident={() => setShowIncident(true)} onNotifs={() => setShowNotifSetup(true)} onLock={() => setAppLocked(true)} />}
       </div>
