@@ -2,6 +2,16 @@ import { useState, useRef, useEffect } from 'react'
 import { useCartStore } from '../../lib/store'
 import toast from 'react-hot-toast'
 
+// Inline translations — no context needed
+const DEFAULT_T = {
+  total:'Total', popular:'Popular', designExperience:'Design Your Experience',
+  concierge:'Concierge', luxuryExperiences:'Luxury experiences · Ibiza',
+  bookNow:'Book now', from:'From', perPerson:'per person',
+  highlights:'Highlights', islaInsider:'Isla insider tip',
+  getDirections:'Get directions', guests:'Guests',
+}
+function useT_ctx() { return DEFAULT_T }
+
 // ── Real Ibiza market prices + 10% commission ─────────────────
 // Sources: boatsibiza.com, ticketsibiza.com, ibiza-luxuryvillas.com (April 2026)
 

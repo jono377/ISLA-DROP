@@ -119,9 +119,10 @@ function LanguagePicker({ lang, setLang }) {
 function TabBar({ view, setView, cartCount }) {
   const tabs = [
     { id:VIEWS.HOME,      label:'Home',       path:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+    { id:VIEWS.CATEGORY,  label:'Categories', path:'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z' },
     { id:VIEWS.SEARCH,    label:'Search',     search:true },
-    { id:VIEWS.CONCIERGE, label:'Concierge',  concierge:true },
     { id:VIEWS.BASKET,    label:'Basket',     path:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', badge:cartCount },
+    { id:VIEWS.CONCIERGE, label:'Concierge',  concierge:true },
     { id:VIEWS.ACCOUNT,   label:'Account',    path:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' },
   ]
   return (
