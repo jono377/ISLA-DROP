@@ -27,6 +27,15 @@ import {
   DriverProfileCard, LateBanner, ProductReviews, DriverTip,
   OrderIssue, SmartSuggestions, WalletPayButton
 } from './CustomerFeatures3'
+import {
+  GroupOrderSheet, LoyaltyTierView, W3WPicker, SocialLoginButtons,
+  PhoneVerification, sendOrderConfirmationEmail,
+  useDeepLink, shareProduct
+} from './CustomerFeatures4'
+import {
+  OrderReceipt, RepeatOrderSetup, DarkModeToggle, useDarkMode,
+  PaymentMethodSelector, EXTRA_TRANSLATIONS
+} from './CustomerFeatures5'
 import { useWishlistStore } from '../../lib/store'
 
 const VIEWS = {
@@ -248,14 +257,15 @@ function BasketView({ t, onCheckout, promoCode, setPromoCode }) {
 }
 
 // ─── Account ──────────────────────────────────────────────────
-function AccountView({ t, onShowHistory, onShowAddresses, onShowHelp, onShowLoyalty, onShowNotifications, onShowWishlist, onShowReferral, onSignIn }) {
+function AccountView({ t, onShowHistory, onShowAddresses, onShowHelp, onShowLoyalty, onShowNotifications, onShowWishlist, onShowReferral, onShowGroup, onSignIn, dark, onToggleDark }) {
   const { user, profile, clear } = useAuthStore()
 
   const menuItems = user ? [
     { icon:'📦', label:'Order history', action:onShowHistory },
     { icon:'❤️', label:'Favourites', action:onShowWishlist },
+    { icon:'🛒', label:'Group order', action:onShowGroup },
     { icon:'📍', label:'Saved addresses', action:onShowAddresses },
-    { icon:'🌴', label:'Loyalty rewards', action:onShowLoyalty },
+    { icon:'🌴', label:'Loyalty & rewards', action:onShowLoyalty },
     { icon:'🔗', label:'Refer a friend · Earn €10', action:onShowReferral },
     { icon:'🔔', label:'Notifications', action:onShowNotifications },
     { icon:'❓', label:'Help & support', action:onShowHelp },
@@ -284,8 +294,9 @@ function AccountView({ t, onShowHistory, onShowAddresses, onShowHelp, onShowLoya
             </button>
           ))}
 
+          <DarkModeToggle dark={dark} onToggle={onToggleDark} />
           <button onClick={()=>{ supabase.auth.signOut(); clear() }}
-            style={{ width:'100%', marginTop:16, padding:'13px', background:'rgba(196,104,58,0.12)', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:12, fontFamily:F.sans, fontSize:14, color:'#E8A070', cursor:'pointer' }}>
+            style={{ width:'100%', marginTop:8, padding:'13px', background:'rgba(196,104,58,0.12)', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:12, fontFamily:F.sans, fontSize:14, color:'#E8A070', cursor:'pointer' }}>
             Sign out
           </button>
         </>
@@ -294,8 +305,14 @@ function AccountView({ t, onShowHistory, onShowAddresses, onShowHelp, onShowLoya
           <div style={{ fontSize:48, marginBottom:14 }}>👤</div>
           <div style={{ fontFamily:F.serif, fontSize:22, color:'white', marginBottom:8 }}>Sign in to your account</div>
           <div style={{ fontSize:14, color:C.muted, marginBottom:24 }}>Track orders, save addresses, earn rewards and more</div>
+          <SocialLoginButtons onSuccess={()=>{}} />
+          <div style={{ display:'flex', alignItems:'center', gap:10, margin:'14px 0' }}>
+            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.1)' }}/>
+            <span style={{ fontSize:12, color:'rgba(255,255,255,0.4)' }}>or email</span>
+            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.1)' }}/>
+          </div>
           <button onClick={onSignIn} style={{ width:'100%', padding:'14px', background:'#C4683A', color:'white', border:'none', borderRadius:12, fontFamily:F.sans, fontSize:15, fontWeight:600, cursor:'pointer', marginBottom:10 }}>
-            Sign in
+            Sign in with email
           </button>
           <button onClick={onSignIn} style={{ width:'100%', padding:'14px', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:12, fontFamily:F.sans, fontSize:14, cursor:'pointer' }}>
             Create account
@@ -583,11 +600,21 @@ export default function CustomerApp() {
   const [showReviews, setShowReviews] = useState(null)
   const [tip, setTip] = useState(0)
   const [prevETA, setPrevETA] = useState(null)
+  const [showGroup, setShowGroup] = useState(false)
+  const [showLoyaltyTier, setShowLoyaltyTier] = useState(false)
+  const [showW3W, setShowW3W] = useState(false)
+  const [showReceipt, setShowReceipt] = useState(null)
+  const [showRepeat, setShowRepeat] = useState(null)
+  const [showPaymentMethod, setShowPaymentMethod] = useState(false)
+  const { dark, toggle: toggleDark } = useDarkMode()
 
   const { user } = useAuthStore()
   const cart = useCartStore()
   const t = useT(lang)
   const estimatedMins = cart.deliveryAddress ? 18 : null
+
+  // Deep link handling
+  useDeepLink(goToCategory, p=>setShowDetail(p))
 
   // Handle browser back button
   useEffect(() => {
@@ -650,6 +677,7 @@ export default function CustomerApp() {
         paymentIntentId, scheduled_at: scheduledDelivery ? new Date(scheduledDelivery.date+'T'+scheduledDelivery.time).toISOString() : null,
       })
       cart.clearCart(); setPromoCode(null); setActiveOrder(order); setView(VIEWS.TRACKING)
+      sendOrderConfirmationEmail(order, user)
       const sub = subToOrder(order.id, u => {
         setActiveOrder(u)
         if (u.status === 'delivered') {
@@ -697,9 +725,13 @@ export default function CustomerApp() {
         </div>
 
         <div style={{ fontFamily:F.serif, fontSize:16, color:'white', marginBottom:12 }}>Delivery location</div>
-        <div style={{ borderRadius:14, overflow:'hidden', marginBottom:20 }}>
+        <div style={{ borderRadius:14, overflow:'hidden', marginBottom:10 }}>
           <DeliveryMap onLocationSet={()=>{}} />
         </div>
+        <button onClick={()=>setShowW3W(true)}
+          style={{ width:'100%', padding:'10px', marginBottom:20, background:'rgba(229,0,26,0.08)', border:'0.5px solid rgba(229,0,26,0.25)', borderRadius:10, color:'rgba(229,0,26,0.8)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:F.sans }}>
+          ///what3words — precise delivery location for villas &amp; beaches
+        </button>
 
         <div style={{ fontFamily:F.serif, fontSize:16, color:'white', marginBottom:12 }}>Order summary</div>
         <div style={{ background:'rgba(255,255,255,0.07)', borderRadius:14, padding:16, marginBottom:20 }}>
@@ -804,11 +836,13 @@ export default function CustomerApp() {
           onShowHistory={()=>setShowHistory(true)}
           onShowAddresses={()=>setShowAddresses(true)}
           onShowHelp={()=>setShowHelp(true)}
-          onShowLoyalty={()=>setShowLoyalty(true)}
+          onShowLoyalty={()=>setShowLoyaltyTier(true)}
           onShowNotifications={()=>setShowNotifications(true)}
           onShowWishlist={()=>setShowWishlist(true)}
           onShowReferral={()=>setShowReferral(true)}
-          onSignIn={()=>setShowSignIn(true)} />
+          onShowGroup={()=>setShowGroup(true)}
+          onSignIn={()=>setShowSignIn(true)}
+          dark={dark} onToggleDark={toggleDark} />
       )}
       {view===VIEWS.ASSIST && <AssistBot onClose={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.BEST && <AllProductsPage title="🔥 Best Sellers" products={BEST_SELLERS} onBack={()=>setView(VIEWS.HOME)} />}
@@ -847,6 +881,11 @@ export default function CustomerApp() {
       {showSchedule && <ScheduleDelivery onClose={()=>setShowSchedule(false)} onSchedule={s=>{ setScheduledDelivery(s); setShowSchedule(false) }} />}
 
       <PWAInstallPrompt />
+      {showGroup && <OverlayErrorBoundary onClose={()=>setShowGroup(false)}><GroupOrderSheet onClose={()=>setShowGroup(false)} /></OverlayErrorBoundary>}
+      {showLoyaltyTier && <OverlayErrorBoundary onClose={()=>setShowLoyaltyTier(false)}><LoyaltyTierView onClose={()=>setShowLoyaltyTier(false)} /></OverlayErrorBoundary>}
+      {showW3W && <W3WPicker onClose={()=>setShowW3W(false)} onSelect={r=>{ const {setDeliveryLocation}=useCartStore.getState(); setDeliveryLocation(r.lat,r.lng,'///'+r.words); setShowW3W(false); toast.success('///'+r.words+' set as delivery location') }} />}
+      {showReceipt && <OverlayErrorBoundary onClose={()=>setShowReceipt(null)}><OrderReceipt order={showReceipt} onClose={()=>setShowReceipt(null)} /></OverlayErrorBoundary>}
+      {showRepeat && <OverlayErrorBoundary onClose={()=>setShowRepeat(null)}><RepeatOrderSetup order={showRepeat} onClose={()=>setShowRepeat(null)} /></OverlayErrorBoundary>}
       {/* Sign in overlay */}
       {showSignIn && (
         <div style={{ position:'fixed', inset:0, zIndex:500, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'flex-end' }} onClick={()=>setShowSignIn(false)}>
