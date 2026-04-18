@@ -554,15 +554,9 @@ export function useVillaPresets() {
 async function buildVillaOrder(prompt) {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('No API key — add VITE_ANTHROPIC_API_KEY to Vercel')
-  const productList = PRODUCTS.slice(0,60).map(p=>p.id+'|'+p.name+'|€'+p.price+'|cat:'+p.category).join('
-')
+  const productList = PRODUCTS.slice(0,60).map(p=>p.id+'|'+p.name+'|EUR'+p.price+'|cat:'+p.category).join(', ')
   const system = 'You are Isla, an expert Ibiza villa concierge. Build a perfect drinks and supplies order for villa guests. Respond ONLY with valid JSON: {"title":"string","summary":"string","items":[{"product_id":"string","quantity":number,"reason":"string"}],"total_estimate":"string"}'
-  const message = 'Build an Ibiza villa order for: '+prompt+'
-
-Available products (id|name|price|category):
-'+productList+'
-
-Pick 6-12 items with realistic quantities. Only use product IDs from the list above.'
+  const message = 'Build an Ibiza villa order for: '+prompt+'. Available products (id|name|price|category): '+productList+'. Pick 6-12 items with realistic quantities. Only use product IDs from the list above.'
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true', 'x-api-key':apiKey },
