@@ -917,6 +917,8 @@ function CustomerAppInner() {
   const [showRatingPrompt, setShowRatingPrompt] = useState(false)
   const [homeLoaded, setHomeLoaded] = useState(false)
   const { onTouchStart: swipeBackStart, onTouchEnd: swipeBackEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
+  const realtimeDriverLoc = useRealtimeDriverLocation(activeOrder?.driver_id, !!(activeOrder?.driver_id))
+  const proximitySuggestion = useProximityVenueSuggestion(cart.deliveryLat, cart.deliveryLng)
   const [showPushPrompt, setShowPushPrompt] = useState(false)
   const formatPrice = useFormatPrice()
   const isAfterDark = useAfterDarkMode()
@@ -1081,7 +1083,7 @@ function CustomerAppInner() {
           {/* Feature 21: Beach GPS */}
           <BeachGPSButton onSet={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null) }} />
           {/* D5: Proximity venue suggestion */}
-          {cart.deliveryLat && cart.deliveryLng && (()=>{const v=useProximityVenueSuggestion(cart.deliveryLat,cart.deliveryLng);return v?<VenueSuggestionBanner venue={v} onAccept={()=>{cart.setDeliveryLocation(v.lat,v.lng,v.name+', Ibiza',null);toast.success('Delivery to '+v.name+' set!')}} onDismiss={()=>{}} />:null})()}
+          {proximitySuggestion && <VenueSuggestionBanner venue={proximitySuggestion} onAccept={()=>{cart.setDeliveryLocation(proximitySuggestion.lat,proximitySuggestion.lng,proximitySuggestion.name+', Ibiza',null);toast.success('Delivery to '+proximitySuggestion.name+' set!')}} onDismiss={()=>{}} />}
           {/* Feature 17: Zone validation */}
           <DeliveryZoneWarning lat={cart.deliveryLat} lng={cart.deliveryLng} />
           <div style={{ borderRadius:14,overflow:'hidden',marginBottom:14 }}>
@@ -1151,8 +1153,6 @@ function CustomerAppInner() {
 
   // ── TRACKING ──────────────────────────────────────────────
   if (view===VIEWS.TRACKING && activeOrder) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const realtimeDriverLoc = useRealtimeDriverLocation(activeOrder.driver_id, !!activeOrder.driver_id)
     const STEPS=['confirmed','preparing','assigned','picked_up','en_route','delivered']
     const LABELS={confirmed:'Confirmed',preparing:'Preparing',assigned:'Driver assigned',picked_up:'Picked up',en_route:'On the way',delivered:'Delivered!'}
     const idx=STEPS.indexOf(activeOrder.status)

@@ -28,6 +28,12 @@ function BackBtn({ onBack }) {
 }
 
 // ── POINT 1: Product Detail Sheet ────────────────────────────
+
+function ProductImageGallery({ product }) {
+  const imgs = useProductImages(product.id)
+  return <ImageGallery product={product} images={imgs} />
+}
+
 export function ProductDetailSheet({ product, onClose }) {
   const qty = useCartStore(s=>s.items.find(i=>i.product.id===product.id)?.quantity??0)
   const { addItem, updateQuantity } = useCartStore()
@@ -38,7 +44,7 @@ export function ProductDetailSheet({ product, onClose }) {
       <div style={{ width:'100%',maxWidth:480,margin:'0 auto',background:'#0D3545',borderRadius:'24px 24px 0 0',maxHeight:'92vh',overflowY:'auto' }} onClick={e=>e.stopPropagation()}>
         <div style={{ width:36,height:4,background:'rgba(255,255,255,0.2)',borderRadius:2,margin:'16px auto 0' }}/>
         <button onClick={onClose} style={{ position:'absolute',top:18,right:18,width:32,height:32,borderRadius:'50%',background:'rgba(255,255,255,0.15)',border:'none',color:'white',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center' }}>x</button>
-        {(()=>{ const imgs = useProductImages(product.id); return <ImageGallery product={product} images={imgs} /> })()}
+        <ProductImageGallery product={product} />
         <div style={{ padding:'16px 20px 40px' }}>
           <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10 }}>
             <div style={{ flex:1,marginRight:12 }}>
