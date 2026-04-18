@@ -678,24 +678,12 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 
       {/* Scrolling content */}
       {!searchQuery && (
-        <div style={{ paddingBottom:20 }}>
+        <div style={{ paddingBottom:20, paddingTop:4 }}>
           {/* Feature 5: Last order shortcut */}
           <LastOrderShortcut onReorder={onReorder} />
 
           {/* Feature 13: Morning after kit */}
           {showMorningKit && <MorningAfterKitBanner onAddKit={()=>{}} onDismiss={dismissMorningKit} />}
-          {/* Feature 22: Villa presets — full-screen view */}
-          <div style={{ margin:'0 16px 18px' }}>
-            <button onClick={onShowVillaPresets}
-              style={{ width:'100%', background:'linear-gradient(135deg,rgba(43,122,139,0.2),rgba(13,53,69,0.3))', border:'0.5px solid rgba(43,122,139,0.35)', borderRadius:16, padding:'16px', cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', gap:14 }}>
-              <div style={{ fontSize:36, flexShrink:0 }}>🏡</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:3 }}>Villa presets</div>
-                <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', lineHeight:1.5 }}>AI-powered orders, starter packs and saved presets for villa changeovers</div>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-          </div>
           {/* Feature 9: Your usual order */}
           <YourUsualCard productIds={[]} onAddAll={()=>setView(VIEWS.BASKET)} />
           {/* POINT 7: Recently viewed */}
@@ -822,6 +810,19 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <div style={{ fontSize:22, marginBottom:4 }}>🏊</div>
               <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Pool party mode</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Bulk ordering for groups</div>
+            </button>
+          </div>
+
+          {/* ── Villa presets — placed here, well below sticky nav ── */}
+          <div style={{ margin:'0 16px 16px' }}>
+            <button onClick={onShowVillaPresets}
+              style={{ width:'100%', background:'linear-gradient(135deg,rgba(43,122,139,0.18),rgba(13,53,69,0.25))', border:'0.5px solid rgba(43,122,139,0.3)', borderRadius:16, padding:'16px', cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', gap:14 }}>
+              <div style={{ fontSize:34, flexShrink:0 }}>🏡</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:'DM Serif Display,serif', fontSize:17, color:'white', marginBottom:3 }}>Villa presets</div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', lineHeight:1.5 }}>AI-powered orders, starter packs and saved presets for villa changeovers</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
             </button>
           </div>
 
