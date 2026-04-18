@@ -83,6 +83,15 @@ import {
   FlightStatusBanner, useProximityVenueSuggestion, VenueSuggestionBanner,
 } from './CustomerFeatures_getir'
 import {
+  HomeSkeletonLoader, usePersonalisedCategories, VoiceSearchButton,
+  useProductImages, ImageGallery, BecauseYouBoughtRow, useLoyaltyDelivery,
+  getOrderNumberFromURL, processReferral, PushNotificationPrompt,
+  useSwipeBack, fireOrderConfirmedHaptic, DEFAULT_WEATHER_TAGS, WeatherBadge,
+  IBIZA_2025_EVENTS, seedIbizaEvents, PreArrivalFlightStatus,
+  formatCurrency, useFormatPrice, useAfterDarkMode, AfterDarkBanner,
+  getAfterDarkProducts,
+} from './CustomerFeatures_launch'
+import {
   DidYouMean, useItemNotes, ItemNoteButton, useRealtimeStock,
   SmartReorderButton, useSaveForLater, SaveForLaterList,
   ProductCompareSheet, CaloriesBadge, useSearchFocus,
@@ -206,7 +215,7 @@ function TabBar({ view, setView, cartCount }) {
 }
 
 // ── Mini product card ─────────────────────────────────────────
-function MiniCard({ product, t, onDetail }) {
+function MiniCard({ product, t, onDetail, weather }) {
   const qty = useCartStore(s=>s.items.find(i=>i.product.id===product.id)?.quantity??0)
   const { addItem, updateQuantity } = useCartStore()
   const handleAdd = (e) => {
@@ -224,6 +233,7 @@ function MiniCard({ product, t, onDetail }) {
       style={{ background:C.card, border:'0.5px solid '+C.cardBorder, borderRadius:14, overflow:'hidden', minWidth:134, maxWidth:134, flexShrink:0, position:'relative', cursor:'pointer', transition:'transform 0.1s' }}>
       <div style={{ position:'relative' }}>
         <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="mini" style={{ height:100 }} />
+        <WeatherBadge product={product} weather={weather} />
         {product.popular && qty===0 && <div style={{ position:'absolute',top:5,left:5,background:'rgba(0,0,0,0.55)',borderRadius:8,padding:'2px 6px',fontSize:9,color:'rgba(255,255,255,0.9)',fontWeight:600 }}>🔥</div>}
         {qty===0
           ? <button onClick={handleAdd} style={{ position:'absolute',top:7,right:7,width:28,height:28,background:'#C4683A',border:'2px solid white',borderRadius:'50%',color:'white',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,0.18)',lineHeight:1 }}>+</button>
@@ -509,6 +519,7 @@ function SearchView({ t, onAssist, onCategorySelect }) {
             placeholder="Search products or ask Isla anything..." style={{ flex:1,border:'none',background:'none',fontFamily:'DM Sans,sans-serif',fontSize:14,color:'white',outline:'none' }}/>
           {query&&<button onClick={()=>setQuery('')} style={{ border:'none',background:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:15,padding:0 }}>✕</button>}
         </div>
+        <VoiceSearchButton onResult={q=>setQuery(q)} />
       </div>
 
       {/* Isla AI prompt — shown when query looks like a vibe not a product */}
@@ -571,11 +582,13 @@ function SearchView({ t, onAssist, onCategorySelect }) {
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
   const prevItems = cart.previousItems || []
+  const orderedCategories = usePersonalisedCategories(prevItems)
+  useEffect(()=>{ const t=setTimeout(()=>setHomeLoaded(true),400); return ()=>clearTimeout(t) },[])
   const flashSale = useFlashSale()
   const { pulling, refreshing, onTouchStart, onTouchMove, onTouchEnd } = usePullToRefresh(async () => {
     await new Promise(r => setTimeout(r, 800))
@@ -677,8 +690,19 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
       )}
 
       {/* Scrolling content */}
-      {!searchQuery && (
+      {!searchQuery && !homeLoaded && <HomeSkeletonLoader />}
+      {!searchQuery && homeLoaded && (
         <div style={{ paddingBottom:20, paddingTop:4 }}>
+          {/* T4-20: After dark mode */}
+          <AfterDarkBanner />
+          {isAfterDark && afterDarkProducts && (
+            <div style={{ marginBottom:22 }}>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, padding:'0 16px', marginBottom:12, color:'white' }}>🌙 Tonight's picks</div>
+              <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
+                {afterDarkProducts.map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail} weather={weather}/>)}
+              </div>
+            </div>
+          )}
           {/* Feature 5: Last order shortcut */}
           <LastOrderShortcut onReorder={onReorder} />
 
@@ -688,11 +712,13 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <YourUsualCard productIds={[]} onAddAll={()=>setView(VIEWS.BASKET)} />
           {/* POINT 7: Recently viewed */}
           <RecentlyViewedRow onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
+          {/* T2-6: Because you bought X */}
+          <BecauseYouBoughtRow previousItems={prevItems} onDetail={p=>{trackView(p);onDetail&&onDetail(p)}} />
 
           {prevItems.length>0 && (
             <div style={{ paddingTop:20,marginBottom:22 }}>
               <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,padding:'0 16px',marginBottom:12,color:'white' }}>🔄 {t.orderAgain}</div>
-              <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{prevItems.slice(0,8).map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail}/>)}</div>
+              <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{prevItems.slice(0,8).map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail} weather={weather}/>)}</div>
             </div>
           )}
           {/* Feature 14: Seasonal banner */}
@@ -721,14 +747,14 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
               <button onClick={onBest} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
             </div>
-            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{BEST_SELLERS.map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail}/>)}</div>
+            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{BEST_SELLERS.map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail} weather={weather}/>)}</div>
           </div>
           <div style={{ marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onNewIn} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>✨ {t.newIn}</button>
               <button onClick={onNewIn} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
             </div>
-            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{NEW_IN.slice(0,10).map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail}/>)}</div>
+            <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{NEW_IN.slice(0,10).map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail} weather={weather}/>)}</div>
           </div>
           {/* Feature 11: Staff picks */}
           <StaffPicksRow onDetail={onDetail} />
@@ -840,7 +866,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           </div>
 
           {/* ── One horizontal scroll row per category ─────────── */}
-          {CATEGORIES.map(cat => {
+          {orderedCategories.map(cat => {
             const catProducts = PRODUCTS.filter(p => p.category === cat.key).slice(0, 10)
             if (catProducts.length === 0) return null
             return (
@@ -852,7 +878,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
                   <button onClick={()=>onCategorySelect(cat.key)} style={{ fontSize:11,color:'rgba(255,255,255,0.5)',background:'none',border:'none',cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>See all →</button>
                 </div>
                 <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>
-                  {catProducts.map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail}/>)}
+                  {catProducts.map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail} weather={weather}/>)}
                 </div>
               </div>
             )
@@ -889,6 +915,11 @@ function CustomerAppInner() {
   const weather = useWeatherSuggestion()
   const { show: showAppRatingPrompt, dismiss: dismissRatingPrompt } = useAppRatingPrompt()
   const [showRatingPrompt, setShowRatingPrompt] = useState(false)
+  const [homeLoaded, setHomeLoaded] = useState(false)
+  const [showPushPrompt, setShowPushPrompt] = useState(false)
+  const formatPrice = useFormatPrice()
+  const isAfterDark = useAfterDarkMode()
+  const afterDarkProducts = getAfterDarkProducts()
   const { show: showOnboarding, finish: finishOnboarding } = useOnboarding()
   const { show: showCookieBanner, accept: acceptCookies, decline: declineCookies } = useCookieConsent()
   const { currency, setCurrency, format: formatPrice } = useCurrency()
@@ -910,6 +941,9 @@ function CustomerAppInner() {
   const [corporateBilling, setCorporateBilling] = useState(false)
   const [corporateDetails, setCorporateDetails] = useState({})
   useReferralFromURL()
+  useEffect(()=>{
+    if(user?.id){const stored=sessionStorage.getItem('isla_referral_code');if(stored)processReferral(user.id)}
+  },[user?.id])
   const { tip: driverTipAmount, setTip: setDriverTipAmount } = useCartTip()
   const [showGuestCheckout, setShowGuestCheckout] = useState(false)
   const [guestUser, setGuestUser] = useState(null)
@@ -986,16 +1020,27 @@ function CustomerAppInner() {
     setPayLoading(true)
     try {
       const subToOrder = subscribeToOrder
+      const deliveryFee = loyaltyRedeemed ? 0 : 3.50
+      const orderTotal = cart.getTotal() - (loyaltyRedeemed ? 3.50 : 0) + (driverTipAmount||0)
       const order = await createOrder({
         customerId:user.id, items:cart.items.map(i=>({productId:i.product.id,quantity:i.quantity,price:i.product.price})),
         deliveryLat:cart.deliveryLat, deliveryLng:cart.deliveryLng, deliveryAddress:cart.deliveryAddress,
-        deliveryNotes:cart.deliveryNotes, what3words:cart.what3words, subtotal:cart.getSubtotal(), total:cart.getTotal(), paymentIntentId,
+        deliveryNotes:cart.deliveryNotes, what3words:cart.what3words, subtotal:cart.getSubtotal(),
+        total:orderTotal, paymentIntentId, loyalty_applied:loyaltyRedeemed, delivery_fee:deliveryFee,
       })
-      cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION)
+      cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION); fireOrderConfirmedHaptic()
       Analytics.checkoutComplete(order.total||cart.getTotal())
       addNotif({ type:'order', title:'Order confirmed! 🛵', body:'Order #'+order.order_number+' is being prepared. Estimated arrival: '+(order.estimated_minutes||18)+' min.' })
       const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');addNotif({type:'order',title:'Delivered! 🎉',body:'Your order #'+u.order_number+' has been delivered.'});setTimeout(()=>setShowPostDeliveryTip(true),8000);sub.unsubscribe()} })
       if (user?.id) checkStreak(user.id)
+      // Show push prompt after order 3+
+      try {
+        const orderCount = parseInt(localStorage.getItem('isla_order_count')||'0') + 1
+        localStorage.setItem('isla_order_count', String(orderCount))
+        if (orderCount === 3 && !localStorage.getItem('isla_push_prompted')) {
+          setTimeout(()=>setShowPushPrompt(true), 3000)
+        }
+      } catch {}
       // Feature 4: WhatsApp confirmation
       if (user?.phone) sendWhatsAppConfirmation({ phone:user.phone, orderNumber:order.order_number, items:cart.items, total:order.total?.toFixed(2), etaMins:18 })
     } catch(err){ toast.error('Order failed: '+err.message) }
@@ -1044,7 +1089,7 @@ function CustomerAppInner() {
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>Order summary</div>
           <div style={{ background:'rgba(255,255,255,0.07)',borderRadius:14,padding:16,marginBottom:20 }}>
             {/* Feature 4: Live checkout total — reads from live cart */}
-            <LiveCheckoutTotal tipAmount={driverTipAmount} />
+            <LiveCheckoutTotal tipAmount={driverTipAmount} loyaltyRedeemed={loyaltyRedeemed} />
             {cart.getHasAgeRestricted() && (
               <div style={{ marginTop:10,padding:'8px 12px',background:'rgba(196,104,58,0.18)',borderRadius:8,fontSize:11,color:'#E8C090',display:'flex',gap:6 }}>
                 <span>🆔</span><span>ID required at delivery for age-restricted items</span>
@@ -1174,7 +1219,10 @@ function CustomerAppInner() {
   }
 
   // ── FULL-SCREEN VIEWS (no tab bar) ──────────────────────────
-  if (view===VIEWS.FAQ)             return <FAQView onBack={()=>setView(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.FAQ) {
+    const { onTouchStart:swBk, onTouchEnd:swBkEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
+    return <div onTouchStart={swBk} onTouchEnd={swBkEnd} style={{minHeight:'100vh'}}><FAQView onBack={()=>setView(VIEWS.ACCOUNT)} /></div>
+  }
   if (view===VIEWS.VILLA_PRESETS)   return (
     <div style={{ background:'linear-gradient(170deg,#0A2A38,#0D3545)', minHeight:'100vh', paddingBottom:80, overflowY:'auto' }}>
       <div style={{ background:'linear-gradient(135deg,#0D3B4A,#1A5263)', padding:'16px', position:'sticky', top:0, zIndex:50, display:'flex', alignItems:'center', gap:12 }}>
@@ -1186,11 +1234,17 @@ function CustomerAppInner() {
     </div>
   )
   if (view===VIEWS.CREDITS)         return <CreditTrackerView onBack={()=>setView(VIEWS.ACCOUNT)} />
-  if (view===VIEWS.ORDER_HISTORY)   return <OrderHistoryView   onBack={()=>setView(VIEWS.ACCOUNT)} onShowReceipt={o=>setShowReceipt(o)} />
+  if (view===VIEWS.ORDER_HISTORY) {
+    const { onTouchStart:swBk, onTouchEnd:swBkEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
+    return <div onTouchStart={swBk} onTouchEnd={swBkEnd} style={{minHeight:'100vh'}}><OrderHistoryView onBack={()=>setView(VIEWS.ACCOUNT)} onShowReceipt={o=>setShowReceipt(o)} /></div>
+  }
   if (view===VIEWS.SAVED_ADDRESSES) return <SavedAddressesView onBack={()=>setView(VIEWS.ACCOUNT)} />
   if (view===VIEWS.EDIT_PROFILE)    return <EditProfileView    onBack={()=>setView(VIEWS.ACCOUNT)} />
   if (view===VIEWS.WISHLIST)        return <WishlistView onBack={()=>setView(VIEWS.ACCOUNT)} onDetail={p=>{trackView(p);setSelectedProduct(p);setView(VIEWS.HOME)}} />
-  if (view===VIEWS.LOYALTY)         return <LoyaltyCard  onBack={()=>setView(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.LOYALTY) {
+    const { onTouchStart:swBk, onTouchEnd:swBkEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
+    return <div onTouchStart={swBk} onTouchEnd={swBkEnd} style={{minHeight:'100vh'}}><LoyaltyCard onBack={()=>setView(VIEWS.ACCOUNT)} /></div>
+  }
   if (view===VIEWS.REFERRAL)        return <ReferralView onBack={()=>setView(VIEWS.ACCOUNT)} />
   if (view===VIEWS.NOTIFICATIONS)   return <NotificationPrefsView onBack={()=>setView(VIEWS.ACCOUNT)} />
 
@@ -1202,7 +1256,7 @@ function CustomerAppInner() {
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} onShowPreArrival={()=>setShowPreArrival(true)} onShowPoolParty={()=>setShowPoolParty(true)} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>setView(VIEWS.VILLA_PRESETS)} /></FadeIn>}
+      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} onShowPreArrival={()=>setShowPreArrival(true)} onShowPoolParty={()=>setShowPoolParty(true)} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>setView(VIEWS.VILLA_PRESETS)} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} onShowLoyalty={()=>setView(VIEWS.LOYALTY)} onShowReferral={()=>setView(VIEWS.REFERRAL)} onShowWishlist={()=>setView(VIEWS.WISHLIST)} onShowNotifications={()=>setView(VIEWS.NOTIFICATIONS)} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>setView(VIEWS.FAQ)} onShowCredits={()=>setView(VIEWS.CREDITS)} /></FadeIn>}
@@ -1246,6 +1300,16 @@ function CustomerAppInner() {
       {showRecurring && <RecurringOrderSheet cart={cart} onClose={()=>setShowRecurring(false)} onSchedule={()=>{}} />}
       {/* C2: Cookie consent */}
       {showCookieBanner && <CookieConsentBanner onAccept={acceptCookies} onDecline={declineCookies} />}
+      {/* T2-10: Push notification prompt */}
+      {showPushPrompt && <PushNotificationPrompt
+        onAccept={()=>{
+          try{localStorage.setItem('isla_push_prompted','1')}catch{}
+          setShowPushPrompt(false)
+          if(typeof requestPushPermission==='function') requestPushPermission()
+          toast.success('Notifications enabled! 🔔')
+        }}
+        onDismiss={()=>{ try{localStorage.setItem('isla_push_prompted','1')}catch{}; setShowPushPrompt(false) }}
+      />}
       {/* B10: Rating prompt with Rate later */}
       {showRatingPrompt && ratingOrder && <RatingPromptSheet order={ratingOrder} onRate={()=>{ setShowRatingPrompt(false); setShowRating(ratingOrder) }} onLater={()=>setShowRatingPrompt(false)} onClose={()=>setShowRatingPrompt(false)} />}
       {/* Feature 16: Offline banner */}

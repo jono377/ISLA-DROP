@@ -4,6 +4,7 @@ import { usePaginatedOrders, generateLocalizedReceipt } from './CustomerFeatures
 import { BackInStockButton, PeopleViewingBadge } from './CustomerFeatures_polish'
 import { AllergenInfo, ResponsibleDrinkingBadge, FrequentlyBoughtTogether } from './CustomerFeatures_getir'
 import { SmartReorderButton, CaloriesBadge } from './CustomerFeatures_v2'
+import { useProductImages, ImageGallery } from './CustomerFeatures_launch'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { supabase } from '../../lib/supabase'
 import { PRODUCTS, BEST_SELLERS } from '../../lib/products'
@@ -37,11 +38,7 @@ export function ProductDetailSheet({ product, onClose }) {
       <div style={{ width:'100%',maxWidth:480,margin:'0 auto',background:'#0D3545',borderRadius:'24px 24px 0 0',maxHeight:'92vh',overflowY:'auto' }} onClick={e=>e.stopPropagation()}>
         <div style={{ width:36,height:4,background:'rgba(255,255,255,0.2)',borderRadius:2,margin:'16px auto 0' }}/>
         <button onClick={onClose} style={{ position:'absolute',top:18,right:18,width:32,height:32,borderRadius:'50%',background:'rgba(255,255,255,0.15)',border:'none',color:'white',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center' }}>x</button>
-        <div style={{ height:220,position:'relative',overflow:'hidden' }}>
-          <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="card" style={{ width:'100%',height:220,objectFit:'cover' }} />
-          <div style={{ position:'absolute',inset:0,background:'linear-gradient(to top,rgba(13,53,69,0.95) 0%,transparent 55%)' }}/>
-          <div style={{ position:'absolute',bottom:16,left:20,fontSize:40 }}>{product.emoji}</div>
-        </div>
+        {(()=>{ const imgs = useProductImages(product.id); return <ImageGallery product={product} images={imgs} /> })()}
         <div style={{ padding:'16px 20px 40px' }}>
           <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10 }}>
             <div style={{ flex:1,marginRight:12 }}>
