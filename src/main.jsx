@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { getOrderNumberFromURL, PublicTrackingPage } from './components/customer/CustomerFeatures_launch'
+import { getOrderNumberFromURL } from './components/customer/CustomerFeatures_launch'
+import { PublicTrackingPage } from './components/customer/CustomerFeatures_v2'
 import CustomerApp from './components/customer/CustomerApp'
 import './index.css'
 
