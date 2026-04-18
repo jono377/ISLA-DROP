@@ -146,19 +146,25 @@ function SplashScreen({ onEnter }) {
   const [vis, setVis] = useState(false)
   useEffect(() => { setTimeout(() => setVis(true), 80) }, [])
   return (
-    // Outer: fills the full viewport with the background image
-    <div style={{ position:'fixed', inset:0, overflow:'hidden', display:'flex', justifyContent:'center' }}>
+    <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, overflow:'hidden', zIndex:9999 }}>
+      {/* Background image — always full screen */}
       <img src="/splash.jpg" alt="Isla Drop" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top' }} />
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.05) 40%,rgba(0,0,0,0.6) 68%,rgba(0,0,0,0.88) 100%)' }} />
-      {/* Inner: centred 480px column — matches the rest of the app on desktop */}
-      <div style={{ position:'relative', width:'100%', maxWidth:480, display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
-        <div style={{ padding:'0 28px 64px', opacity:vis?1:0, transform:vis?'translateY(0)':'translateY(20px)', transition:'all 0.9s cubic-bezier(0.34,1.1,0.64,1)' }}>
-          <div style={{ fontFamily:'DM Serif Display,serif', fontSize:58, color:'white', lineHeight:1, letterSpacing:'-1.5px', marginBottom:6, textShadow:'0 3px 20px rgba(0,0,0,0.4)' }}>Isla Drop</div>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.68)', letterSpacing:'3.5px', textTransform:'uppercase', marginBottom:5 }}>24/7 Delivery · Ibiza</div>
-          <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:40 }}>Drinks · Snacks · Tobacco</div>
-          <button onClick={onEnter} style={{ width:'100%', padding:'18px', background:'#C4683A', color:'white', border:'none', borderRadius:16, fontFamily:'DM Sans,sans-serif', fontSize:17, fontWeight:500, cursor:'pointer', boxShadow:'0 8px 32px rgba(196,104,58,0.55)', marginBottom:14 }}>Order Now</button>
-          <div style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.3)' }}>Anytime. Anywhere. Ibiza.</div>
-        </div>
+      {/* Content column — viewport-centred using left:50% + marginLeft trick */}
+      <div style={{
+        position:'absolute', bottom:0,
+        left:'50%', transform:'translateX(-50%)',
+        width:'100%', maxWidth:480,
+        padding:'0 28px 64px',
+        opacity:vis?1:0,
+        transform: vis ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(20px)',
+        transition:'opacity 0.9s cubic-bezier(0.34,1.1,0.64,1), transform 0.9s cubic-bezier(0.34,1.1,0.64,1)',
+      }}>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:58, color:'white', lineHeight:1, letterSpacing:'-1.5px', marginBottom:6, textShadow:'0 3px 20px rgba(0,0,0,0.4)' }}>Isla Drop</div>
+        <div style={{ fontSize:12, color:'rgba(255,255,255,0.68)', letterSpacing:'3.5px', textTransform:'uppercase', marginBottom:5 }}>24/7 Delivery · Ibiza</div>
+        <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:40 }}>Drinks · Snacks · Tobacco</div>
+        <button onClick={onEnter} style={{ width:'100%', padding:'18px', background:'#C4683A', color:'white', border:'none', borderRadius:16, fontFamily:'DM Sans,sans-serif', fontSize:17, fontWeight:500, cursor:'pointer', boxShadow:'0 8px 32px rgba(196,104,58,0.55)', marginBottom:14 }}>Order Now</button>
+        <div style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.3)' }}>Anytime. Anywhere. Ibiza.</div>
       </div>
     </div>
   )
@@ -1248,17 +1254,8 @@ function CustomerAppInner() {
   return (
     <div style={{ background:C.bg, minHeight:'100vh' }}>
       {/* Desktop: full-width background with centred 480px column */}
-      <style>{`
-        @media(min-width:520px){
-          .isla-app-shell{max-width:480px;margin:0 auto;position:relative;min-height:100vh;box-shadow:0 0 60px rgba(0,0,0,0.5)}
-          .isla-tab-bar{max-width:480px!important;left:50%!important;transform:translateX(-50%)!important}
-          .isla-desktop-bg{position:fixed;inset:0;background:linear-gradient(135deg,#061820 0%,#0A2A38 50%,#0D3545 100%);z-index:-1}
-        }
-        @media(min-width:520px){
-          body{background:linear-gradient(135deg,#061820 0%,#0A2A38 50%,#0D3545 100%)}
-        }
-      `}</style>
-      <div className="isla-app-shell" style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
+
+      <div className="isla-shell" style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
 
       {view===VIEWS.CATEGORY && categoryKey && (
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />
@@ -1358,10 +1355,11 @@ export default function CustomerApp() {
   return (
     <AppErrorBoundary>
       <style>{`
-        body { background: linear-gradient(135deg,#061820 0%,#0A2A38 50%,#0D3545 100%) !important; }
+        body { margin:0; background: linear-gradient(135deg,#061820 0%,#0A2A38 50%,#0D3545 100%) !important; }
         @media(min-width:520px) {
-          #root { display:flex; justify-content:center; background: linear-gradient(135deg,#061820 0%,#0A2A38 50%,#0D3545 100%); min-height:100vh; }
-          #root > * { width:100%; max-width:480px; position:relative; box-shadow:0 0 80px rgba(0,0,0,0.6); }
+          body { min-height:100vh; }
+          #root { display:flex; justify-content:center; min-height:100vh; background: linear-gradient(135deg,#061820 0%,#0A2A38 50%,#0D3545 100%); }
+          .isla-shell { max-width:480px; width:100%; position:relative; box-shadow:0 0 80px rgba(0,0,0,0.6); }
         }
       `}</style>
       <CustomerAppInner />
