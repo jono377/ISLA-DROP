@@ -918,7 +918,6 @@ function CustomerAppInner() {
   const [homeLoaded, setHomeLoaded] = useState(false)
   const { onTouchStart: swipeBackStart, onTouchEnd: swipeBackEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
   const realtimeDriverLoc = useRealtimeDriverLocation(activeOrder?.driver_id, !!(activeOrder?.driver_id))
-  const proximitySuggestion = useProximityVenueSuggestion(cart.deliveryLat, cart.deliveryLng)
   const [showPushPrompt, setShowPushPrompt] = useState(false)
   const formatPrice = useFormatPrice()
   const isAfterDark = useAfterDarkMode()
@@ -944,9 +943,6 @@ function CustomerAppInner() {
   const [corporateBilling, setCorporateBilling] = useState(false)
   const [corporateDetails, setCorporateDetails] = useState({})
   useReferralFromURL()
-  useEffect(()=>{
-    if(user?.id){const stored=sessionStorage.getItem('isla_referral_code');if(stored)processReferral(user.id)}
-  },[user?.id])
   const { tip: driverTipAmount, setTip: setDriverTipAmount } = useCartTip()
   const [showGuestCheckout, setShowGuestCheckout] = useState(false)
   const [guestUser, setGuestUser] = useState(null)
@@ -955,6 +951,9 @@ function CustomerAppInner() {
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [showHotelDelivery, setShowHotelDelivery] = useState(false)
   const { user } = useAuthStore()
+  useEffect(()=>{
+    if(user?.id){const stored=sessionStorage.getItem('isla_referral_code');if(stored)processReferral(user.id)}
+  },[user?.id])
   const savedCard = useSavedCard()
   const { notifs, unread, add: addNotif, markRead, markAllRead, clear: clearNotifs } = useNotifications()
   const [showNotifCentre, setShowNotifCentre] = useState(false)
@@ -968,7 +967,7 @@ function CustomerAppInner() {
   const liveOrderCount = useLiveOrderCount()
   const events = useIbizaEvents()
   const { checkStreak } = useOrderStreak()
-  const { supported: pushSupported, subscribe: subscribePush } = usePushNotifications ? usePushNotifications() : {}
+  const { supported: pushSupported, subscribe: subscribePush } = usePushNotifications()
   useEffect(() => {
     if (typeof registerServiceWorker === 'function') registerServiceWorker()
     setupNotificationActions()
@@ -985,6 +984,7 @@ function CustomerAppInner() {
   const { prefs: dietaryPrefs, toggle: toggleDietary } = useDietaryPrefs()
   const [showDietaryFilter, setShowDietaryFilter] = useState(false)
   const cart = useCartStore()
+  const proximitySuggestion = useProximityVenueSuggestion(cart.deliveryLat, cart.deliveryLng)
   const t    = useT(lang)
   const estimatedMins = cart.deliveryAddress ? 18 : null
 
