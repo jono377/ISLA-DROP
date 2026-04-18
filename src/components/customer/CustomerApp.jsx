@@ -193,7 +193,7 @@ function TabBar({ view, setView, cartCount }) {
     { id:VIEWS.ACCOUNT,   label:'Account',    path:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' },
   ]
   return (
-    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:480, display:'flex', background:C.tabBg, backdropFilter:'blur(14px)', borderTop:'0.5px solid rgba(43,122,139,0.2)', zIndex:100, paddingBottom:'env(safe-area-inset-bottom,0px)' }}>
+    <div className="isla-tab-bar" style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:480, display:'flex', background:C.tabBg, backdropFilter:'blur(14px)', borderTop:'0.5px solid rgba(43,122,139,0.2)', zIndex:100, paddingBottom:'env(safe-area-inset-bottom,0px)' }}>
       {tabs.map(t => {
         const on = view === t.id
         return (
@@ -1070,7 +1070,7 @@ function CustomerAppInner() {
   // ── CHECKOUT ──────────────────────────────────────────────
   if (view===VIEWS.CHECKOUT) {
     return (
-      <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:60 }}>
+      <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:60, maxWidth:480, margin:'0 auto', boxShadow:'0 0 60px rgba(0,0,0,0.5)' }}>
         <div style={{ padding:'16px 16px 20px' }}>
           <CheckoutProgressBar step={2} />
           <button onClick={()=>setView(VIEWS.BASKET)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:14,cursor:'pointer',fontFamily:'DM Sans,sans-serif',marginBottom:12 }}>← Back to basket</button>
@@ -1157,7 +1157,7 @@ function CustomerAppInner() {
     const LABELS={confirmed:'Confirmed',preparing:'Preparing',assigned:'Driver assigned',picked_up:'Picked up',en_route:'On the way',delivered:'Delivered!'}
     const idx=STEPS.indexOf(activeOrder.status)
     return (
-      <div style={{ background:C.bg, minHeight:'100vh', padding:'24px 16px 100px' }}>
+      <div style={{ background:C.bg, minHeight:'100vh', padding:'24px 16px 100px', maxWidth:480, margin:'0 auto', boxShadow:'0 0 60px rgba(0,0,0,0.5)' }}>
         <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:4 }}>{activeOrder.status==='delivered'?'Delivered! 🎉':'On its way 🛵'}</div>
         <div style={{ fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20 }}>#{activeOrder.order_number}</div>
         <AnimatedTrackingSteps steps={STEPS} labels={LABELS} currentStatus={activeOrder.status} />
@@ -1222,7 +1222,7 @@ function CustomerAppInner() {
   // ── FULL-SCREEN VIEWS (no tab bar) ──────────────────────────
   if (view===VIEWS.FAQ)             return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><FAQView onBack={()=>setView(VIEWS.ACCOUNT)} /></div>
   if (view===VIEWS.VILLA_PRESETS)   return (
-    <div style={{ background:'linear-gradient(170deg,#0A2A38,#0D3545)', minHeight:'100vh', paddingBottom:80, overflowY:'auto' }}>
+    <div style={{ background:'linear-gradient(170deg,#0A2A38,#0D3545)', minHeight:'100vh', paddingBottom:80, overflowY:'auto', maxWidth:480, margin:'0 auto', boxShadow:'0 0 60px rgba(0,0,0,0.5)' }}>
       <div style={{ background:'linear-gradient(135deg,#0D3B4A,#1A5263)', padding:'16px', position:'sticky', top:0, zIndex:50, display:'flex', alignItems:'center', gap:12 }}>
         <button onClick={()=>setView(VIEWS.HOME)} style={{ width:36,height:36,background:'rgba(255,255,255,0.1)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
@@ -1242,7 +1242,19 @@ function CustomerAppInner() {
 
   // ── MAIN SHELL — tab bar lives here only ──────────────────
   return (
-    <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
+    <div style={{ background:C.bg, minHeight:'100vh' }}>
+      {/* Desktop: full-width background with centred 480px column */}
+      <style>{`
+        @media(min-width:520px){
+          .isla-app-shell{max-width:480px;margin:0 auto;position:relative;min-height:100vh;box-shadow:0 0 60px rgba(0,0,0,0.5)}
+          .isla-tab-bar{max-width:480px!important;left:50%!important;transform:translateX(-50%)!important}
+          .isla-desktop-bg{position:fixed;inset:0;background:linear-gradient(135deg,#061820 0%,#0A2A38 50%,#0D3545 100%);z-index:-1}
+        }
+        @media(min-width:520px){
+          body{background:linear-gradient(135deg,#061820 0%,#0A2A38 50%,#0D3545 100%)}
+        }
+      `}</style>
+      <div className="isla-app-shell" style={{ background:C.bg, minHeight:'100vh', paddingBottom:68 }}>
 
       {view===VIEWS.CATEGORY && categoryKey && (
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />
@@ -1333,6 +1345,7 @@ function CustomerAppInner() {
       {showBoatMode && <BoatDeliverySheet onClose={()=>setShowBoatMode(false)} onConfirm={details=>{ if(cart.setDeliveryNotes) cart.setDeliveryNotes(details.notes) }} />}
 
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes shimmer{0%,100%{opacity:1}50%{opacity:0.55}} @keyframes spin{to{transform:rotate(360deg)}} @keyframes gentleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}} @keyframes badgeBounce{0%{transform:scale(1)}40%{transform:scale(1.5)}70%{transform:scale(0.9)}100%{transform:scale(1)}}`}</style>
+      </div>
     </div>
   )
 }
@@ -1340,6 +1353,13 @@ function CustomerAppInner() {
 export default function CustomerApp() {
   return (
     <AppErrorBoundary>
+      <style>{`
+        body { background: linear-gradient(135deg,#061820 0%,#0A2A38 50%,#0D3545 100%) !important; }
+        @media(min-width:520px) {
+          #root { display:flex; justify-content:center; background: linear-gradient(135deg,#061820 0%,#0A2A38 50%,#0D3545 100%); min-height:100vh; }
+          #root > * { width:100%; max-width:480px; position:relative; box-shadow:0 0 80px rgba(0,0,0,0.6); }
+        }
+      `}</style>
       <CustomerAppInner />
     </AppErrorBoundary>
   )
