@@ -916,6 +916,7 @@ function CustomerAppInner() {
   const { show: showAppRatingPrompt, dismiss: dismissRatingPrompt } = useAppRatingPrompt()
   const [showRatingPrompt, setShowRatingPrompt] = useState(false)
   const [homeLoaded, setHomeLoaded] = useState(false)
+  const { onTouchStart: swipeBackStart, onTouchEnd: swipeBackEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
   const [showPushPrompt, setShowPushPrompt] = useState(false)
   const formatPrice = useFormatPrice()
   const isAfterDark = useAfterDarkMode()
@@ -1219,10 +1220,7 @@ function CustomerAppInner() {
   }
 
   // ── FULL-SCREEN VIEWS (no tab bar) ──────────────────────────
-  if (view===VIEWS.FAQ) {
-    const { onTouchStart:swBk, onTouchEnd:swBkEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
-    return <div onTouchStart={swBk} onTouchEnd={swBkEnd} style={{minHeight:'100vh'}}><FAQView onBack={()=>setView(VIEWS.ACCOUNT)} /></div>
-  }
+  if (view===VIEWS.FAQ)             return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><FAQView onBack={()=>setView(VIEWS.ACCOUNT)} /></div>
   if (view===VIEWS.VILLA_PRESETS)   return (
     <div style={{ background:'linear-gradient(170deg,#0A2A38,#0D3545)', minHeight:'100vh', paddingBottom:80, overflowY:'auto' }}>
       <div style={{ background:'linear-gradient(135deg,#0D3B4A,#1A5263)', padding:'16px', position:'sticky', top:0, zIndex:50, display:'flex', alignItems:'center', gap:12 }}>
@@ -1234,17 +1232,11 @@ function CustomerAppInner() {
     </div>
   )
   if (view===VIEWS.CREDITS)         return <CreditTrackerView onBack={()=>setView(VIEWS.ACCOUNT)} />
-  if (view===VIEWS.ORDER_HISTORY) {
-    const { onTouchStart:swBk, onTouchEnd:swBkEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
-    return <div onTouchStart={swBk} onTouchEnd={swBkEnd} style={{minHeight:'100vh'}}><OrderHistoryView onBack={()=>setView(VIEWS.ACCOUNT)} onShowReceipt={o=>setShowReceipt(o)} /></div>
-  }
+  if (view===VIEWS.ORDER_HISTORY)   return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><OrderHistoryView onBack={()=>setView(VIEWS.ACCOUNT)} onShowReceipt={o=>setShowReceipt(o)} /></div>
   if (view===VIEWS.SAVED_ADDRESSES) return <SavedAddressesView onBack={()=>setView(VIEWS.ACCOUNT)} />
   if (view===VIEWS.EDIT_PROFILE)    return <EditProfileView    onBack={()=>setView(VIEWS.ACCOUNT)} />
   if (view===VIEWS.WISHLIST)        return <WishlistView onBack={()=>setView(VIEWS.ACCOUNT)} onDetail={p=>{trackView(p);setSelectedProduct(p);setView(VIEWS.HOME)}} />
-  if (view===VIEWS.LOYALTY) {
-    const { onTouchStart:swBk, onTouchEnd:swBkEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
-    return <div onTouchStart={swBk} onTouchEnd={swBkEnd} style={{minHeight:'100vh'}}><LoyaltyCard onBack={()=>setView(VIEWS.ACCOUNT)} /></div>
-  }
+  if (view===VIEWS.LOYALTY)         return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><LoyaltyCard onBack={()=>setView(VIEWS.ACCOUNT)} /></div>
   if (view===VIEWS.REFERRAL)        return <ReferralView onBack={()=>setView(VIEWS.ACCOUNT)} />
   if (view===VIEWS.NOTIFICATIONS)   return <NotificationPrefsView onBack={()=>setView(VIEWS.ACCOUNT)} />
 
