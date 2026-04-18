@@ -922,7 +922,7 @@ function CustomerAppInner() {
   const afterDarkProducts = getAfterDarkProducts()
   const { show: showOnboarding, finish: finishOnboarding } = useOnboarding()
   const { show: showCookieBanner, accept: acceptCookies, decline: declineCookies } = useCookieConsent()
-  const { currency, setCurrency, format: formatPrice } = useCurrency()
+  const { currency, setCurrency, format: formatCurrencyDisplay } = useCurrency()
   const collections = useCollections()
   const flash = useFlashProducts()
   const depot = useNearestDepot()
