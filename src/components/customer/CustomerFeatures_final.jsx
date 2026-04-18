@@ -500,13 +500,39 @@ export function BeachGPSButton({ onSet }) {
 }
 
 // ── FEATURE 22: Villa manager saved order presets ─────────────
+// ── VILLA PRESETS — complete rebuild ─────────────────────────
 const VILLA_PRESETS_KEY = 'isla_villa_presets'
+
+// Curated starter packs for common villa scenarios
+const STARTER_PRESETS = [
+  {
+    id:'starter_changeover', name:'Changeover essentials', emoji:'🏡', colour:'rgba(43,122,139,0.2)', border:'rgba(43,122,139,0.35)',
+    description:'Ice, water, beer and wine for arriving guests',
+    tags:['ice','water_juice','beer_cider','wine'],
+  },
+  {
+    id:'starter_pool_party', name:'Pool party pack', emoji:'🏊', colour:'rgba(196,104,58,0.15)', border:'rgba(196,104,58,0.3)',
+    description:'Spirits, mixers, cold beers and ice for 10+',
+    tags:['spirits','soft_drinks','beer_cider','ice'],
+  },
+  {
+    id:'starter_sundowner', name:'Sundowner set', emoji:'🌅', colour:'rgba(200,168,75,0.12)', border:'rgba(200,168,75,0.28)',
+    description:'Champagne, wine and nibbles for the terrace',
+    tags:['champagne','wine','snacks'],
+  },
+  {
+    id:'starter_morning', name:'Morning after', emoji:'🤕', colour:'rgba(90,107,58,0.15)', border:'rgba(90,107,58,0.3)',
+    description:'Soft drinks, water and recovery essentials',
+    tags:['soft_drinks','water_juice','snacks'],
+  },
+]
+
 export function useVillaPresets() {
   const [presets, setPresets] = useState(() => {
     try { return JSON.parse(localStorage.getItem(VILLA_PRESETS_KEY) || '[]') } catch { return [] }
   })
-  const save = useCallback((name, items) => {
-    const preset = { id: Date.now(), name, items, created_at: new Date().toISOString() }
+  const save = useCallback((name, emoji, items) => {
+    const preset = { id: Date.now(), name, emoji: emoji||'🏡', items, created_at: new Date().toISOString() }
     setPresets(prev => {
       const next = [...prev.filter(p=>p.name!==name), preset]
       try { localStorage.setItem(VILLA_PRESETS_KEY, JSON.stringify(next)) } catch {}
@@ -524,75 +550,418 @@ export function useVillaPresets() {
   return { presets, save, remove }
 }
 
+// AI villa order builder
+async function buildVillaOrder(prompt) {
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('No API key — add VITE_ANTHROPIC_API_KEY to Vercel')
+  const productList = PRODUCTS.slice(0,60).map(p=>p.id+'|'+p.name+'|€'+p.price+'|cat:'+p.category).join('
+')
+  const system = 'You are Isla, an expert Ibiza villa concierge. Build a perfect drinks and supplies order for villa guests. Respond ONLY with valid JSON: {"title":"string","summary":"string","items":[{"product_id":"string","quantity":number,"reason":"string"}],"total_estimate":"string"}'
+  const message = 'Build an Ibiza villa order for: '+prompt+'
+
+Available products (id|name|price|category):
+'+productList+'
+
+Pick 6-12 items with realistic quantities. Only use product IDs from the list above.'
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true', 'x-api-key':apiKey },
+    body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:800, system, messages:[{role:'user',content:message}] })
+  })
+  if (!resp.ok) { const e=await resp.text(); throw new Error('API '+resp.status+': '+e.slice(0,100)) }
+  const data = await resp.json()
+  const raw = data.content?.[0]?.text || ''
+  return JSON.parse(raw.replace(/```json|```/g,'').trim())
+}
+
 export function VillaPresetsPanel({ onAddAll }) {
   const { presets, save, remove } = useVillaPresets()
   const { addItem } = useCartStore()
   const cart = useCartStore()
+  const [tab, setTab] = useState('presets') // presets | starter | ai | build
   const [showSave, setShowSave] = useState(false)
   const [presetName, setPresetName] = useState('')
+  const [presetEmoji, setPresetEmoji] = useState('🏡')
+  // AI tab state
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState(null)
+  const [aiError, setAiError] = useState('')
+  // Build tab state
+  const [buildItems, setBuildItems] = useState({})
+  const [buildName, setBuildName] = useState('')
 
-  const addPreset = (preset) => {
+  const QUICK_PROMPTS = [
+    '8 guests arriving Friday for a long weekend',
+    '12 people, pool party Saturday afternoon',
+    'Romantic couple stay, 3 nights',
+    'Hen party group of 10, big night out',
+    'Family with kids, 5 days',
+    'Villa changeover, restock the basics',
+  ]
+
+  const EMOJIS = ['🏡','🌴','🏊','🌅','🎉','🥂','🍺','🎵','👑','🛥️']
+
+  const addPreset = (preset, showToast=true) => {
     let count = 0
     preset.items.forEach(({ product, quantity }) => {
       const p = PRODUCTS.find(p=>p.id===product.id) || product
-      for (let i=0;i<quantity;i++) { addItem(p); count++ }
+      if (p) for (let i=0;i<quantity;i++) { addItem(p); count++ }
     })
-    toast.success(count + ' items added from "' + preset.name + '" 🏡')
+    if (showToast) toast.success(count+' items added 🛵', {duration:1800})
+    onAddAll?.()
+  }
+
+  const addStarterPack = (pack) => {
+    const items = PRODUCTS.filter(p => pack.tags.some(t => p.category===t)).slice(0,8)
+    if (!items.length) { toast.error('No matching products'); return }
+    items.forEach(p => addItem(p))
+    toast.success(pack.name+' added to basket! 🌴', {duration:1800})
     onAddAll?.()
   }
 
   const saveCurrentCart = () => {
     if (!presetName.trim()) { toast.error('Enter a preset name'); return }
     if (!cart.items.length) { toast.error('Add items to basket first'); return }
-    save(presetName.trim(), cart.items.map(({product,quantity})=>({product:{id:product.id,name:product.name,emoji:product.emoji,price:product.price},quantity})))
-    setShowSave(false); setPresetName('')
+    save(presetName.trim(), presetEmoji, cart.items.map(({product,quantity})=>({
+      product:{id:product.id,name:product.name,emoji:product.emoji,price:product.price}, quantity
+    })))
+    setShowSave(false); setPresetName(''); setPresetEmoji('🏡')
   }
 
+  const runAI = async (prompt) => {
+    const p = prompt || aiPrompt
+    if (!p.trim()) return
+    setAiLoading(true); setAiResult(null); setAiError('')
+    try {
+      const result = await buildVillaOrder(p)
+      setAiResult(result)
+    } catch(err) {
+      setAiError(err.message.includes('No API key') ? 'AI requires VITE_ANTHROPIC_API_KEY in Vercel settings.' : 'Could not generate right now. Try again.')
+    }
+    setAiLoading(false)
+  }
+
+  const addAiResult = () => {
+    if (!aiResult?.items) return
+    let count = 0
+    aiResult.items.forEach(item => {
+      const p = PRODUCTS.find(p=>p.id===item.product_id)
+      if (p) for (let i=0;i<(item.quantity||1);i++) { addItem(p); count++ }
+    })
+    toast.success(count+' items added to basket 🛵', {duration:2000})
+    onAddAll?.()
+  }
+
+  const saveAiResult = () => {
+    if (!aiResult?.items) return
+    const items = aiResult.items.map(item => {
+      const p = PRODUCTS.find(p=>p.id===item.product_id)
+      return p ? { product:{id:p.id,name:p.name,emoji:p.emoji,price:p.price}, quantity:item.quantity||1 } : null
+    }).filter(Boolean)
+    save(aiResult.title || 'AI preset', '🤖', items)
+    toast.success('Saved as a preset!')
+  }
+
+  const getBuildTotal = () => Object.entries(buildItems).reduce((sum,[id,qty])=>{
+    const p = PRODUCTS.find(p=>p.id===id); return sum+(p?p.price*qty:0)
+  }, 0)
+
+  const addBuildToBasket = () => {
+    let count = 0
+    Object.entries(buildItems).forEach(([id,qty])=>{
+      const p = PRODUCTS.find(p=>p.id===id)
+      if (p&&qty>0) for(let i=0;i<qty;i++){addItem(p);count++}
+    })
+    if (!count) { toast.error('Add some items first'); return }
+    toast.success(count+' items added to basket! 🛵', {duration:2000})
+    onAddAll?.()
+  }
+
+  const saveBuildPreset = () => {
+    if (!buildName.trim()) { toast.error('Enter a preset name'); return }
+    const items = Object.entries(buildItems).map(([id,qty])=>{
+      const p = PRODUCTS.find(p=>p.id===id)
+      return p && qty>0 ? { product:{id:p.id,name:p.name,emoji:p.emoji,price:p.price}, quantity:qty } : null
+    }).filter(Boolean)
+    if (!items.length) { toast.error('Add some items first'); return }
+    save(buildName.trim(), '🏗️', items)
+    setBuildItems({}); setBuildName('')
+  }
+
+  const TABS = [
+    { id:'presets', label:'My presets', emoji:'📋' },
+    { id:'starter', label:'Starter packs', emoji:'⭐' },
+    { id:'ai',      label:'AI builder', emoji:'✨' },
+    { id:'build',   label:'Build your own', emoji:'🏗️' },
+  ]
+
   return (
-    <div style={{ margin:'0 16px 20px', background:'rgba(255,255,255,0.04)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'16px' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-        <div style={{ fontFamily:F.serif, fontSize:18, color:'white' }}>🏡 Villa presets</div>
-        <button onClick={()=>setShowSave(s=>!s)}
-          style={{ padding:'6px 14px', background:'rgba(196,104,58,0.2)', border:'0.5px solid rgba(196,104,58,0.4)', borderRadius:20, fontSize:11, fontWeight:700, color:'#E8A070', cursor:'pointer', fontFamily:F.sans }}>
-          + Save current basket
-        </button>
+    <div style={{ margin:'0 0 20px' }}>
+      {/* Header */}
+      <div style={{ padding:'18px 16px 14px', background:'linear-gradient(135deg,rgba(13,59,74,0.9),rgba(26,80,99,0.8))', borderBottom:'0.5px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ fontFamily:F.serif, fontSize:20, color:'white', marginBottom:2 }}>🏡 Villa presets</div>
+        <div style={{ fontSize:12, color:C.muted }}>AI-powered orders, starter packs and saved favourites</div>
       </div>
-      {showSave && (
-        <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-          <input value={presetName} onChange={e=>setPresetName(e.target.value)}
-            placeholder='e.g. "Casa Alba changeover"'
-            onKeyDown={e=>e.key==='Enter'&&saveCurrentCart()}
-            style={{ flex:1, padding:'10px 12px', background:'rgba(255,255,255,0.08)', border:'0.5px solid rgba(255,255,255,0.2)', borderRadius:10, color:'white', fontSize:13, fontFamily:F.sans, outline:'none' }}/>
-          <button onClick={saveCurrentCart}
-            style={{ padding:'10px 16px', background:'#C4683A', border:'none', borderRadius:10, color:'white', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:F.sans }}>
-            Save
+
+      {/* Tabs */}
+      <div style={{ display:'flex', overflowX:'auto', scrollbarWidth:'none', padding:'0 16px', gap:6, background:'rgba(13,53,69,0.6)', borderBottom:'0.5px solid rgba(255,255,255,0.07)' }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={()=>setTab(t.id)}
+            style={{ padding:'10px 14px', borderRadius:0, border:'none', borderBottom: tab===t.id?'2px solid #C4683A':'2px solid transparent', background:'none', cursor:'pointer', fontSize:12, fontFamily:F.sans, color:tab===t.id?'white':C.muted, fontWeight:tab===t.id?600:400, whiteSpace:'nowrap', flexShrink:0, transition:'all 0.15s' }}>
+            {t.emoji} {t.label}
           </button>
-        </div>
-      )}
-      {presets.length === 0 ? (
-        <div style={{ fontSize:12, color:C.muted, textAlign:'center', padding:'16px 0' }}>
-          No presets yet. Build a basket and save it as a preset for one-tap reordering.
-        </div>
-      ) : (
-        presets.map(preset => (
-          <div key={preset.id} style={{ background:'rgba(255,255,255,0.06)', borderRadius:12, padding:'12px 14px', marginBottom:8, display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:13, fontWeight:600, color:'white', fontFamily:F.sans, marginBottom:3 }}>{preset.name}</div>
-              <div style={{ fontSize:11, color:C.muted }}>
-                {preset.items.map(i=>i.product.emoji).join(' ')} · {preset.items.reduce((s,i)=>s+i.quantity,0)} items
+        ))}
+      </div>
+
+      <div style={{ padding:'16px' }}>
+
+        {/* ── MY PRESETS TAB ─────────────────────────────── */}
+        {tab==='presets' && (
+          <>
+            <button onClick={()=>setShowSave(s=>!s)}
+              style={{ width:'100%', padding:'11px', background:'rgba(196,104,58,0.12)', border:'0.5px solid rgba(196,104,58,0.3)', borderRadius:12, color:'#E8A070', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:F.sans, marginBottom:12, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+              + Save current basket as preset
+            </button>
+            {showSave && (
+              <div style={{ background:'rgba(255,255,255,0.05)', borderRadius:12, padding:'14px', marginBottom:14 }}>
+                <div style={{ fontSize:12, color:C.muted, marginBottom:8 }}>Preset name</div>
+                <input value={presetName} onChange={e=>setPresetName(e.target.value)}
+                  placeholder='e.g. Casa Alba changeover'
+                  onKeyDown={e=>e.key==='Enter'&&saveCurrentCart()}
+                  style={{ width:'100%', padding:'10px 12px', background:'rgba(255,255,255,0.08)', border:'0.5px solid rgba(255,255,255,0.2)', borderRadius:10, color:'white', fontSize:13, fontFamily:F.sans, outline:'none', boxSizing:'border-box', marginBottom:10 }}/>
+                <div style={{ fontSize:12, color:C.muted, marginBottom:8 }}>Choose an emoji</div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:12 }}>
+                  {EMOJIS.map(e=>(
+                    <button key={e} onClick={()=>setPresetEmoji(e)}
+                      style={{ width:36, height:36, borderRadius:8, border:'1.5px solid '+(presetEmoji===e?'#C4683A':'rgba(255,255,255,0.1)'), background:presetEmoji===e?'rgba(196,104,58,0.2)':'transparent', fontSize:18, cursor:'pointer' }}>
+                      {e}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={saveCurrentCart}
+                  style={{ width:'100%', padding:'11px', background:'#C4683A', border:'none', borderRadius:10, color:'white', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:F.sans }}>
+                  Save preset
+                </button>
               </div>
+            )}
+            {presets.length === 0 ? (
+              <div style={{ textAlign:'center', padding:'28px 0' }}>
+                <div style={{ fontSize:40, marginBottom:12 }}>📋</div>
+                <div style={{ fontFamily:F.serif, fontSize:18, color:'white', marginBottom:6 }}>No presets yet</div>
+                <div style={{ fontSize:12, color:C.muted, lineHeight:1.6 }}>Build a basket, then save it here for one-tap reordering — perfect for repeat villa changeovers.</div>
+              </div>
+            ) : presets.map(preset => (
+              <div key={preset.id} style={{ background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:14, padding:'14px', marginBottom:10 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:8 }}>
+                  <div style={{ fontSize:28, flexShrink:0 }}>{preset.emoji||'🏡'}</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:14, fontWeight:600, color:'white', fontFamily:F.sans }}>{preset.name}</div>
+                    <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>
+                      {preset.items.map(i=>i.product.emoji).join(' ')} · {preset.items.reduce((s,i)=>s+i.quantity,0)} items · €{preset.items.reduce((s,i)=>s+(i.product.price||0)*i.quantity,0).toFixed(2)}
+                    </div>
+                  </div>
+                  <button onClick={()=>remove(preset.id)}
+                    style={{ background:'none', border:'none', color:'rgba(255,255,255,0.3)', cursor:'pointer', fontSize:16, padding:0, flexShrink:0 }}>🗑</button>
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button onClick={()=>addPreset(preset)}
+                    style={{ flex:1, padding:'10px', background:'#C4683A', border:'none', borderRadius:10, color:'white', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:F.sans }}>
+                    Add all to basket
+                  </button>
+                  <button onClick={()=>{
+                    const total = preset.items.reduce((s,i)=>s+(i.product.price||0)*i.quantity,0)
+                    const text = preset.emoji+' '+preset.name+' via Isla Drop 🌴 ('+preset.items.reduce((s,i)=>s+i.quantity,0)+' items, €'+total.toFixed(2)+')'
+                    navigator.share ? navigator.share({title:'Villa order',text}) : (navigator.clipboard?.writeText(text),toast.success('Copied!'))
+                  }}
+                    style={{ padding:'10px 14px', background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:10, color:C.muted, fontSize:12, cursor:'pointer', fontFamily:F.sans }}>
+                    Share
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* ── STARTER PACKS TAB ──────────────────────────── */}
+        {tab==='starter' && (
+          <>
+            <div style={{ fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+              Ready-made packages curated for common Ibiza villa occasions. Tap any pack to add everything to your basket instantly.
             </div>
-            <button onClick={()=>addPreset(preset)}
-              style={{ padding:'8px 16px', background:'#C4683A', border:'none', borderRadius:10, color:'white', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:F.sans, flexShrink:0 }}>
-              Add all
-            </button>
-            <button onClick={()=>remove(preset.id)}
-              style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:16, flexShrink:0, padding:0 }}>
-              🗑
-            </button>
-          </div>
-        ))
-      )}
+            {STARTER_PRESETS.map(pack => (
+              <div key={pack.id} style={{ background:pack.colour, border:'0.5px solid '+pack.border, borderRadius:16, padding:'16px', marginBottom:12 }}>
+                <div style={{ display:'flex', alignItems:'flex-start', gap:12, marginBottom:12 }}>
+                  <div style={{ fontSize:32, flexShrink:0 }}>{pack.emoji}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontFamily:F.serif, fontSize:17, color:'white', marginBottom:3 }}>{pack.name}</div>
+                    <div style={{ fontSize:12, color:C.muted, lineHeight:1.5 }}>{pack.description}</div>
+                  </div>
+                </div>
+                <div style={{ display:'flex', gap:7, flexWrap:'wrap', marginBottom:12 }}>
+                  {PRODUCTS.filter(p=>pack.tags.some(t=>p.category===t)).slice(0,6).map(p=>(
+                    <div key={p.id} style={{ background:'rgba(255,255,255,0.08)', borderRadius:20, padding:'3px 10px', fontSize:11, color:'rgba(255,255,255,0.7)', fontFamily:F.sans }}>
+                      {p.emoji} {p.name.split(' ').slice(0,2).join(' ')}
+                    </div>
+                  ))}
+                </div>
+                <button onClick={()=>addStarterPack(pack)}
+                  style={{ width:'100%', padding:'11px', background:'#C4683A', border:'none', borderRadius:12, color:'white', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:F.sans }}>
+                  Add {pack.name} to basket →
+                </button>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* ── AI BUILDER TAB ─────────────────────────────── */}
+        {tab==='ai' && (
+          <>
+            {!aiResult && !aiLoading && (
+              <>
+                <div style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.12),rgba(43,122,139,0.12))', border:'0.5px solid rgba(196,104,58,0.25)', borderRadius:14, padding:'14px 16px', marginBottom:16 }}>
+                  <div style={{ fontFamily:F.serif, fontSize:17, color:'white', marginBottom:4 }}>✨ AI Villa Order Builder</div>
+                  <div style={{ fontSize:12, color:C.muted, lineHeight:1.6 }}>Tell Isla about your guests and occasion. She will build the perfect Ibiza villa order — right quantities, right products, no guessing.</div>
+                </div>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:7, marginBottom:14 }}>
+                  {QUICK_PROMPTS.map(p=>(
+                    <button key={p} onClick={()=>runAI(p)}
+                      style={{ padding:'7px 13px', background:'rgba(255,255,255,0.07)', border:'0.5px solid rgba(255,255,255,0.14)', borderRadius:20, fontSize:11, color:'rgba(255,255,255,0.75)', cursor:'pointer', fontFamily:F.sans, textAlign:'left' }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <input value={aiPrompt} onChange={e=>setAiPrompt(e.target.value)}
+                    onKeyDown={e=>e.key==='Enter'&&runAI()}
+                    placeholder='Describe your guests and occasion...'
+                    style={{ flex:1, padding:'12px 14px', background:'rgba(255,255,255,0.08)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:24, color:'white', fontSize:13, fontFamily:F.sans, outline:'none' }}/>
+                  <button onClick={()=>runAI()} disabled={!aiPrompt.trim()}
+                    style={{ width:44, height:44, background:aiPrompt.trim()?'#C4683A':'rgba(255,255,255,0.08)', border:'none', borderRadius:'50%', cursor:aiPrompt.trim()?'pointer':'default', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+                  </button>
+                </div>
+                {aiError && <div style={{ marginTop:12, fontSize:12, color:'rgba(240,149,149,0.8)', padding:'10px 12px', background:'rgba(240,149,149,0.08)', borderRadius:10 }}>{aiError}</div>}
+              </>
+            )}
+            {aiLoading && (
+              <div style={{ textAlign:'center', padding:'40px 0' }}>
+                <div style={{ width:44, height:44, border:'3px solid rgba(255,255,255,0.12)', borderTopColor:'#C4683A', borderRadius:'50%', animation:'villaSpinAI 0.8s linear infinite', margin:'0 auto 16px' }}/>
+                <div style={{ fontFamily:F.serif, fontSize:18, color:'white', marginBottom:6 }}>Isla is building your order...</div>
+                <div style={{ fontSize:12, color:C.muted }}>Selecting the right products and quantities for your group</div>
+                <style>{'@keyframes villaSpinAI{to{transform:rotate(360deg)}}'}</style>
+              </div>
+            )}
+            {aiResult && !aiLoading && (
+              <>
+                <div style={{ background:'rgba(255,255,255,0.04)', borderRadius:14, padding:'14px', marginBottom:14 }}>
+                  <div style={{ fontFamily:F.serif, fontSize:18, color:'white', marginBottom:4 }}>{aiResult.title}</div>
+                  {aiResult.summary && <div style={{ fontSize:12, color:C.muted, lineHeight:1.6, marginBottom:12 }}>{aiResult.summary}</div>}
+                  {(aiResult.items||[]).map((item,i)=>{
+                    const p = PRODUCTS.find(p=>p.id===item.product_id)
+                    if (!p) return null
+                    return (
+                      <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:'0.5px solid rgba(255,255,255,0.06)' }}>
+                        <span style={{ fontSize:20, flexShrink:0 }}>{p.emoji}</span>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:13, color:'white', fontFamily:F.sans }}>{p.name}</div>
+                          {item.reason && <div style={{ fontSize:10, color:C.muted, marginTop:1 }}>{item.reason}</div>}
+                        </div>
+                        <div style={{ fontSize:11, color:C.muted, flexShrink:0 }}>×{item.quantity||1}</div>
+                        <div style={{ fontSize:12, fontWeight:600, color:'#E8A070', flexShrink:0 }}>€{((p.price||0)*(item.quantity||1)).toFixed(2)}</div>
+                      </div>
+                    )
+                  })}
+                  {aiResult.total_estimate && (
+                    <div style={{ display:'flex', justifyContent:'space-between', paddingTop:10, marginTop:4 }}>
+                      <span style={{ fontSize:13, fontWeight:600, color:'white', fontFamily:F.sans }}>Estimated total</span>
+                      <span style={{ fontSize:14, fontWeight:700, color:'#E8A070' }}>{aiResult.total_estimate}</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display:'flex', gap:8, marginBottom:10 }}>
+                  <button onClick={addAiResult}
+                    style={{ flex:1, padding:'12px', background:'#C4683A', border:'none', borderRadius:12, color:'white', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:F.sans }}>
+                    Add all to basket →
+                  </button>
+                  <button onClick={saveAiResult}
+                    style={{ padding:'12px 14px', background:'rgba(200,168,75,0.15)', border:'0.5px solid rgba(200,168,75,0.3)', borderRadius:12, color:'#C8A84B', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:F.sans }}>
+                    Save preset
+                  </button>
+                </div>
+                <button onClick={()=>{setAiResult(null);setAiPrompt('')}}
+                  style={{ width:'100%', padding:'10px', background:'transparent', border:'0.5px solid rgba(255,255,255,0.12)', borderRadius:10, color:C.muted, fontSize:12, cursor:'pointer', fontFamily:F.sans }}>
+                  Build a different order
+                </button>
+              </>
+            )}
+          </>
+        )}
+
+        {/* ── BUILD YOUR OWN TAB ────────────────────────── */}
+        {tab==='build' && (
+          <>
+            <div style={{ fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+              Hand-pick products and quantities to build a custom preset. Great for regular villa managers who know exactly what they need.
+            </div>
+            {['beer_cider','wine','champagne','spirits','soft_drinks','water_juice','snacks','ice'].filter(cat=>{
+              return PRODUCTS.some(p=>p.category===cat)
+            }).map(cat=>{
+              const catProducts = PRODUCTS.filter(p=>p.category===cat).slice(0,6)
+              const catLabel = cat.replace(/_/g,' ').replace(/\w/g,l=>l.toUpperCase())
+              return (
+                <div key={cat} style={{ marginBottom:18 }}>
+                  <div style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.6)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:8, fontFamily:F.sans }}>
+                    {catLabel}
+                  </div>
+                  {catProducts.map(p=>{
+                    const qty = buildItems[p.id] || 0
+                    return (
+                      <div key={p.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'8px 0', borderBottom:'0.5px solid rgba(255,255,255,0.05)' }}>
+                        <span style={{ fontSize:20, flexShrink:0 }}>{p.emoji}</span>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:12, color:'white', fontFamily:F.sans, lineHeight:1.3 }}>{p.name}</div>
+                          <div style={{ fontSize:11, fontWeight:600, color:'#E8A070' }}>€{p.price.toFixed(2)}</div>
+                        </div>
+                        <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+                          <button onClick={()=>setBuildItems(prev=>({...prev,[p.id]:Math.max(0,(prev[p.id]||0)-1)}))}
+                            style={{ width:26,height:26,background:'rgba(255,255,255,0.1)',border:'none',borderRadius:'50%',color:'white',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center' }}>−</button>
+                          <span style={{ fontSize:13,fontWeight:600,color:'white',minWidth:20,textAlign:'center' }}>{qty}</span>
+                          <button onClick={()=>setBuildItems(prev=>({...prev,[p.id]:(prev[p.id]||0)+1}))}
+                            style={{ width:26,height:26,background:'#C4683A',border:'none',borderRadius:'50%',color:'white',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center' }}>+</button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+            {/* Sticky footer */}
+            <div style={{ position:'sticky', bottom:0, background:'rgba(13,53,69,0.97)', backdropFilter:'blur(10px)', borderTop:'0.5px solid rgba(255,255,255,0.1)', padding:'14px 0 0' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
+                <span style={{ fontSize:12, color:C.muted }}>
+                  {Object.values(buildItems).reduce((s,q)=>s+q,0)} items selected
+                </span>
+                <span style={{ fontSize:14, fontWeight:700, color:'#E8A070' }}>€{getBuildTotal().toFixed(2)}</span>
+              </div>
+              <div style={{ display:'flex', gap:8, marginBottom:4 }}>
+                <input value={buildName} onChange={e=>setBuildName(e.target.value)}
+                  placeholder='Preset name (optional)'
+                  style={{ flex:1, padding:'9px 12px', background:'rgba(255,255,255,0.08)', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:10, color:'white', fontSize:12, fontFamily:F.sans, outline:'none' }}/>
+                <button onClick={saveBuildPreset}
+                  style={{ padding:'9px 14px', background:'rgba(200,168,75,0.2)', border:'0.5px solid rgba(200,168,75,0.3)', borderRadius:10, color:'#C8A84B', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:F.sans, whiteSpace:'nowrap' }}>
+                  Save preset
+                </button>
+              </div>
+              <button onClick={addBuildToBasket}
+                style={{ width:'100%', padding:'13px', background:Object.values(buildItems).some(q=>q>0)?'#C4683A':'rgba(255,255,255,0.08)', border:'none', borderRadius:12, color:'white', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:F.sans }}>
+                {Object.values(buildItems).some(q=>q>0) ? 'Add '+Object.values(buildItems).reduce((s,q)=>s+q,0)+' items to basket →' : 'Select items above'}
+              </button>
+            </div>
+          </>
+        )}
+
+      </div>
     </div>
   )
 }
