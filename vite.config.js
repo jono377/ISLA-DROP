@@ -29,6 +29,12 @@ export default defineConfig({
             './src/components/customer/CustomerFeatures_v2',
             './src/components/customer/CustomerFeatures_launch',
           ],
+          // New features
+          'features-new': [
+            './src/components/customer/CustomerFeatures_world2',
+            './src/components/customer/CustomerFeatures_polish2',
+            './src/components/customer/CustomerFeatures_perf',
+          ],
           // Heavy AI sections (lazy-loaded)
           'features-concierge': [
             './src/components/customer/Concierge_final',
@@ -40,6 +46,12 @@ export default defineConfig({
     },
     // Target modern browsers (smaller bundle)
     target: 'es2020',
+    // Minify for production
+    minify: 'esbuild',
+    // Remove console.log in production
+    esbuildOptions: {
+      drop: ['console', 'debugger'],
+    },
     // Warn if chunks > 500kb
     chunkSizeWarningLimit: 500,
   },
