@@ -100,7 +100,6 @@ import {
   ZoneMinimumBanner, usePrefetch, ShareBasketButton,
   BarcodeScanner, oneTabReorder, CharityDonationToggle,
   CarbonOffsetToggle, TipSplitInfo, getOptimisedImageUrl,
-  ConfettiCelebration as Confetti,
 } from './CustomerFeatures_polish2'
 import {
   useExpressCheckout, ExpressCheckoutBar, ExpressCheckoutSheet,
@@ -552,7 +551,7 @@ function looksLikeAIQuery(q) {
 }
 
 // ── Search view ───────────────────────────────────────────────
-function SearchView({ t, onAssist, onCategorySelect }) {
+function SearchView({ t, onAssist, onCategorySelect, onDetail, onShowBarcode }) {
   const [query, setQuery] = useState('')
   const [historyVer, setHistoryVer] = useState(0)
   const [showFilterPanel, setShowFilterPanel] = useState(false)
@@ -587,7 +586,7 @@ function SearchView({ t, onAssist, onCategorySelect }) {
         </div>
         <VoiceSearchButton onResult={q=>setQuery(q)} />
         <ImageSearchButton onResult={p=>{ onDetail&&onDetail(p) }} />
-        <button onClick={()=>setShowBarcodeScanner(true)}
+        <button onClick={()=>onShowBarcode&&onShowBarcode()}
           style={{ width:36,height:36,background:'rgba(255,255,255,0.09)',border:'0.5px solid rgba(255,255,255,0.14)',borderRadius:10,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M3 9V5a2 2 0 0 1 2-2h4M3 15v4a2 2 0 0 0 2 2h4M21 9V5a2 2 0 0 0-2-2h-4M21 15v4a2 2 0 0 1-2 2h-4M7 12h10"/></svg>
         </button>
@@ -1434,7 +1433,7 @@ function CustomerAppInner() {
         <LiveOrderHomeCard order={activeOrder} etaMins={etaMins} onTrack={()=>setView(VIEWS.TRACKING)} />
       )}
       {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>setView(VIEWS.VILLA_PRESETS)} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></FadeIn>}
-      {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} />}
+      {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onShowBarcode={()=>setShowBarcodeScanner(true)} />}
       {view===VIEWS.BASKET && (
         <ExpressCheckoutBar
           onExpress={()=>setShowExpressSheet(true)}
