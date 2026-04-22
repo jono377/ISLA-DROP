@@ -84,6 +84,15 @@ import {
   FlightStatusBanner, useProximityVenueSuggestion, VenueSuggestionBanner,
 } from './CustomerFeatures_getir'
 import {
+  useNotificationReorder, SupportChatWidget, ImageSearchButton,
+  OrderIssueSheet, useSurgePricing, SurgePricingBanner,
+  RecurringOrderSetup, OccasionCollections, DeliveryQRCode,
+  DriverRatingSheet, ChallengesBadgesView, shareReferralLink,
+  ReferralDeepLinkHandler, useAbandonedBasketTracker,
+  useFirstOrderDiscount, FirstOrderDiscountBanner,
+  FreeSampleOffer, useBirthdayReward, BirthdayRewardBanner,
+} from './CustomerFeatures_world2'
+import {
   HomeSkeletonLoader, usePersonalisedCategories, VoiceSearchButton,
   useProductImages, ImageGallery, BecauseYouBoughtRow, useLoyaltyDelivery,
   getOrderNumberFromURL, processReferral, PushNotificationPrompt,
@@ -397,6 +406,8 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
       {!cart.deliveryAddress && <NoAddressWarning onSetAddress={()=>toast('Set your address in checkout',{icon:'📍'})} />}
       <GroupOrderBanner groupToken={groupToken} onStart={()=>createGroupOrder()} />
       <SaveForLaterList saved={savedLater} onMoveToBasket={()=>{}} onRemove={removeFromSaved} />
+      <FirstOrderDiscountBanner discount={firstOrderDiscount} onApply={()=>toast.success('€10 discount applied! 🎁')} />
+      <FreeSampleOffer subtotal={cart.getSubtotal()} onAddSample={p=>{ cart.addItem(p) }} />
       {cart.getItemCount() >= 25 && (
         <div style={{ background:'rgba(200,168,75,0.12)',border:'0.5px solid rgba(200,168,75,0.3)',borderRadius:12,padding:'10px 14px',marginBottom:12,display:'flex',gap:10,alignItems:'flex-start' }}>
           <span style={{ fontSize:16,flexShrink:0 }}>⏱️</span>
@@ -409,7 +420,7 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
         style={{ width:'100%',padding:'16px',background:belowMin?'rgba(255,255,255,0.1)':'#C4683A',color:belowMin?'rgba(255,255,255,0.3)':'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:belowMin?'not-allowed':'pointer',boxShadow:belowMin?'none':'0 4px 20px rgba(196,104,58,0.4)',marginBottom:10 }}>
         {belowMin?'Add €'+(MIN-sub).toFixed(2)+' more to checkout →':(t.checkout||'Order now')+' →'}
       </button>
-      <button onClick={()=>setShowRecurring(true)}
+      <button onClick={()=>setShowRecurringSetup(true)}
         style={{ width:'100%',padding:'11px',background:'rgba(43,122,139,0.12)',border:'0.5px solid rgba(43,122,139,0.25)',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:12,color:'rgba(126,232,200,0.8)',cursor:'pointer',marginBottom:8,display:'flex',alignItems:'center',justifyContent:'center',gap:6 }}>
         🔄 Set up recurring order
       </button>
@@ -422,7 +433,7 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
 }
 
 // ── Account ───────────────────────────────────────────────────
-function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile, onShowLoyalty, onShowReferral, onShowWishlist, onShowNotifications, dark, onToggleDark, onDeleteAccount, onChangeEmail, onChangePassword, onShowFAQ, onShowCredits }) {
+function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile, onShowLoyalty, onShowReferral, onShowWishlist, onShowNotifications, dark, onToggleDark, onDeleteAccount, onChangeEmail, onChangePassword, onShowFAQ, onShowCredits, onShowChallenges, onShowSupport }) {
   const { user, profile, clear } = useAuthStore()
   const { clearCart } = useCartStore()
   return (
@@ -449,6 +460,8 @@ function AccountView({ t, onShowHistory, onShowAddresses, onShowEditProfile, onS
             { icon:'💬', label:'WhatsApp support', sub:'+34 971 000 000', action:()=>window.open('https://wa.me/34971000000','_blank') },
             { icon:'🌍', label:'Language',         sub:'Change display language',        action:()=>toast('Use the flag in the top-right of the home screen') },
             { icon:'❓', label:'Help & FAQ',       sub:'Delivery, payments and more',   action:onShowFAQ },
+            { icon:'💬', label:'Support chat',      sub:'Chat with us about your order',   action:onShowSupport },
+            { icon:'🏆', label:'Challenges & Badges',sub:'Earn rewards for every order',   action:onShowChallenges },
             { icon:'💳', label:'Credits & refunds', sub:'View your account credits',        action:onShowCredits },
             { icon:'🔑', label:'Change email',     sub:'Update your email address',      action:onChangeEmail },
             { icon:'🔒', label:'Change password',  sub:'Update your password',           action:onChangePassword },
@@ -551,6 +564,7 @@ function SearchView({ t, onAssist, onCategorySelect }) {
           {query&&<button onClick={()=>setQuery('')} style={{ border:'none',background:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',fontSize:15,padding:0 }}>✕</button>}
         </div>
         <VoiceSearchButton onResult={q=>setQuery(q)} />
+        <ImageSearchButton onResult={p=>{ onDetail&&onDetail(p) }} />
       </div>
 
       {/* Isla AI prompt — shown when query looks like a vibe not a product */}
@@ -724,6 +738,8 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
       {!searchQuery && !homeLoaded && <HomeSkeletonLoader />}
       {!searchQuery && homeLoaded && (
         <div style={{ paddingBottom:20, paddingTop:4 }}>
+          {/* Birthday reward */}
+          <BirthdayRewardBanner active={birthdayReward} />
           {/* T4-20: After dark mode */}
           <AfterDarkBanner />
           {isAfterDark && afterDarkProducts && (
@@ -773,6 +789,8 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <EventCalendarBanner events={events} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* Feature 16: Weather-based product row */}
           <WeatherProductRow weather={weather} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
+          {/* Occasion collections */}
+          <OccasionCollections onSelect={p=>{ trackView(p); onDetail&&onDetail(p) }} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
@@ -966,6 +984,14 @@ function CustomerAppInner() {
   }
   const realtimeDriverLoc = useRealtimeDriverLocation(activeOrder?.driver_id, !!(activeOrder?.driver_id))
   const [showPushPrompt, setShowPushPrompt] = useState(false)
+  const [showSupportChat, setShowSupportChat] = useState(false)
+  const [showOrderIssue, setShowOrderIssue] = useState(false)
+  const [showDriverRating, setShowDriverRating] = useState(false)
+  const [showChallenges, setShowChallenges] = useState(false)
+  const [showRecurringSetup, setShowRecurringSetup] = useState(false)
+  const surge = useSurgePricing()
+  const birthdayReward = useBirthdayReward()
+  const firstOrderDiscount = useFirstOrderDiscount()
   const formatPrice = useFormatPrice()
   const isAfterDark = useAfterDarkMode()
   const afterDarkProducts = getAfterDarkProducts()
@@ -990,6 +1016,8 @@ function CustomerAppInner() {
   const [corporateBilling, setCorporateBilling] = useState(false)
   const [corporateDetails, setCorporateDetails] = useState({})
   useReferralFromURL()
+  useNotificationReorder()
+  useAbandonedBasketTracker()
   const { tip: driverTipAmount, setTip: setDriverTipAmount } = useCartTip()
   const [showGuestCheckout, setShowGuestCheckout] = useState(false)
   const [guestUser, setGuestUser] = useState(null)
@@ -1112,7 +1140,7 @@ function CustomerAppInner() {
       cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION); fireOrderConfirmedHaptic()
       Analytics.checkoutComplete(order.total||cart.getTotal())
       addNotif({ type:'order', title:'Order confirmed! 🛵', body:'Order #'+order.order_number+' is being prepared. Estimated arrival: '+(order.estimated_minutes||18)+' min.' })
-      const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');addNotif({type:'order',title:'Delivered! 🎉',body:'Your order #'+u.order_number+' has been delivered.'});setTimeout(()=>setShowPostDeliveryTip(true),8000);sub.unsubscribe()} })
+      const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');addNotif({type:'order',title:'Delivered! 🎉',body:'Your order #'+u.order_number+' has been delivered.'});setTimeout(()=>setShowPostDeliveryTip(true),8000);setTimeout(()=>setShowDriverRating(true),12000);sub.unsubscribe()} })
       if (user?.id) checkStreak(user.id)
       // Show push prompt after order 3+
       try {
@@ -1151,6 +1179,7 @@ function CustomerAppInner() {
       <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:60, maxWidth:480, margin:'0 auto', boxShadow:'0 0 60px rgba(0,0,0,0.5)' }}>
         <div style={{ padding:'16px 16px 20px' }}>
           <CheckoutProgressBar step={2} />
+          <SurgePricingBanner surge={surge} />
           <button onClick={()=>setView(VIEWS.BASKET)}
   style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'7px 14px 7px 10px',cursor:'pointer',marginBottom:16 }}>
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
@@ -1310,6 +1339,7 @@ function CustomerAppInner() {
         {activeOrder.status==='delivered' && <SplitBillButton order={activeOrder} />}
         {/* Feature 18: Instagram story (after delivery) */}
         {activeOrder.status==='delivered' && <InstagramStoryShare order={activeOrder} />}
+        <DeliveryQRCode order={activeOrder} />
         <button onClick={()=>setView(VIEWS.HOME)} style={{ width:'100%',padding:15,background:'#C4683A',color:'white',border:'none',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:15,cursor:'pointer',marginTop:8 }}>Place another order</button>
       </div>
     )
@@ -1350,7 +1380,7 @@ function CustomerAppInner() {
       {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>setView(VIEWS.VILLA_PRESETS)} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onBack={()=>goBack(VIEWS.HOME)} driverTipAmount={driverTipAmount} loyaltyRedeemed={loyaltyRedeemed} setLoyaltyRedeemed={setLoyaltyRedeemed} itemNotes={itemNotes} setItemNote={setItemNote} groupToken={groupToken} createGroupOrder={createGroupOrder} savedLater={savedLater} removeFromSaved={removeFromSaved} />}
-      {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.ORDER_HISTORY) }} onShowAddresses={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.SAVED_ADDRESSES) }} onShowEditProfile={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.EDIT_PROFILE) }} onShowLoyalty={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.LOYALTY) }} onShowReferral={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.REFERRAL) }} onShowWishlist={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.WISHLIST) }} onShowNotifications={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.NOTIFICATIONS) }} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.FAQ) }} onShowCredits={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.CREDITS) }} /></FadeIn>}
+      {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.ORDER_HISTORY) }} onShowAddresses={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.SAVED_ADDRESSES) }} onShowEditProfile={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.EDIT_PROFILE) }} onShowLoyalty={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.LOYALTY) }} onShowReferral={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.REFERRAL) }} onShowWishlist={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.WISHLIST) }} onShowNotifications={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.NOTIFICATIONS) }} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onShowChallenges={()=>setShowChallenges(true)} onShowSupport={()=>setShowSupportChat(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.FAQ) }} onShowCredits={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.CREDITS) }} /></FadeIn>}
       {view===VIEWS.ASSIST   && <AssistBot initialQuery={assistQuery} onClose={()=>{ setAssistQuery(''); goBack(VIEWS.HOME) }} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>goBack(VIEWS.HOME)} />}
       {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>goBack(VIEWS.HOME)} />}
@@ -1391,6 +1421,7 @@ function CustomerAppInner() {
       {/* Recurring order */}
       {showRecurring && <RecurringOrderSheet cart={cart} onClose={()=>setShowRecurring(false)} onSchedule={()=>{}} />}
       {/* C2: Cookie consent */}
+      <ReferralDeepLinkHandler />
       {showCookieBanner && <CookieConsentBanner onAccept={acceptCookies} onDecline={declineCookies} />}
       {/* T2-10: Push notification prompt */}
       {showPushPrompt && <PushNotificationPrompt
@@ -1415,6 +1446,11 @@ function CustomerAppInner() {
       {showPreArrival && <PreArrivalSheet onClose={()=>setShowPreArrival(false)} onSchedule={s=>{ cart.setDeliveryNotes&&cart.setDeliveryNotes('PRE-ARRIVAL: '+s.villa+' at '+s.arrivalTime+' on '+s.arrivalDate+(s.flightNum?' flight '+s.flightNum:'')); toast.success('Pre-arrival order scheduled!') }} />}
       {/* Feature 15: Pool party mode */}
       {showPoolParty && <PoolPartyMode onClose={()=>setShowPoolParty(false)} onAddAll={()=>setView(VIEWS.BASKET)} />}
+      {showSupportChat && <SupportChatWidget activeOrder={activeOrder} onClose={()=>setShowSupportChat(false)} />}
+      {showOrderIssue && activeOrder && <OrderIssueSheet order={activeOrder} onClose={()=>setShowOrderIssue(false)} />}
+      {showDriverRating && activeOrder?.driver_id && <DriverRatingSheet order={activeOrder} onClose={()=>setShowDriverRating(false)} />}
+      {showChallenges && <ChallengesBadgesView onClose={()=>setShowChallenges(false)} />}
+      {showRecurringSetup && <RecurringOrderSetup cart={cart} onClose={()=>setShowRecurringSetup(false)} onSchedule={()=>{}} />}
       {/* Feature 5: Guest checkout */}
       {showGuestCheckout && <GuestCheckoutModal onClose={()=>setShowGuestCheckout(false)} onContinue={g=>{ setGuestUser(g); setShowGuestCheckout(false); setView(VIEWS.CHECKOUT) }} />}
       {/* Feature 12: Delete account */}
