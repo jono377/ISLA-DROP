@@ -692,7 +692,7 @@ export function OccasionCollections({ onSelect }) {
         {OCCASIONS.map(occ => {
           const prods = occ.products.map(id=>PRODUCTS.find(p=>p.id===id)).filter(Boolean)
           return (
-            <button key={occ.id} onClick={()=>{prods.forEach(p=>addItem(p));toast.success(occ.label+' added! '+occ.emoji,{duration:1500})}}
+            <button key={occ.id} onClick={()=>onSelect(occ.id)}
               style={{ flexShrink:0,background:'rgba(255,255,255,0.07)',border:'0.5px solid rgba(255,255,255,0.12)',borderRadius:16,padding:'14px 16px',textAlign:'center',minWidth:110,cursor:'pointer' }}>
               <div style={{ fontSize:30,marginBottom:6 }}>{occ.emoji}</div>
               <div style={{ fontSize:12,fontWeight:600,color:'white',fontFamily:'DM Sans,sans-serif',marginBottom:2 }}>{occ.label}</div>

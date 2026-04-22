@@ -106,6 +106,7 @@ import {
   useSearchFilters, SearchFilterBar, SearchFilterPanel,
   useWinBackDetection, WinBackBanner, useDebounce,
 } from './CustomerFeatures_perf'
+import OccasionPage from './OccasionPage'
 import {
   HomeSkeletonLoader, usePersonalisedCategories, VoiceSearchButton,
   useProductImages, ImageGallery, BecauseYouBoughtRow, useLoyaltyDelivery,
@@ -150,7 +151,7 @@ function useCountdown(endsAt) {
   return secs>0?(h>0?h+'h ':'')+m+'m '+s+'s':null
 }
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation', CONCIERGE:'concierge', ONBOARDING:'onboarding', NOTIFICATIONS_CENTRE:'notif_centre', FAQ:'faq', CREDITS:'credits', VILLA_PRESETS:'villa_presets' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation', CONCIERGE:'concierge', ONBOARDING:'onboarding', NOTIFICATIONS_CENTRE:'notif_centre', FAQ:'faq', CREDITS:'credits', VILLA_PRESETS:'villa_presets', OCCASION:'occasion' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -315,7 +316,7 @@ function PromoCodeEntry({ onApply }) {
   )
 }
 
-function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, setLoyaltyRedeemed, itemNotes, setItemNote, groupToken, createGroupOrder, savedLater, removeFromSaved }) {
+function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, setLoyaltyRedeemed, itemNotes, setItemNote, groupToken, createGroupOrder, savedLater, removeFromSaved, firstOrderDiscount }) {
   const cart = useCartStore()
   const { updateQuantity, addItem } = useCartStore()
   const { removing, animateRemove } = useSlideOut()
@@ -816,7 +817,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           {/* Feature 16: Weather-based product row */}
           <WeatherProductRow weather={weather} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* Occasion collections */}
-          <OccasionCollections onSelect={p=>{ trackView(p); onDetail&&onDetail(p) }} />
+          <OccasionCollections onSelect={occ=>{ homeScrollRef.current=window.scrollY; setOccasionId(occ.id||occ); setView(VIEWS.OCCASION) }} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
@@ -1019,6 +1020,7 @@ function CustomerAppInner() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [showOnboardingFull, setShowOnboardingFull] = useState(false)
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
+  const [occasionId, setOccasionId] = useState(null)
   const [showExpressSheet, setShowExpressSheet] = useState(false)
   const [showFilterPanel, setShowFilterPanel] = useState(false)
   const { eligible: expressEligible, expressData } = useExpressCheckout()
@@ -1436,13 +1438,14 @@ function CustomerAppInner() {
           onNormal={handleCheckoutStart}
         />
       )}
-      {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onBack={()=>goBack(VIEWS.HOME)} driverTipAmount={driverTipAmount} loyaltyRedeemed={loyaltyRedeemed} setLoyaltyRedeemed={setLoyaltyRedeemed} itemNotes={itemNotes} setItemNote={setItemNote} groupToken={groupToken} createGroupOrder={createGroupOrder} savedLater={savedLater} removeFromSaved={removeFromSaved} />}
+      {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onBack={()=>goBack(VIEWS.HOME)} driverTipAmount={driverTipAmount} loyaltyRedeemed={loyaltyRedeemed} setLoyaltyRedeemed={setLoyaltyRedeemed} itemNotes={itemNotes} setItemNote={setItemNote} groupToken={groupToken} createGroupOrder={createGroupOrder} savedLater={savedLater} removeFromSaved={removeFromSaved} firstOrderDiscount={firstOrderDiscount} />}
       {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.ORDER_HISTORY) }} onShowAddresses={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.SAVED_ADDRESSES) }} onShowEditProfile={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.EDIT_PROFILE) }} onShowLoyalty={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.LOYALTY) }} onShowReferral={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.REFERRAL) }} onShowWishlist={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.WISHLIST) }} onShowNotifications={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.NOTIFICATIONS) }} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onShowChallenges={()=>setShowChallenges(true)} onShowSupport={()=>setShowSupportChat(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.FAQ) }} onShowCredits={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.CREDITS) }} /></FadeIn>}
       {view===VIEWS.ASSIST   && <AssistBot initialQuery={assistQuery} onClose={()=>{ setAssistQuery(''); goBack(VIEWS.HOME) }} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>goBack(VIEWS.HOME)} />}
       {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>goBack(VIEWS.HOME)} />}
       {view===VIEWS.PARTY_DAY   && <PartyBuilder initialType="design_day"   onBack={()=>goBack(VIEWS.HOME)} />}
       {view===VIEWS.ARRIVAL     && <ArrivalPackage onBack={()=>goBack(VIEWS.HOME)} />}
+      {view===VIEWS.OCCASION && occasionId && <OccasionPage occasionId={occasionId} onBack={()=>{ setOccasionId(null); goBack(VIEWS.HOME) }} />}
       {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>goBack(VIEWS.HOME)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />}
       {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>goBack(VIEWS.HOME)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />}
 
