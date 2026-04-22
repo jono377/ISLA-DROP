@@ -954,14 +954,13 @@ function CustomerAppInner() {
   const [showRatingPrompt, setShowRatingPrompt] = useState(false)
   const [homeLoaded, setHomeLoaded] = useState(false)
   const { onTouchStart: swipeBackStart, onTouchEnd: swipeBackEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
-  const homeScrollRef = useRef(0)
+  const homeScrollRef    = useRef(0)
+  const accountScrollRef = useRef(0)
   // Save scroll position when leaving home, restore when returning
   const goBack = (dest) => {
-    const saved = homeScrollRef.current
+    const saved = dest === VIEWS.HOME ? homeScrollRef.current : accountScrollRef.current
     setView(dest)
-    if (dest === VIEWS.HOME) {
-      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.scrollTo({top:saved,behavior:'instant'}) }) })
-    }
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.scrollTo({top:saved,behavior:'instant'}) }) })
   }
   const realtimeDriverLoc = useRealtimeDriverLocation(activeOrder?.driver_id, !!(activeOrder?.driver_id))
   const [showPushPrompt, setShowPushPrompt] = useState(false)
@@ -1268,7 +1267,7 @@ function CustomerAppInner() {
   }
 
   // ── FULL-SCREEN VIEWS (no tab bar) ──────────────────────────
-  if (view===VIEWS.FAQ)             return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><FAQView onBack={()=>setView(VIEWS.ACCOUNT)} /></div>
+  if (view===VIEWS.FAQ)             return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><FAQView onBack={()=>goBack(VIEWS.ACCOUNT)} /></div>
   if (view===VIEWS.VILLA_PRESETS)   return (
     <div style={{ background:'linear-gradient(170deg,#0A2A38,#0D3545)', minHeight:'100vh', paddingBottom:80, overflowY:'auto', maxWidth:480, margin:'0 auto', boxShadow:'0 0 60px rgba(0,0,0,0.5)' }}>
       <div style={{ background:'linear-gradient(135deg,#0D3B4A,#1A5263)', padding:'16px', position:'sticky', top:0, zIndex:50, display:'flex', alignItems:'center', gap:12 }}>
@@ -1279,14 +1278,14 @@ function CustomerAppInner() {
       <VillaPresetsPanel onAddAll={()=>setView(VIEWS.BASKET)} />
     </div>
   )
-  if (view===VIEWS.CREDITS)         return <CreditTrackerView onBack={()=>setView(VIEWS.ACCOUNT)} />
-  if (view===VIEWS.ORDER_HISTORY)   return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><OrderHistoryView onBack={()=>setView(VIEWS.ACCOUNT)} onShowReceipt={o=>setShowReceipt(o)} /></div>
-  if (view===VIEWS.SAVED_ADDRESSES) return <SavedAddressesView onBack={()=>setView(VIEWS.ACCOUNT)} />
-  if (view===VIEWS.EDIT_PROFILE)    return <EditProfileView    onBack={()=>setView(VIEWS.ACCOUNT)} />
-  if (view===VIEWS.WISHLIST)        return <WishlistView onBack={()=>setView(VIEWS.ACCOUNT)} onDetail={p=>{trackView(p);setSelectedProduct(p);setView(VIEWS.HOME)}} />
-  if (view===VIEWS.LOYALTY)         return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><LoyaltyCard onBack={()=>setView(VIEWS.ACCOUNT)} /></div>
-  if (view===VIEWS.REFERRAL)        return <ReferralView onBack={()=>setView(VIEWS.ACCOUNT)} />
-  if (view===VIEWS.NOTIFICATIONS)   return <NotificationPrefsView onBack={()=>setView(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.CREDITS)         return <CreditTrackerView onBack={()=>goBack(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.ORDER_HISTORY)   return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><OrderHistoryView onBack={()=>goBack(VIEWS.ACCOUNT)} onShowReceipt={o=>setShowReceipt(o)} /></div>
+  if (view===VIEWS.SAVED_ADDRESSES) return <SavedAddressesView onBack={()=>goBack(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.EDIT_PROFILE)    return <EditProfileView    onBack={()=>goBack(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.WISHLIST)        return <WishlistView onBack={()=>goBack(VIEWS.ACCOUNT)} onDetail={p=>{trackView(p);setSelectedProduct(p);setView(VIEWS.HOME)}} />
+  if (view===VIEWS.LOYALTY)         return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><LoyaltyCard onBack={()=>goBack(VIEWS.ACCOUNT)} /></div>
+  if (view===VIEWS.REFERRAL)        return <ReferralView onBack={()=>goBack(VIEWS.ACCOUNT)} />
+  if (view===VIEWS.NOTIFICATIONS)   return <NotificationPrefsView onBack={()=>goBack(VIEWS.ACCOUNT)} />
 
   // ── MAIN SHELL — tab bar lives here only ──────────────────
   return (
@@ -1302,7 +1301,7 @@ function CustomerAppInner() {
       {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>setView(VIEWS.VILLA_PRESETS)} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onBack={()=>setView(VIEWS.HOME)} driverTipAmount={driverTipAmount} loyaltyRedeemed={loyaltyRedeemed} setLoyaltyRedeemed={setLoyaltyRedeemed} itemNotes={itemNotes} setItemNote={setItemNote} groupToken={groupToken} createGroupOrder={createGroupOrder} savedLater={savedLater} removeFromSaved={removeFromSaved} />}
-      {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} onShowLoyalty={()=>setView(VIEWS.LOYALTY)} onShowReferral={()=>setView(VIEWS.REFERRAL)} onShowWishlist={()=>setView(VIEWS.WISHLIST)} onShowNotifications={()=>setView(VIEWS.NOTIFICATIONS)} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>setView(VIEWS.FAQ)} onShowCredits={()=>setView(VIEWS.CREDITS)} /></FadeIn>}
+      {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.ORDER_HISTORY) }} onShowAddresses={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.SAVED_ADDRESSES) }} onShowEditProfile={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.EDIT_PROFILE) }} onShowLoyalty={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.LOYALTY) }} onShowReferral={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.REFERRAL) }} onShowWishlist={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.WISHLIST) }} onShowNotifications={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.NOTIFICATIONS) }} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.FAQ) }} onShowCredits={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.CREDITS) }} /></FadeIn>}
       {view===VIEWS.ASSIST   && <AssistBot initialQuery={assistQuery} onClose={()=>{ setAssistQuery(''); setView(VIEWS.HOME) }} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>goBack(VIEWS.HOME)} />}
