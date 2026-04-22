@@ -1032,7 +1032,6 @@ function CustomerAppInner() {
   const { show: showWhatsNew, dismiss: dismissWhatsNew } = useWhatsNew()
   const { fly: flyToCart, Particles: CartParticles } = useFlyToCart()
   const checkOutOfStock = useOutOfStockCheck()
-  usePrefetch(view, cart)
   const birthdayReward = useBirthdayReward()
   const firstOrderDiscount = useFirstOrderDiscount()
   const formatPrice = useFormatPrice()
@@ -1133,6 +1132,7 @@ function CustomerAppInner() {
   const { prefs: dietaryPrefs, toggle: toggleDietary } = useDietaryPrefs()
   const [showDietaryFilter, setShowDietaryFilter] = useState(false)
   const cart = useCartStore()
+  usePrefetch(view, cart)
   const proximitySuggestion = useProximityVenueSuggestion(cart.deliveryLat, cart.deliveryLng)
   const t    = useT(lang)
   const estimatedMins = cart.deliveryAddress ? 18 : null
