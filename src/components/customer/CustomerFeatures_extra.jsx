@@ -617,3 +617,276 @@ export async function saveBirthday(userId, birthday) {
     toast.success('Birthday saved! Expect a gift 🎁')
   } catch { toast.error('Could not save birthday') }
 }
+
+// ── Beach Delivery Sheet ──────────────────────────────────────
+const IBIZA_BEACHES = [
+  { name:'Playa de Salinas', emoji:'🏖️', lat:38.8710, lng:1.3960, note:'Near Beso Beach · car park on the right' },
+  { name:'Playa d'en Bossa', emoji:'🏄', lat:38.8820, lng:1.4050, note:'Ushuaia end · main beach access' },
+  { name:'Cala Bassa', emoji:'🌊', lat:38.9600, lng:1.2350, note:'Beach bar pickup point' },
+  { name:'Cala Conta', emoji:'🐠', lat:38.9560, lng:1.2200, note:'Rocky steps entrance' },
+  { name:'Cala Tarida', emoji:'🌴', lat:38.9740, lng:1.2390, note:'Beach restaurant area' },
+  { name:'Es Cavallet', emoji:'🌞', lat:38.8690, lng:1.3890, note:'Chiringuito end' },
+  { name:'Las Salinas Beach', emoji:'🦩', lat:38.8640, lng:1.3950, note:'South end near salt flats' },
+  { name:'Aguas Blancas', emoji:'🌿', lat:39.0850, lng:1.5680, note:'North coast, rocky cove' },
+  { name:'Benirras', emoji:'🥁', lat:39.0650, lng:1.4030, note:'Famous drum circle beach' },
+  { name:'Port des Torrent', emoji:'⛵', lat:38.9790, lng:1.2350, note:'Calm bay, families' },
+  { name:'Cala Llonga', emoji:'🏝️', lat:38.9170, lng:1.5340, note:'Small sheltered cove' },
+  { name:'Blue Marlin Beach', emoji:'🍹', lat:38.8720, lng:1.3580, note:'Beach club, main gate' },
+]
+
+export function BeachDeliverySheet({ onClose, onSet }) {
+  const { addItem } = useCartStore ? useCartStore() : { addItem:()=>{} }
+  const [tab, setTab] = useState('select') // select | ai
+  const [selected, setSelected] = useState(null)
+  const [searching, setSearching] = useState(false)
+  // AI state
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState(null)
+  const [aiError, setAiError] = useState('')
+
+  const QUICK_PROMPTS = [
+    'Sunny beach day for 4, need cold drinks and snacks',
+    'Long afternoon session at the beach, keeping cool',
+    'Romantic sunset picnic for 2',
+    'Group of 8 at Salinas, big afternoon session',
+    'Kids and family beach day, soft drinks and snacks',
+    'Pre-club warm up at the beach for 6',
+  ]
+
+  const useGPS = () => {
+    setSearching(true)
+    navigator.geolocation?.getCurrentPosition(pos => {
+      const { latitude:lat, longitude:lng } = pos.coords
+      let nearest = null, nearestDist = Infinity
+      IBIZA_BEACHES.forEach(b => {
+        const d = Math.sqrt(Math.pow(b.lat-lat,2)+Math.pow(b.lng-lng,2))
+        if (d < nearestDist) { nearestDist = d; nearest = b }
+      })
+      if (nearest && nearestDist < 0.05) {
+        setSelected(nearest)
+        setTab('select')
+      } else {
+        onSet({ lat, lng, address:'Beach location ('+lat.toFixed(4)+', '+lng.toFixed(4)+')' })
+      }
+      setSearching(false)
+    }, () => { toast.error('Could not get location — select a beach below'); setSearching(false) })
+  }
+
+  const runAI = async (prompt) => {
+    const p = prompt || aiPrompt
+    if (!p.trim()) return
+    setAiLoading(true); setAiResult(null); setAiError('')
+    try {
+      const { PRODUCTS } = await import('../../lib/products')
+      const productList = PRODUCTS.slice(0,60).map(p=>p.id+'|'+p.name+'|EUR'+p.price+'|'+p.category).join(', ')
+      const beachCtx = selected ? 'Delivering to '+selected.name+' beach in Ibiza. ' : 'Delivering to an Ibiza beach. '
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true', 'x-api-key':import.meta.env.VITE_ANTHROPIC_API_KEY||'' },
+        body: JSON.stringify({
+          model:'claude-haiku-4-5-20251001', max_tokens:600,
+          system:'You are Isla, an expert Ibiza beach concierge. Build the perfect beach day drinks and snacks order. Consider the heat, the occasion and the group. Respond ONLY with valid JSON: {"title":"string","vibe":"string","items":[{"product_id":"string","quantity":number,"reason":"string"}],"total_estimate":"string","beach_tip":"string"}',
+          messages:[{role:'user',content:beachCtx+'Beach order for: '+p+'. Available products: '+productList+'. Pick 5-10 items. Only use product IDs from the list above.'}]
+        })
+      })
+      const data = await resp.json()
+      const raw = data.content?.[0]?.text || ''
+      const result = JSON.parse(raw.replace(/```json|```/g,'').trim())
+      setAiResult(result)
+    } catch {
+      setAiError('Could not generate right now — try again or pick items manually')
+    }
+    setAiLoading(false)
+  }
+
+  const addAiOrder = async () => {
+    if (!aiResult?.items) return
+    const { PRODUCTS } = await import('../../lib/products')
+    const { useCartStore: cart } = await import('../../lib/store')
+    const { addItem: add } = cart.getState()
+    let count = 0
+    aiResult.items.forEach(item => {
+      const p = PRODUCTS.find(p=>p.id===item.product_id)
+      if (p) for (let i=0;i<(item.quantity||1);i++) { add(p); count++ }
+    })
+    toast.success(count+' beach items added to basket! 🏖️', { duration:2000 })
+    if (selected) onSet({ lat:selected.lat, lng:selected.lng, address:selected.name+', Ibiza 🏖️' })
+    else onClose()
+  }
+
+  const confirm = () => {
+    if (!selected) return
+    onSet({ lat:selected.lat, lng:selected.lng, address:selected.name+', Ibiza 🏖️' })
+  }
+
+  return (
+    <div style={{ position:'fixed',inset:0,zIndex:600,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'flex-end' }} onClick={onClose}>
+      <div style={{ width:'100%',maxWidth:480,margin:'0 auto',background:'#0D3545',borderRadius:'24px 24px 0 0',maxHeight:'92vh',display:'flex',flexDirection:'column' }} onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{ padding:'16px 20px 12px',borderBottom:'0.5px solid rgba(255,255,255,0.08)',flexShrink:0 }}>
+          <div style={{ width:36,height:4,background:'rgba(255,255,255,0.2)',borderRadius:2,margin:'0 auto 14px' }}/>
+          <div style={{ display:'flex',alignItems:'center',gap:10,marginBottom:14 }}>
+            <span style={{ fontSize:28 }}>🏖️</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white' }}>Beach delivery</div>
+              <div style={{ fontSize:12,color:'rgba(255,255,255,0.45)' }}>
+                {selected ? 'Delivering to: '+selected.name : 'Select your beach or ask Isla AI'}
+              </div>
+            </div>
+            <button onClick={onClose} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:22,padding:0 }}>✕</button>
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display:'flex',gap:0,background:'rgba(255,255,255,0.05)',borderRadius:12,padding:3 }}>
+            {[{id:'select',label:'🗺️ Pick beach'},{id:'ai',label:'✨ AI order builder'}].map(t=>(
+              <button key={t.id} onClick={()=>setTab(t.id)}
+                style={{ flex:1,padding:'9px',border:'none',borderRadius:10,cursor:'pointer',fontSize:12,fontFamily:'DM Sans,sans-serif',fontWeight:tab===t.id?600:400,background:tab===t.id?'#C4683A':'transparent',color:'white',transition:'all 0.15s' }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Beach selection tab */}
+        {tab==='select' && (
+          <>
+            <div style={{ padding:'10px 20px 4px',flexShrink:0 }}>
+              <button onClick={useGPS} disabled={searching}
+                style={{ width:'100%',padding:'10px',background:'rgba(196,104,58,0.2)',border:'0.5px solid rgba(196,104,58,0.4)',borderRadius:12,color:'#E8A070',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:8 }}>
+                {searching ? '📍 Finding your beach...' : '📍 Use my current location'}
+              </button>
+            </div>
+            <div style={{ overflowY:'auto',flex:1,padding:'8px 20px' }}>
+              {IBIZA_BEACHES.map(beach=>(
+                <button key={beach.name} onClick={()=>setSelected(beach)}
+                  style={{ width:'100%',display:'flex',alignItems:'center',gap:12,padding:'12px 14px',background:selected?.name===beach.name?'rgba(196,104,58,0.2)':'rgba(255,255,255,0.04)',border:'0.5px solid '+(selected?.name===beach.name?'rgba(196,104,58,0.5)':'rgba(255,255,255,0.08)'),borderRadius:12,cursor:'pointer',marginBottom:8,textAlign:'left',transition:'all 0.15s' }}>
+                  <span style={{ fontSize:24,flexShrink:0 }}>{beach.emoji}</span>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <div style={{ fontSize:13,fontWeight:600,color:'white',fontFamily:'DM Sans,sans-serif' }}>{beach.name}</div>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:2 }}>{beach.note}</div>
+                  </div>
+                  {selected?.name===beach.name && <span style={{ color:'#C4683A',fontSize:18,flexShrink:0 }}>✓</span>}
+                </button>
+              ))}
+            </div>
+            <div style={{ padding:'12px 20px 32px',borderTop:'0.5px solid rgba(255,255,255,0.08)',flexShrink:0 }}>
+              <button onClick={confirm} disabled={!selected}
+                style={{ width:'100%',padding:'15px',background:selected?'#C4683A':'rgba(255,255,255,0.1)',border:'none',borderRadius:14,color:'white',fontSize:15,fontWeight:600,cursor:selected?'pointer':'default',fontFamily:'DM Sans,sans-serif' }}>
+                {selected ? 'Deliver to '+selected.name+' →' : 'Select a beach above'}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* AI builder tab */}
+        {tab==='ai' && (
+          <div style={{ overflowY:'auto',flex:1,padding:'16px 20px 32px' }}>
+            {/* Beach context */}
+            {selected && (
+              <div style={{ background:'rgba(43,122,139,0.15)',border:'0.5px solid rgba(43,122,139,0.3)',borderRadius:12,padding:'10px 14px',marginBottom:14,fontSize:12,color:'rgba(255,255,255,0.7)',display:'flex',alignItems:'center',gap:8 }}>
+                <span>{selected.emoji}</span>
+                <span>Building order for <strong style={{ color:'white' }}>{selected.name}</strong> — {selected.note}</span>
+              </div>
+            )}
+            {!selected && (
+              <div style={{ background:'rgba(196,104,58,0.1)',border:'0.5px solid rgba(196,104,58,0.25)',borderRadius:12,padding:'10px 14px',marginBottom:14,fontSize:12,color:'rgba(255,255,255,0.6)',display:'flex',alignItems:'center',gap:8 }}>
+                <span>💡</span><span>Select a beach first to set your delivery location, or Isla will build the order and you can set the address in checkout.</span>
+              </div>
+            )}
+
+            {/* AI intro card */}
+            {!aiResult && !aiLoading && (
+              <div style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.12),rgba(43,122,139,0.12))',border:'0.5px solid rgba(196,104,58,0.25)',borderRadius:14,padding:'14px 16px',marginBottom:16 }}>
+                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:17,color:'white',marginBottom:4 }}>✨ Isla AI Beach Planner</div>
+                <div style={{ fontSize:12,color:'rgba(255,255,255,0.55)',lineHeight:1.6 }}>Tell Isla about your beach day — who you are, how many people, what vibe. She will pick the perfect drinks, snacks and essentials.</div>
+              </div>
+            )}
+
+            {/* Quick prompts */}
+            {!aiResult && !aiLoading && (
+              <>
+                <div style={{ display:'flex',flexWrap:'wrap',gap:7,marginBottom:14 }}>
+                  {QUICK_PROMPTS.map(p=>(
+                    <button key={p} onClick={()=>runAI(p)}
+                      style={{ padding:'7px 13px',background:'rgba(255,255,255,0.07)',border:'0.5px solid rgba(255,255,255,0.13)',borderRadius:20,fontSize:11,color:'rgba(255,255,255,0.75)',cursor:'pointer',fontFamily:'DM Sans,sans-serif',textAlign:'left' }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display:'flex',gap:8,marginBottom:aiError?10:0 }}>
+                  <input value={aiPrompt} onChange={e=>setAiPrompt(e.target.value)}
+                    onKeyDown={e=>e.key==='Enter'&&runAI()}
+                    placeholder='Describe your beach day...'
+                    style={{ flex:1,padding:'12px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:24,color:'white',fontSize:13,fontFamily:'DM Sans,sans-serif',outline:'none' }}/>
+                  <button onClick={()=>runAI()} disabled={!aiPrompt.trim()}
+                    style={{ width:44,height:44,background:aiPrompt.trim()?'#C4683A':'rgba(255,255,255,0.08)',border:'none',borderRadius:'50%',cursor:aiPrompt.trim()?'pointer':'default',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+                  </button>
+                </div>
+                {aiError && <div style={{ fontSize:12,color:'rgba(240,149,149,0.8)',padding:'8px 0' }}>{aiError}</div>}
+              </>
+            )}
+
+            {/* Loading */}
+            {aiLoading && (
+              <div style={{ textAlign:'center',padding:'40px 0' }}>
+                <div style={{ width:44,height:44,border:'3px solid rgba(255,255,255,0.1)',borderTopColor:'#C4683A',borderRadius:'50%',animation:'beachSpinAI 0.8s linear infinite',margin:'0 auto 16px' }}/>
+                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:18,color:'white',marginBottom:6 }}>Isla is planning your beach day...</div>
+                <div style={{ fontSize:12,color:'rgba(255,255,255,0.45)' }}>Picking the perfect drinks and snacks</div>
+                <style>{'@keyframes beachSpinAI{to{transform:rotate(360deg)}}'}</style>
+              </div>
+            )}
+
+            {/* AI Result */}
+            {aiResult && !aiLoading && (
+              <>
+                <div style={{ background:'rgba(255,255,255,0.04)',borderRadius:14,padding:'14px',marginBottom:14 }}>
+                  <div style={{ fontFamily:'DM Serif Display,serif',fontSize:18,color:'white',marginBottom:2 }}>{aiResult.title}</div>
+                  {aiResult.vibe && <div style={{ fontSize:12,color:'rgba(255,255,255,0.5)',marginBottom:12,fontStyle:'italic' }}>"{aiResult.vibe}"</div>}
+                  {(aiResult.items||[]).map((item,i)=>{
+                    const getProduct = () => {
+                      try { return null } catch { return null }
+                    }
+                    return (
+                      <div key={i} style={{ display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'0.5px solid rgba(255,255,255,0.06)' }}>
+                        <span style={{ fontSize:18,flexShrink:0 }}>🏖️</span>
+                        <div style={{ flex:1,minWidth:0 }}>
+                          <div style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif' }}>{item.product_id}</div>
+                          {item.reason && <div style={{ fontSize:10,color:'rgba(255,255,255,0.4)',marginTop:1 }}>{item.reason}</div>}
+                        </div>
+                        <div style={{ fontSize:11,color:'rgba(255,255,255,0.5)',flexShrink:0 }}>×{item.quantity||1}</div>
+                      </div>
+                    )
+                  })}
+                  {aiResult.total_estimate && (
+                    <div style={{ display:'flex',justifyContent:'space-between',paddingTop:10,marginTop:4 }}>
+                      <span style={{ fontSize:13,fontWeight:600,color:'white',fontFamily:'DM Sans,sans-serif' }}>Estimated total</span>
+                      <span style={{ fontSize:14,fontWeight:700,color:'#E8A070' }}>{aiResult.total_estimate}</span>
+                    </div>
+                  )}
+                  {aiResult.beach_tip && (
+                    <div style={{ marginTop:12,padding:'8px 12px',background:'rgba(43,122,139,0.15)',borderRadius:8,fontSize:11,color:'rgba(126,232,200,0.8)',lineHeight:1.5 }}>
+                      🌴 Isla tip: {aiResult.beach_tip}
+                    </div>
+                  )}
+                </div>
+                <div style={{ display:'flex',gap:8,marginBottom:10 }}>
+                  <button onClick={addAiOrder}
+                    style={{ flex:1,padding:'13px',background:'#C4683A',border:'none',borderRadius:12,color:'white',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>
+                    Add to basket{selected?' + set beach':''}  →
+                  </button>
+                </div>
+                <button onClick={()=>{setAiResult(null);setAiPrompt('')}}
+                  style={{ width:'100%',padding:'11px',background:'transparent',border:'0.5px solid rgba(255,255,255,0.12)',borderRadius:10,color:'rgba(255,255,255,0.5)',fontSize:12,cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>
+                  Plan a different beach day
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

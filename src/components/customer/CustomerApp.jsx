@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { PRODUCTS, CATEGORIES, BEST_SELLERS, NEW_IN } from '../../lib/products'
-import { LANGUAGES, useT } from '../../i18n/translations'
+import { LANGUAGES, useT, setGlobalLang } from '../../i18n/translations'
 import AgeVerification from './AgeVerification'
 import StripeCheckout from './StripeCheckout'
 import DeliveryMap from './DeliveryMap'
@@ -40,7 +40,7 @@ import {
   useCartTip, BasketTipLine, GuestCheckoutModal, StockBadge, OutOfStockOverlay,
   useOnboarding, OnboardingCarousel, ScrollToTop,
   FreeDeliveryBar, EarnStampsLine, DeleteAccountSheet,
-  ChangeCredentialsSheet, HotelDeliverySheet, shareProduct,
+  ChangeCredentialsSheet, HotelDeliverySheet, shareProduct, BeachDeliverySheet,
 } from './CustomerFeatures_extra'
 import {
   useSavedCard, SavedCardRow, AddressAutocomplete,
@@ -384,6 +384,14 @@ function BasketView({ t, onCheckout }) {
       {!cart.deliveryAddress && <NoAddressWarning onSetAddress={()=>toast('Set your address in checkout',{icon:'📍'})} />}
       <GroupOrderBanner groupToken={groupToken} onStart={()=>createGroupOrder()} />
       <SaveForLaterList saved={savedLater} onMoveToBasket={()=>{}} onRemove={removeFromSaved} />
+      {cart.getItemCount() >= 25 && (
+        <div style={{ background:'rgba(200,168,75,0.12)',border:'0.5px solid rgba(200,168,75,0.3)',borderRadius:12,padding:'10px 14px',marginBottom:12,display:'flex',gap:10,alignItems:'flex-start' }}>
+          <span style={{ fontSize:16,flexShrink:0 }}>⏱️</span>
+          <div style={{ fontSize:12,color:'rgba(255,255,255,0.75)',fontFamily:'DM Sans,sans-serif',lineHeight:1.5 }}>
+            <strong style={{ color:'#C8A84B' }}>Large order ({cart.getItemCount()} items)</strong> — our warehouse team will need extra preparation time for this order. Please allow an additional 15–25 minutes on top of the standard delivery time. We will keep you updated.
+          </div>
+        </div>
+      )}
       <button onClick={onCheckout} disabled={belowMin}
         style={{ width:'100%',padding:'16px',background:belowMin?'rgba(255,255,255,0.1)':'#C4683A',color:belowMin?'rgba(255,255,255,0.3)':'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:belowMin?'not-allowed':'pointer',boxShadow:belowMin?'none':'0 4px 20px rgba(196,104,58,0.4)',marginBottom:10 }}>
         {belowMin?'Add €'+(MIN-sub).toFixed(2)+' more to checkout →':(t.checkout||'Order now')+' →'}
@@ -847,6 +855,12 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Pool party mode</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Bulk ordering for groups</div>
             </button>
+            <button onClick={()=>setShowBeachDelivery(true)}
+              style={{ padding:'14px', background:'linear-gradient(135deg,rgba(196,104,58,0.3),rgba(139,60,20,0.4))', border:'0.5px solid rgba(196,104,58,0.35)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
+              <div style={{ fontSize:22, marginBottom:4 }}>🏖️</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Beach delivery</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Salinas, Bossa, Cala...</div>
+            </button>
           </div>
 
           {/* ── Villa presets — placed here, well below sticky nav ── */}
@@ -903,7 +917,8 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 function CustomerAppInner() {
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [assistQuery, setAssistQuery] = useState('')
-  const [lang, setLang]               = useState(()=>{ try{return localStorage.getItem('isla_lang')||detectDeviceLanguage()}catch{return 'en'} })
+  const [lang, setLangState]           = useState(()=>{ try{return localStorage.getItem('isla_lang')||detectDeviceLanguage()}catch{return 'en'} })
+  const setLang = (l) => { setLangState(l); setGlobalLang(l); try{localStorage.setItem('isla_lang',l)}catch{} }
   const [categoryKey, setCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
   const [activeOrder, setActiveOrder] = useState(null)
@@ -969,6 +984,7 @@ function CustomerAppInner() {
   const [showNotifCentre, setShowNotifCentre] = useState(false)
   const [showPreArrival, setShowPreArrival] = useState(false)
   const [showPoolParty, setShowPoolParty] = useState(false)
+  const [showBeachDelivery, setShowBeachDelivery] = useState(false)
   const [giftEnabled, setGiftEnabled] = useState(false)
   const [giftMessage, setGiftMessage] = useState('')
   const [substitution, setSubstitution] = useState('substitute')
@@ -979,6 +995,7 @@ function CustomerAppInner() {
   const { checkStreak } = useOrderStreak()
   const { supported: pushSupported, subscribe: subscribePush } = usePushNotifications()
   useEffect(() => {
+    setGlobalLang(lang)
     if (typeof registerServiceWorker === 'function') registerServiceWorker()
     setupNotificationActions()
     window.addEventListener('isla:repeat_order', e => {
@@ -1295,6 +1312,7 @@ function CustomerAppInner() {
       {showIssue && <ReportIssueSheet order={showIssue} onClose={()=>setShowIssue(null)} />}
       {/* POINT 15: PWA install */}
       <PWAInstallPrompt />
+      {showBeachDelivery && <BeachDeliverySheet onClose={()=>setShowBeachDelivery(false)} onSet={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null); setShowBeachDelivery(false); toast.success('📍 '+loc.address) }} />}
       {/* Post-delivery tip */}
       {showPostDeliveryTip && activeOrder && <PostDeliveryTipSheet order={activeOrder} driverName={null} onClose={()=>setShowPostDeliveryTip(false)} />}
       {/* Quick-add sheet */}

@@ -726,14 +726,50 @@ export function PoolPartyMode({ onClose, onAddAll }) {
   const { addItem } = useCartStore()
   const [quantities, setQuantities] = useState({})
   const [guests, setGuests] = useState(10)
+  const [tab, setTab] = useState('build') // build | ai
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState(null)
+  const [aiError, setAiError] = useState('')
 
   const PARTY_PRODUCTS = [
-    { category:'Spirits & Cocktails', emoji:'🍸', items: PRODUCTS.filter(p=>p.category==='spirits').slice(0,3) },
-    { category:'Beer & Cider', emoji:'🍺', items: PRODUCTS.filter(p=>p.category==='beer_cider').slice(0,3) },
-    { category:'Champagne & Wine', emoji:'🥂', items: PRODUCTS.filter(p=>['champagne','wine'].includes(p.category)).slice(0,2) },
-    { category:'Soft Drinks & Mixers', emoji:'🥤', items: PRODUCTS.filter(p=>p.category==='soft_drinks').slice(0,3) },
-    { category:'Ice & Essentials', emoji:'🧊', items: PRODUCTS.filter(p=>['ice','essentials'].includes(p.category)).slice(0,2) },
+    { category:'Spirits & Cocktails', emoji:'🍸', items: PRODUCTS.filter(p=>p.category==='spirits') },
+    { category:'Beer & Cider', emoji:'🍺', items: PRODUCTS.filter(p=>p.category==='beer_cider') },
+    { category:'Champagne & Wine', emoji:'🥂', items: PRODUCTS.filter(p=>['champagne','wine'].includes(p.category)) },
+    { category:'Soft Drinks & Mixers', emoji:'🥤', items: PRODUCTS.filter(p=>p.category==='soft_drinks') },
+    { category:'Water & Juice', emoji:'💧', items: PRODUCTS.filter(p=>p.category==='water_juice') },
+    { category:'Ice & Essentials', emoji:'🧊', items: PRODUCTS.filter(p=>['ice','essentials'].includes(p.category)) },
+    { category:'Snacks', emoji:'🍿', items: PRODUCTS.filter(p=>p.category==='snacks') },
   ].filter(c=>c.items.length>0)
+
+  const runAI = async () => {
+    const p = aiPrompt || guests+' guests, pool party'
+    setAiLoading(true); setAiResult(null); setAiError('')
+    try {
+      const key = typeof window !== 'undefined' ? undefined : null
+      const productList = PRODUCTS.slice(0,60).map(p=>p.id+'|'+p.name+'|EUR'+p.price+'|'+p.category).join(', ')
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true', 'x-api-key':import.meta.env.VITE_ANTHROPIC_API_KEY||'' },
+        body: JSON.stringify({
+          model:'claude-haiku-4-5-20251001', max_tokens:600,
+          system:'You are an Ibiza pool party planner. Build the perfect drinks order. Respond ONLY with valid JSON: {"summary":"string","items":[{"product_id":"string","quantity":number}]}',
+          messages:[{role:'user',content:'Pool party for '+p+'. Products: '+productList+'. Pick 8-15 items. Only use product IDs from the list.'}]
+        })
+      })
+      const data = await resp.json()
+      const raw = data.content?.[0]?.text || ''
+      const result = JSON.parse(raw.replace(/```json|```/g,'').trim())
+      setAiResult(result)
+      // Auto-populate quantities
+      const newQtys = {}
+      result.items?.forEach(item => { newQtys[item.product_id] = item.quantity||1 })
+      setQuantities(prev=>({...prev,...newQtys}))
+      setTab('build')
+      toast.success('AI order built! Review and adjust below 🎉')
+    } catch { setAiError('Could not generate — try again or build manually') }
+    setAiLoading(false)
+  }
 
   const setQty = (id, qty) => setQuantities(prev=>({...prev,[id]:Math.max(0,qty)}))
   const getQty = (id) => quantities[id] ?? 0
@@ -758,6 +794,12 @@ export function PoolPartyMode({ onClose, onAddAll }) {
   return (
     <Sheet onClose={onClose} maxH="92vh">
       <div style={{ padding:'16px 20px 100px' }}>
+        {/* Back button */}
+        <button onClick={onClose}
+          style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'6px 12px 6px 8px',cursor:'pointer',marginBottom:14 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <span style={{ fontSize:12,color:'white',fontFamily:F.sans }}>Back</span>
+        </button>
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:8 }}>
           <span style={{ fontSize:32 }}>🏊</span>
           <div>
@@ -765,6 +807,36 @@ export function PoolPartyMode({ onClose, onAddAll }) {
             <div style={{ fontSize:12, color:C.muted }}>Bulk ordering for your group</div>
           </div>
         </div>
+        {/* Tabs */}
+        <div style={{ display:'flex', gap:0, marginBottom:16, background:'rgba(255,255,255,0.05)', borderRadius:12, padding:3 }}>
+          {[{id:'build',label:'🏗️ Build your order'},{id:'ai',label:'✨ AI builder'}].map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)}
+              style={{ flex:1,padding:'9px',border:'none',borderRadius:10,cursor:'pointer',fontSize:12,fontFamily:F.sans,fontWeight:tab===t.id?600:400,background:tab===t.id?C.accent:'transparent',color:'white',transition:'all 0.15s' }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {/* AI Tab */}
+        {tab==='ai' && (
+          <div style={{ marginBottom:20 }}>
+            <div style={{ fontSize:12,color:C.muted,marginBottom:12,lineHeight:1.6 }}>Tell Isla about your party and she will build the perfect order automatically.</div>
+            <div style={{ display:'flex',gap:8,marginBottom:10 }}>
+              <input value={aiPrompt} onChange={e=>setAiPrompt(e.target.value)}
+                placeholder={'Describe your party (default: '+guests+' guests)'}
+                style={{ flex:1,padding:'11px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:24,color:'white',fontSize:13,fontFamily:F.sans,outline:'none' }}/>
+              <button onClick={runAI} disabled={aiLoading}
+                style={{ width:44,height:44,background:C.accent,border:'none',borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+                {aiLoading ? <div style={{ width:16,height:16,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'white',borderRadius:'50%',animation:'poolSpin 0.8s linear infinite' }}/> :
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>}
+              </button>
+            </div>
+            {aiError && <div style={{ fontSize:12,color:'rgba(240,149,149,0.8)',marginTop:8 }}>{aiError}</div>}
+            {['12 guests, pool party afternoon','20 people, big night out','Boat trip for 8','Birthday party, 15 guests'].map(s=>(
+              <button key={s} onClick={()=>runAI()} style={{ padding:'6px 12px',background:'rgba(255,255,255,0.07)',border:'0.5px solid rgba(255,255,255,0.12)',borderRadius:20,fontSize:11,color:C.muted,cursor:'pointer',fontFamily:F.sans,marginRight:6,marginBottom:6 }}>{s}</button>
+            ))}
+            <style>{'@keyframes poolSpin{to{transform:rotate(360deg)}}'}</style>
+          </div>
+        )}
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20, background:C.surface, borderRadius:12, padding:'12px 14px' }}>
           <span style={{ fontSize:14, color:C.muted, fontFamily:F.sans }}>Guests:</span>
           <button onClick={()=>setGuests(g=>Math.max(2,g-2))} style={{ width:28,height:28,background:'rgba(255,255,255,0.1)',border:'none',borderRadius:'50%',color:'white',fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center' }}>-</button>
@@ -773,7 +845,7 @@ export function PoolPartyMode({ onClose, onAddAll }) {
           <span style={{ fontSize:11, color:C.muted, fontFamily:F.sans }}>Quantities default to serve {guests}</span>
         </div>
 
-        {PARTY_PRODUCTS.map(cat=>(
+        {tab==='build' && PARTY_PRODUCTS.map(cat=>(
           <div key={cat.category} style={{ marginBottom:18 }}>
             <div style={{ fontSize:13, fontWeight:600, color:'white', marginBottom:10, fontFamily:F.sans }}>{cat.emoji} {cat.category}</div>
             {cat.items.map(p=>(

@@ -463,12 +463,16 @@ export function StaffPicksRow({ onDetail }) {
 // ── FEATURE 12: Time-aware greeting ──────────────────────────
 export function useTimeGreeting() {
   const hour = new Date().getHours()
-  if (hour >= 6 && hour < 11) return { greeting:'Good morning ☀️', vibe:'Start the day right', emoji:'🌅', categories:['water','wellness','snacks'] }
-  if (hour >= 11 && hour < 15) return { greeting:'Afternoon plans? 🌴', vibe:'Pool and beach vibes', emoji:'🏖', categories:['beer_cider','soft_drinks','snacks'] }
+  // Early morning / sunrise
+  if (hour >= 5 && hour < 8)  return { greeting:'Early riser 🌅', vibe:'Good morning, Ibiza', emoji:'🌅', categories:['water_juice','soft_drinks','snacks'] }
+  if (hour >= 8 && hour < 11) return { greeting:'Good morning ☀️', vibe:'Start the day right', emoji:'☀️', categories:['water_juice','soft_drinks','snacks'] }
+  if (hour >= 11 && hour < 15) return { greeting:'Afternoon plans? 🌴', vibe:'Pool and beach vibes', emoji:'🏖️', categories:['beer_cider','soft_drinks','snacks'] }
   if (hour >= 15 && hour < 19) return { greeting:'Sundowner time 🌅', vibe:'Golden hour calls for rosé', emoji:'🥂', categories:['wine','champagne','beer_cider'] }
   if (hour >= 19 && hour < 22) return { greeting:'Evening is yours 🌙', vibe:'Pre-drinks sorted in 18 min', emoji:'🍹', categories:['spirits','champagne','soft_drinks'] }
-  if (hour >= 22 || hour < 2) return { greeting:'Night is young 🎉', vibe:'Keep the energy going', emoji:'✨', categories:['spirits','beer_cider','soft_drinks'] }
-  return { greeting:'Still going? 🌙', vibe:'Late night essentials', emoji:'🌃', categories:['water','snacks','tobacco'] }
+  if (hour >= 22 || hour < 1)  return { greeting:'Night is young 🎉', vibe:'Keep the energy going', emoji:'✨', categories:['spirits','beer_cider','soft_drinks'] }
+  if (hour >= 1 && hour < 3)   return { greeting:'Still going? 🎵', vibe:'Club hours — we never sleep', emoji:'🎵', categories:['spirits','soft_drinks','water_juice'] }
+  // 3am-5am — late night/early morning recovery
+  return { greeting:'Almost sunrise 🌙', vibe:'Late night essentials', emoji:'🌙', categories:['water_juice','snacks','soft_drinks'] }
 }
 
 export function TimeGreetingBanner({ greeting, vibe }) {
