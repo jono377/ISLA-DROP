@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { signIn, signUp, getProfile } from '../../lib/supabase'
 import { useAuthStore } from '../../lib/store'
-import { SocialLoginButtons, PhoneOTPLogin } from './CustomerFeatures_world2'
+import { SocialLoginButtons, PhoneOTPLogin } from '../customer/CustomerFeatures_world2'
 import toast from 'react-hot-toast'
 
 export default function AuthScreen() {
