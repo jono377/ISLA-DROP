@@ -473,32 +473,70 @@ export function WeatherProductRow({ weather, onDetail }) {
 // ── FEATURE 17: Live event calendar ──────────────────────────
 export function useIbizaEvents() {
   const [events, setEvents] = useState([])
-  useEffect(() => {
-    import('../../lib/supabase').then(({ supabase }) => {
+  const [lastFetch, setLastFetch] = useState(null)
+
+  const fetchEvents = async () => {
+    try {
+      const { supabase } = await import('../../lib/supabase')
       const today = new Date().toISOString().split('T')[0]
-      supabase.from('ibiza_events').select('*')
+      const { data } = await supabase
+        .from('ibiza_events')
+        .select('*')
+        .eq('active', true)
         .gte('event_date', today)
-        .order('event_date').limit(5)
-        .then(({ data }) => { if (data?.length) setEvents(data) })
-        .catch(() => {
-          // Fallback hardcoded events when table doesn't exist yet
-          setEvents([
-            { id:1, venue:'Pacha', artist:'Fisher', event_date:new Date().toISOString().split('T')[0], time:'01:00', emoji:'🍒', categories:['spirits','energy_drinks'] },
-            { id:2, venue:'DC-10', artist:'Circoloco', event_date:new Date(Date.now()+86400000).toISOString().split('T')[0], time:'15:00', emoji:'✈️', categories:['beer_cider','spirits'] },
-          ])
-        })
-    }).catch(()=>{})
+        .order('event_date')
+        .limit(10)
+      if (data?.length) {
+        setEvents(data)
+        setLastFetch(new Date())
+        return
+      }
+      // No events in DB — trigger an AI refresh automatically
+      triggerEventRefresh().catch(()=>{})
+    } catch {
+      // Silent fail
+    }
+  }
+
+  useEffect(() => { fetchEvents() }, [])
+
+  // Refresh every 24 hours if app stays open
+  useEffect(() => {
+    const interval = setInterval(fetchEvents, 24 * 60 * 60 * 1000)
+    return () => clearInterval(interval)
   }, [])
-  return events
+
+  return { events, lastFetch, refresh: fetchEvents }
+}
+
+// Trigger the AI event updater Edge Function
+export async function triggerEventRefresh() {
+  try {
+    const { supabase } = await import('../../lib/supabase')
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return
+    const projectRef = import.meta.env.VITE_SUPABASE_URL?.match(/https:\/\/([^.]+)/)?.[1]
+    if (!projectRef) return
+    await fetch('https://'+projectRef+'.supabase.co/functions/v1/update-events', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer '+session.access_token, 'Content-Type': 'application/json' },
+    })
+  } catch { /* Silent — non critical */ }
 }
 
 export function EventCalendarBanner({ events, onDetail }) {
   const today = new Date().toISOString().split('T')[0]
   const { addItem } = useCartStore()
-  if (!events?.length) return null
-  const todayEvents = events.filter(e=>e.event_date===today)
-  if (!todayEvents.length) return null
-  const ev = todayEvents[0]
+  // Support both {events} and {events, lastFetch} shapes
+  const evList = Array.isArray(events) ? events : events?.events || []
+  if (!evList?.length) return null
+  // Show today's events first, then next upcoming
+  const todayEvents = evList.filter(e=>e.event_date===today)
+  const upcoming    = evList.filter(e=>e.event_date>today)
+  const ev = todayEvents[0] || upcoming[0]
+  if (!ev) return null
+  const isToday = ev.event_date === today
+  const daysAway = isToday ? 0 : Math.ceil((new Date(ev.event_date)-new Date(today)) / 86400000)
   const suggestedProducts = PRODUCTS.filter(p=>ev.categories?.some(c=>p.category===c)).slice(0,4)
 
   return (
@@ -507,7 +545,9 @@ export function EventCalendarBanner({ events, onDetail }) {
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
           <span style={{ fontSize:28 }}>{ev.emoji||'🎵'}</span>
           <div>
-            <div style={{ fontSize:11, color:'rgba(200,150,255,0.7)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.5px' }}>Tonight at {ev.venue}</div>
+            <div style={{ fontSize:11, color:'rgba(200,150,255,0.7)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.5px' }}>
+              {isToday ? 'Tonight at ' : daysAway===1 ? 'Tomorrow at ' : 'In '+daysAway+' days · '}{ev.venue}
+            </div>
             <div style={{ fontFamily:F.serif, fontSize:18, color:'white' }}>{ev.artist}</div>
             <div style={{ fontSize:11, color:C.muted }}>Doors {ev.time} · Pre-drinks?</div>
           </div>

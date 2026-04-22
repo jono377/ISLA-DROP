@@ -1000,7 +1000,7 @@ function CustomerAppInner() {
   const [loyaltyRedeemed, setLoyaltyRedeemed] = useState(false)
   const loyaltyStamps = useLoyaltyStamps()
   const liveOrderCount = useLiveOrderCount()
-  const events = useIbizaEvents()
+  const { events, refresh: refreshEvents } = useIbizaEvents()
   const { checkStreak } = useOrderStreak()
   const { supported: pushSupported, subscribe: subscribePush } = usePushNotifications()
   useEffect(() => {

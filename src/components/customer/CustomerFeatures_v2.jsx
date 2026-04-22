@@ -817,20 +817,40 @@ export function LazyImg({ src, alt, style={}, emoji='📦', width, height }) {
   )
 }
 
-// ── I26: Season countdown ─────────────────────────────────────
+// ── I26: Season countdown — real dates per year ───────────────
+// Ibiza season: last weekend of April → 31 October
+// These are the actual opening dates per year
+const IBIZA_SEASON_OPENS = {
+  2025: new Date(2025, 3, 25),  // 25 April 2025
+  2026: new Date(2026, 3, 24),  // 24 April 2026
+  2027: new Date(2027, 3, 23),  // 23 April 2027
+}
+
 export function useSeasonCountdown() {
-  const now = new Date()
+  const now  = new Date()
   const year = now.getFullYear()
-  const SEASON_START = new Date(year, 4, 1)  // 1 May
-  const SEASON_END   = new Date(year, 9, 31) // 31 Oct
-  if (now >= SEASON_START && now <= SEASON_END) {
-    const days = Math.ceil((SEASON_END - now) / 86400000)
+  // Get this year's opening date, fallback to last Friday of April
+  let seasonStart = IBIZA_SEASON_OPENS[year]
+  if (!seasonStart) {
+    // Calculate last Friday of April for unknown years
+    const lastDay = new Date(year, 4, 0) // last day of April
+    const offset  = (lastDay.getDay() + 2) % 7 // days back to Friday
+    seasonStart   = new Date(year, 3, lastDay.getDate() - offset)
+  }
+  const seasonEnd = new Date(year, 9, 31) // 31 October
+
+  if (now >= seasonStart && now <= seasonEnd) {
+    const days = Math.ceil((seasonEnd - now) / 86400000)
     if (days <= 14) return { type:'ending', days, message:'Season ends in '+days+' day'+(days!==1?'s':'')+' — stock up! 🌴' }
     return { type:'peak', days:null, message:'In the heart of Ibiza season 🌴' }
   }
-  const nextStart = now < SEASON_START ? SEASON_START : new Date(year+1, 4, 1)
+  // Off season
+  const nextStart = now < seasonStart ? seasonStart : IBIZA_SEASON_OPENS[year+1] || new Date(year+1, 3, 24)
   const days = Math.ceil((nextStart - now) / 86400000)
-  return { type:'offseason', days, message:'Ibiza season opens in '+days+' day'+(days!==1?'s':'')+' ✈️' }
+  if (days <= 0) return { type:'peak', days:null, message:'Season is open 🌴' }
+  if (days === 1) return { type:'offseason', days:1, message:'Season opens TOMORROW 🎉' }
+  if (days <= 7)  return { type:'offseason', days, message:'Season opens this weekend 🌴 '+days+' days to go' }
+  return { type:'offseason', days, message:'Ibiza season opens in '+days+' days ✈️' }
 }
 
 export function SeasonCountdownBanner() {

@@ -635,7 +635,7 @@ const IBIZA_BEACHES = [
 ]
 
 export function BeachDeliverySheet({ onClose, onSet }) {
-  const { addItem } = useCartStore ? useCartStore() : { addItem:()=>{} }
+  const { addItem } = useCartStore()
   const [tab, setTab] = useState('select') // select | ai
   const [selected, setSelected] = useState(null)
   const [searching, setSearching] = useState(false)
