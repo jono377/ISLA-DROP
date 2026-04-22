@@ -78,6 +78,22 @@ export const T = {
     discountCode: 'Discount code',
     apply: 'Apply',
     spirits: 'Spirits',
+    poolPartyMode: 'Pool party mode',
+    bulkOrdering: 'Bulk ordering for your group',
+    buildYourOrder: 'Build your order',
+    aiBuilder: 'AI builder',
+    numberOfGuests: 'Number of guests',
+    beachDelivery: 'Beach delivery',
+    selectYourBeach: 'Select your beach or use GPS',
+    useMyLocation: 'Use my current location',
+    helpFaq: 'Help & FAQ',
+    creditsRefunds: 'Credits & refunds',
+    savedForLater: 'Saved for later',
+    groupOrder: 'Group order',
+    recurringOrder: 'Set up recurring order',
+    addNote: 'Add note',
+    largeOrderWarning: 'Large order — our team needs extra time to prepare your items.',
+    beachDeliveryNote: 'We deliver to the nearest access point.',
     champagne: 'Champagne',
     wine: 'Wine',
     beer: 'Beer',
@@ -1033,4 +1049,13 @@ export const T = {
 
 export function useT(lang) {
   return T[lang] ?? T.en
+}
+
+// Global translation store — lets any component access translations
+// without prop drilling. Set lang once at app level.
+let _globalLang = 'en'
+export function setGlobalLang(lang) { _globalLang = lang }
+export function gt(key) {
+  const t = T[_globalLang] ?? T.en
+  return t[key] || T.en[key] || key
 }
