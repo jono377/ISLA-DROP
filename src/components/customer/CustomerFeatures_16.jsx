@@ -663,30 +663,66 @@ export function BoatDeliverySheet({ onClose, onConfirm }) {
   )
 }
 
-// ── Weather-aware suggestions hook (bonus) ────────────────────
+// ── Weather hook — always shows Ibiza weather ────────────────
+// Falls back to Ibiza Town coordinates if user denies location
+const IBIZA_LAT = 38.9067
+const IBIZA_LNG = 1.4326
+
+function fetchWeather(lat, lng, setWeather) {
+  fetch(
+    'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lng+
+    '&current=temperature_2m,weathercode,windspeed_10m,precipitation&timezone=Europe/Madrid'
+  )
+    .then(r => r.json())
+    .then(data => {
+      const temp = data.current?.temperature_2m
+      const code = data.current?.weathercode
+      const wind = data.current?.windspeed_10m
+      const rain = data.current?.precipitation
+      if (temp == null) return
+      const sunny   = code <= 2
+      const cloudy  = code >= 3 && code <= 48
+      const rainy   = code >= 51 && code <= 77
+      const stormy  = code >= 80
+      const hot     = temp >= 28
+      const warm    = temp >= 22
+      const cool    = temp < 20
+      // Weather icon
+      const icon = stormy ? '⛈' : rainy ? '🌧' : cloudy ? '⛅' : hot ? '☀️' : sunny ? '🌤' : '🌡'
+      // Descriptive text
+      const text = stormy  ? 'Storm warning ⛈ '+Math.round(temp)+'°C'
+                 : rainy   ? 'Rainy in Ibiza 🌧 '+Math.round(temp)+'°C'
+                 : hot && sunny ? 'Perfect '+Math.round(temp)+'°C ☀️'
+                 : warm && sunny ? 'Beautiful '+Math.round(temp)+'°C 🌤'
+                 : cool    ? 'Cool evening 🌡 '+Math.round(temp)+'°C'
+                 : 'Ibiza '+icon+' '+Math.round(temp)+'°C'
+      setWeather({ temp, code, wind, rain, sunny, hot, warm, cool, rainy, stormy, icon, text })
+    })
+    .catch(() => {
+      // Silent fail — weather is non-critical
+    })
+}
+
 export function useWeatherSuggestion() {
   const [weather, setWeather] = useState(null)
   useEffect(() => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(pos => {
-      const { latitude: lat, longitude: lon } = pos.coords
-      fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weathercode&timezone=Europe/Madrid')
-        .then(r => r.json())
-        .then(data => {
-          const temp = data.current?.temperature_2m
-          const code = data.current?.weathercode
-          if (temp != null) {
-            const sunny = code <= 2
-            const hot = temp >= 28
-            setWeather({ temp, sunny, hot,
-              text: hot && sunny ? 'Perfect pool day ☀️ '+Math.round(temp)+'°C'
-                  : sunny ? 'Beautiful day 🌤 '+Math.round(temp)+'°C'
-                  : code >= 80 ? 'Stormy tonight ⛈ '+Math.round(temp)+'°C'
-                  : 'Ibiza weather 🌤 '+Math.round(temp)+'°C'
-            })
-          }
-        }).catch(() => {})
-    }, () => {})
+    // Try user's actual location first
+    if (navigator?.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => fetchWeather(pos.coords.latitude, pos.coords.longitude, setWeather),
+        // If denied or unavailable — use Ibiza Town as fallback
+        () => fetchWeather(IBIZA_LAT, IBIZA_LNG, setWeather),
+        { timeout: 5000, maximumAge: 300000 } // 5s timeout, cache 5 mins
+      )
+    } else {
+      // No geolocation support — use Ibiza Town
+      fetchWeather(IBIZA_LAT, IBIZA_LNG, setWeather)
+    }
+    // Refresh every 30 minutes
+    const interval = setInterval(() => {
+      fetchWeather(IBIZA_LAT, IBIZA_LNG, setWeather)
+    }, 30 * 60 * 1000)
+    return () => clearInterval(interval)
   }, [])
   return weather
 }
