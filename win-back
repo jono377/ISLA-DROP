@@ -1,0 +1,109 @@
+// Supabase Edge Function: win-back
+// Finds customers who haven't ordered in 7+ days, issues €5 credit,
+// and sends a push notification.
+//
+// Deploy:  supabase functions deploy win-back
+//
+// Schedule via pg_cron (run daily at 09:00 Ibiza time / 07:00 UTC):
+//   select cron.schedule('win-back-daily', '0 7 * * *', $$
+//     select net.http_post(
+//       url:='https://YOUR_REF.supabase.co/functions/v1/win-back',
+//       headers:='{"Authorization":"Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb
+//     )
+//   $$);
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
+const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+const LAPSE_DAYS   = 7
+const CREDIT_AMOUNT = 5.00
+const MAX_BATCH    = 100 // max customers to process per run
+
+Deno.serve(async (req) => {
+  const auth = req.headers.get('Authorization')
+  if (!auth) return new Response('Unauthorized', { status: 401 })
+
+  const supabase = createClient(SUPABASE_URL, SERVICE_KEY)
+  const cutoff   = new Date(Date.now() - LAPSE_DAYS * 86400000).toISOString()
+  const results  = { processed: 0, credited: 0, skipped: 0, errors: 0 }
+
+  try {
+    // Find customers whose most recent order is older than LAPSE_DAYS
+    const { data: recentOrders } = await supabase
+      .from('orders')
+      .select('customer_id, created_at')
+      .eq('status', 'delivered')
+      .order('created_at', { ascending: false })
+
+    if (!recentOrders?.length) {
+      return new Response(JSON.stringify({ ...results, message: 'No orders found' }), { status: 200 })
+    }
+
+    // Group by customer_id — get their most recent order date
+    const lastOrderMap: Record<string, string> = {}
+    for (const order of recentOrders) {
+      if (!lastOrderMap[order.customer_id]) {
+        lastOrderMap[order.customer_id] = order.created_at
+      }
+    }
+
+    // Filter to lapsed customers
+    const lapsedIds = Object.entries(lastOrderMap)
+      .filter(([, date]) => date < cutoff)
+      .map(([id]) => id)
+      .slice(0, MAX_BATCH)
+
+    results.processed = lapsedIds.length
+
+    for (const userId of lapsedIds) {
+      try {
+        // Skip if we already sent a win-back credit in last 14 days
+        const { count } = await supabase
+          .from('customer_credits')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .like('reason', '%win-back%')
+          .gte('created_at', new Date(Date.now() - 14 * 86400000).toISOString())
+
+        if ((count || 0) > 0) { results.skipped++; continue }
+
+        // Issue credit
+        await supabase.from('customer_credits').insert({
+          user_id: userId,
+          amount: CREDIT_AMOUNT,
+          reason: 'We miss you! win-back credit — come back to Isla Drop 🌴',
+          expires_at: new Date(Date.now() + 14 * 86400000).toISOString(),
+        })
+
+        // Send push notification
+        const { data: subs } = await supabase
+          .from('push_subscriptions')
+          .select('endpoint, p256dh, auth')
+          .eq('user_id', userId)
+
+        if (subs?.length) {
+          // Fire push via send-push function
+          await supabase.functions.invoke('send-push', {
+            body: {
+              userId,
+              title: 'We miss you! 🌴',
+              body: '€5 credit added — come back to Isla Drop',
+              data: { type: 'win_back', credit: CREDIT_AMOUNT },
+            }
+          })
+        }
+
+        results.credited++
+      } catch {
+        results.errors++
+      }
+    }
+
+    return new Response(JSON.stringify(results), {
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 })
+  }
+})
