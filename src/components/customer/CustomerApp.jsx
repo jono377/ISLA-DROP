@@ -600,7 +600,7 @@ function SearchView({ t, onAssist, onCategorySelect }) {
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -855,7 +855,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Pool party mode</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Bulk ordering for groups</div>
             </button>
-            <button onClick={()=>setShowBeachDelivery(true)}
+            <button onClick={onShowBeachDelivery}
               style={{ padding:'14px', background:'linear-gradient(135deg,rgba(196,104,58,0.3),rgba(139,60,20,0.4))', border:'0.5px solid rgba(196,104,58,0.35)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
               <div style={{ fontSize:22, marginBottom:4 }}>🏖️</div>
               <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Beach delivery</div>
@@ -942,6 +942,15 @@ function CustomerAppInner() {
   const [showRatingPrompt, setShowRatingPrompt] = useState(false)
   const [homeLoaded, setHomeLoaded] = useState(false)
   const { onTouchStart: swipeBackStart, onTouchEnd: swipeBackEnd } = useSwipeBack(()=>setView(VIEWS.ACCOUNT))
+  const homeScrollRef = useRef(0)
+  // Save scroll position when leaving home, restore when returning
+  const goBack = (dest) => {
+    const saved = homeScrollRef.current
+    setView(dest)
+    if (dest === VIEWS.HOME) {
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.scrollTo({top:saved,behavior:'instant'}) }) })
+    }
+  }
   const realtimeDriverLoc = useRealtimeDriverLocation(activeOrder?.driver_id, !!(activeOrder?.driver_id))
   const [showPushPrompt, setShowPushPrompt] = useState(false)
   const formatPrice = useFormatPrice()
@@ -1015,7 +1024,7 @@ function CustomerAppInner() {
   const t    = useT(lang)
   const estimatedMins = cart.deliveryAddress ? 18 : null
 
-  const goToCategory = (key) => { setCategoryKey(key); setView(VIEWS.CATEGORY) }
+  const goToCategory = (key) => { homeScrollRef.current=window.scrollY; setCategoryKey(key); setView(VIEWS.CATEGORY) }
 
   const handleTabChange = (v) => {
     if (v !== VIEWS.CATEGORY) setCategoryKey(null)
@@ -1278,14 +1287,14 @@ function CustomerAppInner() {
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); setView(VIEWS.HOME) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
-      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>setShowClubPresets(true)} onShowBoat={()=>setShowBoatMode(true)} onShowPreArrival={()=>setShowPreArrival(true)} onShowPoolParty={()=>setShowPoolParty(true)} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>setView(VIEWS.VILLA_PRESETS)} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></FadeIn>}
+      {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>setView(VIEWS.BEST)} onNewIn={()=>setView(VIEWS.NEWIN)} onPartyNight={()=>setView(VIEWS.PARTY_NIGHT)} onPartyDay={()=>setView(VIEWS.PARTY_DAY)} onArrival={()=>setView(VIEWS.ARRIVAL)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>setView(VIEWS.VILLA_PRESETS)} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} />}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} />}
       {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>setView(VIEWS.ORDER_HISTORY)} onShowAddresses={()=>setView(VIEWS.SAVED_ADDRESSES)} onShowEditProfile={()=>setView(VIEWS.EDIT_PROFILE)} onShowLoyalty={()=>setView(VIEWS.LOYALTY)} onShowReferral={()=>setView(VIEWS.REFERRAL)} onShowWishlist={()=>setView(VIEWS.WISHLIST)} onShowNotifications={()=>setView(VIEWS.NOTIFICATIONS)} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>setView(VIEWS.FAQ)} onShowCredits={()=>setView(VIEWS.CREDITS)} /></FadeIn>}
       {view===VIEWS.ASSIST   && <AssistBot initialQuery={assistQuery} onClose={()=>{ setAssistQuery(''); setView(VIEWS.HOME) }} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>setView(VIEWS.HOME)} />}
-      {view===VIEWS.PARTY_DAY   && <PartyBuilder initialType="design_day"   onBack={()=>setView(VIEWS.HOME)} />}
+      {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>goBack(VIEWS.HOME)} />}
+      {view===VIEWS.PARTY_DAY   && <PartyBuilder initialType="design_day"   onBack={()=>goBack(VIEWS.HOME)} />}
       {view===VIEWS.ARRIVAL     && <ArrivalPackage onBack={()=>setView(VIEWS.HOME)} />}
       {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>setView(VIEWS.HOME)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />}
       {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>setView(VIEWS.HOME)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />}

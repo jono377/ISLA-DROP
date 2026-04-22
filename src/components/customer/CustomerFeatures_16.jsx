@@ -578,6 +578,11 @@ export function ClubPresetsSheet({ onClose, onSelect }) {
       <div style={{ width:'100%', maxWidth:480, margin:'0 auto', background:'#0D3545', borderRadius:'24px 24px 0 0', maxHeight:'75vh', overflowY:'auto' }} onClick={e=>e.stopPropagation()}>
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, margin:'14px auto 0' }}/>
         <div style={{ padding:'16px 20px 8px' }}>
+        <button onClick={onClose}
+          style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'6px 14px 6px 10px',cursor:'pointer',marginBottom:14,width:'fit-content' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
+        </button>
           <div style={{ fontFamily:F.serif, fontSize:22, color:'white', marginBottom:4 }}>Club delivery</div>
           <div style={{ fontSize:13, color:C.muted, marginBottom:16 }}>Select your club — we know exactly where to deliver</div>
         </div>
@@ -629,6 +634,11 @@ export function BoatDeliverySheet({ onClose, onConfirm }) {
       <div style={{ width:'100%', maxWidth:480, margin:'0 auto', background:'#0D3545', borderRadius:'24px 24px 0 0', maxHeight:'80vh', overflowY:'auto' }} onClick={e=>e.stopPropagation()}>
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, margin:'14px auto 0' }}/>
         <div style={{ padding:'16px 20px 40px' }}>
+        <button onClick={onClose}
+          style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'6px 14px 6px 10px',cursor:'pointer',marginBottom:14,width:'fit-content' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
+        </button>
           <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:6 }}>
             <span style={{ fontSize:32 }}>⛵</span>
             <div>

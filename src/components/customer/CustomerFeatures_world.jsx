@@ -672,6 +672,11 @@ export function PreArrivalSheet({ onClose, onSchedule }) {
   return (
     <Sheet onClose={onClose}>
       <div style={{ padding:'16px 20px 44px' }}>
+        <button onClick={onClose}
+          style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'6px 14px 6px 10px',cursor:'pointer',marginBottom:14,width:'fit-content' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
+        </button>
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
           <span style={{ fontSize:32 }}>✈️</span>
           <div>

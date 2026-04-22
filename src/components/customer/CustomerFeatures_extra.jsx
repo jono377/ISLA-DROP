@@ -727,6 +727,11 @@ export function BeachDeliverySheet({ onClose, onSet }) {
         {/* Header */}
         <div style={{ padding:'16px 20px 12px',borderBottom:'0.5px solid rgba(255,255,255,0.08)',flexShrink:0 }}>
           <div style={{ width:36,height:4,background:'rgba(255,255,255,0.2)',borderRadius:2,margin:'0 auto 14px' }}/>
+        <button onClick={onClose}
+          style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'6px 14px 6px 10px',cursor:'pointer',marginBottom:10,width:'fit-content' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
+        </button>
           <div style={{ display:'flex',alignItems:'center',gap:10,marginBottom:14 }}>
             <span style={{ fontSize:28 }}>🏖️</span>
             <div style={{ flex:1 }}>
