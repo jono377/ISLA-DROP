@@ -93,6 +93,21 @@ import {
   FreeSampleOffer, useBirthdayReward, BirthdayRewardBanner,
 } from './CustomerFeatures_world2'
 import {
+  useFlyToCart, ConfettiCelebration, EmptyBasketState,
+  EmptySearchState, FirstVisitOnboarding, useWhatsNew, WhatsNewModal,
+  useOutOfStockCheck, useDeliveryZone, DeliveryZoneBadge,
+  PhotoIDVerification, LiveOrderHomeCard,
+  ZoneMinimumBanner, usePrefetch, ShareBasketButton,
+  BarcodeScanner, oneTabReorder, CharityDonationToggle,
+  CarbonOffsetToggle, TipSplitInfo, getOptimisedImageUrl,
+  ConfettiCelebration as Confetti,
+} from './CustomerFeatures_polish2'
+import {
+  useExpressCheckout, ExpressCheckoutBar, ExpressCheckoutSheet,
+  useSearchFilters, SearchFilterBar, SearchFilterPanel,
+  useWinBackDetection, WinBackBanner, useDebounce,
+} from './CustomerFeatures_perf'
+import {
   HomeSkeletonLoader, usePersonalisedCategories, VoiceSearchButton,
   useProductImages, ImageGallery, BecauseYouBoughtRow, useLoyaltyDelivery,
   getOrderNumberFromURL, processReferral, PushNotificationPrompt,
@@ -406,6 +421,7 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
       {!cart.deliveryAddress && <NoAddressWarning onSetAddress={()=>toast('Set your address in checkout',{icon:'📍'})} />}
       <GroupOrderBanner groupToken={groupToken} onStart={()=>createGroupOrder()} />
       <SaveForLaterList saved={savedLater} onMoveToBasket={()=>{}} onRemove={removeFromSaved} />
+      <ZoneMinimumBanner lat={cart.deliveryLat} lng={cart.deliveryLng} subtotal={cart.getSubtotal()} />
       <FirstOrderDiscountBanner discount={firstOrderDiscount} onApply={()=>toast.success('€10 discount applied! 🎁')} />
       <FreeSampleOffer subtotal={cart.getSubtotal()} onAddSample={p=>{ cart.addItem(p) }} />
       {cart.getItemCount() >= 25 && (
@@ -420,6 +436,7 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
         style={{ width:'100%',padding:'16px',background:belowMin?'rgba(255,255,255,0.1)':'#C4683A',color:belowMin?'rgba(255,255,255,0.3)':'white',border:'none',borderRadius:14,fontFamily:'DM Sans,sans-serif',fontSize:15,fontWeight:500,cursor:belowMin?'not-allowed':'pointer',boxShadow:belowMin?'none':'0 4px 20px rgba(196,104,58,0.4)',marginBottom:10 }}>
         {belowMin?'Add €'+(MIN-sub).toFixed(2)+' more to checkout →':(t.checkout||'Order now')+' →'}
       </button>
+      <ShareBasketButton />
       <button onClick={()=>setShowRecurringSetup(true)}
         style={{ width:'100%',padding:'11px',background:'rgba(43,122,139,0.12)',border:'0.5px solid rgba(43,122,139,0.25)',borderRadius:12,fontFamily:'DM Sans,sans-serif',fontSize:12,color:'rgba(126,232,200,0.8)',cursor:'pointer',marginBottom:8,display:'flex',alignItems:'center',justifyContent:'center',gap:6 }}>
         🔄 Set up recurring order
@@ -538,13 +555,18 @@ function looksLikeAIQuery(q) {
 function SearchView({ t, onAssist, onCategorySelect }) {
   const [query, setQuery] = useState('')
   const [historyVer, setHistoryVer] = useState(0)
+  const [showFilterPanel, setShowFilterPanel] = useState(false)
   const { addItem } = useCartStore()
   const { prefs: dietPrefs, toggle: toggleDiet } = useDietaryPrefs()
+  const searchFilters = useSearchFilters()
 
-  // Fuzzy + partial match
-  const [filteredResults, setFilteredResults] = useState([])
-  const rawResults = query.length>1 ? fuzzySearch(query, PRODUCTS) : []
-  useEffect(()=>setFilteredResults(rawResults), [query])
+  // Debounce query for performance — only search after 180ms idle
+  const debouncedQuery = useDebounce(query, 180)
+
+  // Fuzzy + partial match on debounced query
+  const rawResults = debouncedQuery.length>1 ? fuzzySearch(debouncedQuery, PRODUCTS) : []
+  // Apply filters + sort
+  const filteredResults = searchFilters.applyFilters(rawResults)
   const searchInputRef = useSearchFocus(true)
 
   const isAI = query.length>2 && looksLikeAIQuery(query)
@@ -565,13 +587,20 @@ function SearchView({ t, onAssist, onCategorySelect }) {
         </div>
         <VoiceSearchButton onResult={q=>setQuery(q)} />
         <ImageSearchButton onResult={p=>{ onDetail&&onDetail(p) }} />
+        <button onClick={()=>setShowBarcodeScanner(true)}
+          style={{ width:36,height:36,background:'rgba(255,255,255,0.09)',border:'0.5px solid rgba(255,255,255,0.14)',borderRadius:10,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><path d="M3 9V5a2 2 0 0 1 2-2h4M3 15v4a2 2 0 0 0 2 2h4M21 9V5a2 2 0 0 0-2-2h-4M21 15v4a2 2 0 0 1-2 2h-4M7 12h10"/></svg>
+        </button>
       </div>
 
-      {/* Isla AI prompt — shown when query looks like a vibe not a product */}
+      {/* Search filters + sort */}
+      <SearchFilterBar filters={searchFilters} onShowPanel={()=>setShowFilterPanel(true)} />
       {/* Feature 8: Dietary filter bar */}
-      <div style={{ padding:'8px 16px 0' }}>
+      <div style={{ padding:'0 0 4px' }}>
         <DietaryFilterBar prefs={dietPrefs} onToggle={toggleDiet} />
       </div>
+      {/* Filter panel */}
+      {showFilterPanel && <SearchFilterPanel filters={searchFilters} onClose={()=>setShowFilterPanel(false)} />}
       {/* Feature 4: Search history when empty */}
       {!query && <SearchHistoryPanel onSelect={q=>{setQuery(q)}} onClear={()=>setHistoryVer(v=>v+1)} />}
       {/* Feature 4: Live suggestions as you type */}
@@ -591,9 +620,9 @@ function SearchView({ t, onAssist, onCategorySelect }) {
       )}
 
       {/* Product results */}
-      {query.length>1 && results.length>0 && (
+      {debouncedQuery.length>1 && filteredResults.length>0 && (
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:10 }}>
-          {results.map(p=>(
+          {filteredResults.map(p=>(
             <div key={p.id} style={{ background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.1)',borderRadius:14,overflow:'hidden',position:'relative' }}>
               <div style={{ position:'relative' }}>
                 <ProductImage productId={p.id} emoji={p.emoji} category={p.category} alt={p.name} size="card" style={{ height:110 }} />
@@ -738,6 +767,8 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
       {!searchQuery && !homeLoaded && <HomeSkeletonLoader />}
       {!searchQuery && homeLoaded && (
         <div style={{ paddingBottom:20, paddingTop:4 }}>
+          {/* Win-back banner */}
+          <WinBackBanner onShop={()=>{}} />
           {/* Birthday reward */}
           <BirthdayRewardBanner active={birthdayReward} />
           {/* T4-20: After dark mode */}
@@ -990,6 +1021,19 @@ function CustomerAppInner() {
   const [showChallenges, setShowChallenges] = useState(false)
   const [showRecurringSetup, setShowRecurringSetup] = useState(false)
   const surge = useSurgePricing()
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [showOnboardingFull, setShowOnboardingFull] = useState(false)
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
+  const [showExpressSheet, setShowExpressSheet] = useState(false)
+  const [showFilterPanel, setShowFilterPanel] = useState(false)
+  const { eligible: expressEligible, expressData } = useExpressCheckout()
+  const searchFilters = useSearchFilters()
+  const [charityEnabled, setCharityEnabled] = useState(false)
+  const [carbonEnabled, setCarbonEnabled] = useState(false)
+  const { show: showWhatsNew, dismiss: dismissWhatsNew } = useWhatsNew()
+  const { fly: flyToCart, Particles: CartParticles } = useFlyToCart()
+  const checkOutOfStock = useOutOfStockCheck()
+  usePrefetch(view, cart)
   const birthdayReward = useBirthdayReward()
   const firstOrderDiscount = useFirstOrderDiscount()
   const formatPrice = useFormatPrice()
@@ -1018,6 +1062,7 @@ function CustomerAppInner() {
   useReferralFromURL()
   useNotificationReorder()
   useAbandonedBasketTracker()
+  useWinBackDetection()
   const { tip: driverTipAmount, setTip: setDriverTipAmount } = useCartTip()
   const [showGuestCheckout, setShowGuestCheckout] = useState(false)
   const [guestUser, setGuestUser] = useState(null)
@@ -1116,8 +1161,10 @@ function CustomerAppInner() {
     }
   },[activeOrder?.status])
 
-  const handleCheckoutStart = () => {
+  const handleCheckoutStart = async () => {
     Analytics.checkoutStart(cart.getSubtotal())
+    await checkOutOfStock()
+    if (cart.getItemCount() === 0) return
     if (!user && !guestUser) { setShowGuestCheckout(true); return }
     if (cart.getSubtotal() < 15) { toast.error('Minimum order is €15'); return }
     if (!hasValidAddress(cart)) { toast.error('Please set a delivery address first',{icon:'📍'}); return }
@@ -1137,7 +1184,7 @@ function CustomerAppInner() {
         deliveryNotes:cart.deliveryNotes, what3words:cart.what3words, subtotal:cart.getSubtotal(),
         total:orderTotal, paymentIntentId, loyalty_applied:loyaltyRedeemed, delivery_fee:deliveryFee,
       })
-      cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION); fireOrderConfirmedHaptic()
+      cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION); fireOrderConfirmedHaptic(); setShowConfetti(true); setTimeout(()=>setShowConfetti(false),3500)
       Analytics.checkoutComplete(order.total||cart.getTotal())
       addNotif({ type:'order', title:'Order confirmed! 🛵', body:'Order #'+order.order_number+' is being prepared. Estimated arrival: '+(order.estimated_minutes||18)+' min.' })
       const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');addNotif({type:'order',title:'Delivered! 🎉',body:'Your order #'+u.order_number+' has been delivered.'});setTimeout(()=>setShowPostDeliveryTip(true),8000);setTimeout(()=>setShowDriverRating(true),12000);sub.unsubscribe()} })
@@ -1159,6 +1206,9 @@ function CustomerAppInner() {
   // ── SPLASH — absolutely no tab bar ───────────────────────
   if (view===VIEWS.SPLASH) {
     return <SplashScreen onEnter={()=>setView(VIEWS.HOME)} />
+  }
+  if (showOnboarding) {
+    return <FirstVisitOnboarding onDone={finishOnboarding} />
   }
 
   // ── AGE VERIFY ────────────────────────────────────────────
@@ -1197,6 +1247,7 @@ function CustomerAppInner() {
           {proximitySuggestion && <VenueSuggestionBanner venue={proximitySuggestion} onAccept={()=>{cart.setDeliveryLocation(proximitySuggestion.lat,proximitySuggestion.lng,proximitySuggestion.name+', Ibiza',null);toast.success('Delivery to '+proximitySuggestion.name+' set!')}} onDismiss={()=>{}} />}
           {/* Feature 17: Zone validation */}
           <DeliveryZoneWarning lat={cart.deliveryLat} lng={cart.deliveryLng} />
+          <DeliveryZoneBadge lat={cart.deliveryLat} lng={cart.deliveryLng} />
           <div style={{ borderRadius:14,overflow:'hidden',marginBottom:14 }}>
             <DeliveryMap onLocationSet={()=>setLocationSet(true)} />
           </div>
@@ -1266,6 +1317,8 @@ function CustomerAppInner() {
             }}
           />
           {/* Feature 8: Trust badges */}
+          <CharityDonationToggle enabled={charityEnabled} onToggle={()=>setCharityEnabled(e=>!e)} />
+          <CarbonOffsetToggle enabled={carbonEnabled} onToggle={()=>setCarbonEnabled(e=>!e)} />
           <TrustBadges />
           {/* C5: Cancellation policy */}
           <CancellationPolicyNote />
@@ -1377,8 +1430,17 @@ function CustomerAppInner() {
         <CategoryPage categoryKey={categoryKey} onBack={()=>{ setCategoryKey(null); goBack(VIEWS.HOME) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />
       )}
       {view===VIEWS.CATEGORY && !categoryKey && <CategoriesView onSelect={goToCategory} />}
+      {view===VIEWS.HOME && activeOrder && activeOrder.status !== 'delivered' && (
+        <LiveOrderHomeCard order={activeOrder} etaMins={etaMins} onTrack={()=>setView(VIEWS.TRACKING)} />
+      )}
       {view===VIEWS.HOME     && <FadeIn><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>setView(VIEWS.VILLA_PRESETS)} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} />}
+      {view===VIEWS.BASKET && (
+        <ExpressCheckoutBar
+          onExpress={()=>setShowExpressSheet(true)}
+          onNormal={handleCheckoutStart}
+        />
+      )}
       {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onBack={()=>goBack(VIEWS.HOME)} driverTipAmount={driverTipAmount} loyaltyRedeemed={loyaltyRedeemed} setLoyaltyRedeemed={setLoyaltyRedeemed} itemNotes={itemNotes} setItemNote={setItemNote} groupToken={groupToken} createGroupOrder={createGroupOrder} savedLater={savedLater} removeFromSaved={removeFromSaved} />}
       {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.ORDER_HISTORY) }} onShowAddresses={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.SAVED_ADDRESSES) }} onShowEditProfile={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.EDIT_PROFILE) }} onShowLoyalty={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.LOYALTY) }} onShowReferral={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.REFERRAL) }} onShowWishlist={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.WISHLIST) }} onShowNotifications={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.NOTIFICATIONS) }} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onShowChallenges={()=>setShowChallenges(true)} onShowSupport={()=>setShowSupportChat(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.FAQ) }} onShowCredits={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.CREDITS) }} /></FadeIn>}
       {view===VIEWS.ASSIST   && <AssistBot initialQuery={assistQuery} onClose={()=>{ setAssistQuery(''); goBack(VIEWS.HOME) }} />}
@@ -1422,8 +1484,11 @@ function CustomerAppInner() {
       {showRecurring && <RecurringOrderSheet cart={cart} onClose={()=>setShowRecurring(false)} onSchedule={()=>{}} />}
       {/* C2: Cookie consent */}
       <ReferralDeepLinkHandler />
+      <ConfettiCelebration active={showConfetti} />
+      <CartParticles />
       {showCookieBanner && <CookieConsentBanner onAccept={acceptCookies} onDecline={declineCookies} />}
       {/* T2-10: Push notification prompt */}
+      {showWhatsNew && <WhatsNewModal onClose={dismissWhatsNew} />}
       {showPushPrompt && <PushNotificationPrompt
         onAccept={()=>{
           try{localStorage.setItem('isla_push_prompted','1')}catch{}
@@ -1446,6 +1511,15 @@ function CustomerAppInner() {
       {showPreArrival && <PreArrivalSheet onClose={()=>setShowPreArrival(false)} onSchedule={s=>{ cart.setDeliveryNotes&&cart.setDeliveryNotes('PRE-ARRIVAL: '+s.villa+' at '+s.arrivalTime+' on '+s.arrivalDate+(s.flightNum?' flight '+s.flightNum:'')); toast.success('Pre-arrival order scheduled!') }} />}
       {/* Feature 15: Pool party mode */}
       {showPoolParty && <PoolPartyMode onClose={()=>setShowPoolParty(false)} onAddAll={()=>setView(VIEWS.BASKET)} />}
+      {showBarcodeScanner && <BarcodeScanner onResult={p=>{ useCartStore.getState().addItem(p); toast.success(p.emoji+' Added via barcode!',{duration:1500}); setShowBarcodeScanner(false) }} onClose={()=>setShowBarcodeScanner(false)} />}
+      {showExpressSheet && expressData && (
+        <ExpressCheckoutSheet
+          expressData={expressData}
+          total={cart.getTotal()+(driverTipAmount||0)}
+          onConfirm={async()=>{ setShowExpressSheet(false); await handlePaymentSuccess('express') }}
+          onClose={()=>setShowExpressSheet(false)}
+        />
+      )}
       {showSupportChat && <SupportChatWidget activeOrder={activeOrder} onClose={()=>setShowSupportChat(false)} />}
       {showOrderIssue && activeOrder && <OrderIssueSheet order={activeOrder} onClose={()=>setShowOrderIssue(false)} />}
       {showDriverRating && activeOrder?.driver_id && <DriverRatingSheet order={activeOrder} onClose={()=>setShowDriverRating(false)} />}
