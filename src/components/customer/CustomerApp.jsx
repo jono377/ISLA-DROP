@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { PRODUCTS, CATEGORIES, BEST_SELLERS, NEW_IN } from '../../lib/products'
 import { LANGUAGES, useT, setGlobalLang } from '../../i18n/translations'
+import { useLang } from '../../i18n/LangContext'
 import AgeVerification from './AgeVerification'
 import StripeCheckout from './StripeCheckout'
 import DeliveryMap from './DeliveryMap'
@@ -930,7 +931,8 @@ function CustomerAppInner() {
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [assistQuery, setAssistQuery] = useState('')
   const [lang, setLangState]           = useState(()=>{ try{return localStorage.getItem('isla_lang')||detectDeviceLanguage()}catch{return 'en'} })
-  const setLang = (l) => { setLangState(l); setGlobalLang(l); try{localStorage.setItem('isla_lang',l)}catch{} }
+  const { setLang: setLangCtx } = useLang()
+  const setLang = (l) => { setLangState(l); setGlobalLang(l); setLangCtx(l); try{localStorage.setItem('isla_lang',l)}catch{} }
   const [categoryKey, setCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
   const [activeOrder, setActiveOrder] = useState(null)
@@ -1014,8 +1016,36 @@ function CustomerAppInner() {
   const { events, refresh: refreshEvents } = useIbizaEvents()
   const { checkStreak } = useOrderStreak()
   const { supported: pushSupported, subscribe: subscribePush } = usePushNotifications()
+  // Detect returning from Stripe 3DS redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const piId    = params.get('payment_intent')
+    const piStatus = params.get('redirect_status')
+    if (piId && piStatus === 'succeeded') {
+      // Clean URL without reloading
+      window.history.replaceState({}, '', window.location.pathname)
+      // Restore cart if stored before redirect
+      try {
+        const saved = localStorage.getItem('isla_pending_order')
+        if (saved) {
+          const pending = JSON.parse(saved)
+          localStorage.removeItem('isla_pending_order')
+          // Complete the order
+          handlePaymentSuccess(piId)
+          return
+        }
+      } catch {}
+      handlePaymentSuccess(piId)
+    } else if (piId && piStatus === 'failed') {
+      window.history.replaceState({}, '', window.location.pathname)
+      toast.error('Payment failed — please try again')
+      setView(VIEWS.CHECKOUT)
+    }
+  }, [])
+
   useEffect(() => {
     setGlobalLang(lang)
+    setLangCtx(lang)
     if (typeof registerServiceWorker === 'function') registerServiceWorker()
     setupNotificationActions()
     window.addEventListener('isla:repeat_order', e => {
@@ -1121,7 +1151,11 @@ function CustomerAppInner() {
       <div style={{ background:C.bg, minHeight:'100vh', paddingBottom:60, maxWidth:480, margin:'0 auto', boxShadow:'0 0 60px rgba(0,0,0,0.5)' }}>
         <div style={{ padding:'16px 16px 20px' }}>
           <CheckoutProgressBar step={2} />
-          <button onClick={()=>setView(VIEWS.BASKET)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.55)',fontSize:14,cursor:'pointer',fontFamily:'DM Sans,sans-serif',marginBottom:12 }}>← Back to basket</button>
+          <button onClick={()=>setView(VIEWS.BASKET)}
+  style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'7px 14px 7px 10px',cursor:'pointer',marginBottom:16 }}>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+  <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
+</button>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:26,color:'white',marginBottom:20 }}>{t.checkout}</div>
           <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:12 }}>Delivery location</div>
           {/* Feature 6: Confirmed address display */}
@@ -1187,7 +1221,21 @@ function CustomerAppInner() {
           <PayButton total={cart.getTotal()+(driverTipAmount||0)} loading={payLoading} onPay={()=>handlePaymentSuccess('manual')} />
           {/* Feature 10: Apple/Google Pay */}
           <NativePayButton total={cart.getTotal()} onSuccess={handlePaymentSuccess} />
-          <StripeCheckout onSuccess={handlePaymentSuccess} onCancel={()=>setView(VIEWS.BASKET)} />
+          <StripeCheckout
+            onSuccess={handlePaymentSuccess}
+            onCancel={()=>setView(VIEWS.BASKET)}
+            onBeforeRedirect={()=>{
+              // Save order context before 3DS redirect takes user away
+              try {
+                localStorage.setItem('isla_pending_order', JSON.stringify({
+                  customerId: user?.id,
+                  address: cart.deliveryAddress,
+                  total: cart.getTotal(),
+                  ts: Date.now()
+                }))
+              } catch {}
+            }}
+          />
           {/* Feature 8: Trust badges */}
           <TrustBadges />
           {/* C5: Cancellation policy */}

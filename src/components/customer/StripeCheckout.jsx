@@ -16,7 +16,7 @@ const STRIPE_APPEARANCE = {
   },
 }
 
-function CheckoutForm({ total, onSuccess, onCancel }) {
+function CheckoutForm({ total, onSuccess, onCancel, onBeforeRedirect }) {
   const stripe = useStripe()
   const elements = useElements()
   const [loading, setLoading] = useState(false)
@@ -32,19 +32,31 @@ function CheckoutForm({ total, onSuccess, onCancel }) {
     const { error: submitError } = await elements.submit()
     if (submitError) { setError(submitError.message); setLoading(false); return }
 
-    const { error: payError } = await stripe.confirmPayment({
+    onBeforeRedirect?.()
+    const { error: payError, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: window.location.origin + '/order-confirmed',
+        // Return to app after 3DS — the app reads ?payment_intent= on load
+        return_url: window.location.origin + '/?payment=complete',
       },
+      // 'if_required' redirects for 3DS cards — always_resolve means we handle it here too
       redirect: 'if_required',
     })
 
     if (payError) {
-      setError(payError.message)
+      // Card declined, auth failed, etc
+      if (payError.type === 'card_error' || payError.type === 'validation_error') {
+        setError(payError.message)
+      } else {
+        setError('Payment failed — please try again or use a different card.')
+      }
       setLoading(false)
+    } else if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing')) {
+      onSuccess(paymentIntent.id)
     } else {
-      onSuccess()
+      // Still loading or pending — rare
+      setError('Payment is being processed. Please wait.')
+      setLoading(false)
     }
   }
 
@@ -87,7 +99,7 @@ function CheckoutForm({ total, onSuccess, onCancel }) {
   )
 }
 
-export default function StripeCheckout({ onSuccess, onCancel }) {
+export default function StripeCheckout({ onSuccess, onCancel, onBeforeRedirect }) {
   const [clientSecret, setClientSecret] = useState(null)
   const [paymentIntentId, setPaymentIntentId] = useState(null)
   const [loadError, setLoadError] = useState(null)
