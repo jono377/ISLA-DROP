@@ -621,7 +621,7 @@ export async function saveBirthday(userId, birthday) {
 // ── Beach Delivery Sheet ──────────────────────────────────────
 const IBIZA_BEACHES = [
   { name:'Playa de Salinas', emoji:'🏖️', lat:38.8710, lng:1.3960, note:'Near Beso Beach · car park on the right' },
-  { name:'Playa d'en Bossa', emoji:'🏄', lat:38.8820, lng:1.4050, note:'Ushuaia end · main beach access' },
+  { name:'Playa den Bossa', emoji:'🏄', lat:38.8820, lng:1.4050, note:'Ushuaia end · main beach access' },
   { name:'Cala Bassa', emoji:'🌊', lat:38.9600, lng:1.2350, note:'Beach bar pickup point' },
   { name:'Cala Conta', emoji:'🐠', lat:38.9560, lng:1.2200, note:'Rocky steps entrance' },
   { name:'Cala Tarida', emoji:'🌴', lat:38.9740, lng:1.2390, note:'Beach restaurant area' },

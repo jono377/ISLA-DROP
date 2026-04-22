@@ -153,7 +153,7 @@ function SplashScreen({ onEnter }) {
       {/* Content column — viewport-centred using left:50% + marginLeft trick */}
       <div style={{
         position:'absolute', bottom:0,
-        left:'50%', transform:'translateX(-50%)',
+        left:'50%',
         width:'100%', maxWidth:480,
         padding:'0 28px 64px',
         opacity:vis?1:0,
