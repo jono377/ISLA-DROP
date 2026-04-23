@@ -145,6 +145,8 @@ export const UI_STRINGS = {
   // Misc confirmations
   confirmDelete: 'Are you sure?', itemRemoved: 'Item removed',
   addressSaved: 'Address saved', changesSaved: 'Changes saved',
+  clubDelivery: 'Club delivery', boatDelivery: 'Boat delivery',
+  preArrival: 'Pre-arrival', bundleDeals: 'Bundle deals',
 }
 
 // Seed the English cache immediately — no API call needed
