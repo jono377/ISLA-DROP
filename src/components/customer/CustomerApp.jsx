@@ -198,22 +198,19 @@ function SplashScreen({ onEnter }) {
 }
 
 // ── Language Picker ───────────────────────────────────────────
-function LanguagePicker({ lang, setLang }) {
-  const cur = LANGUAGES.find(l=>l.code===lang)||LANGUAGES[0]
+function LanguagePicker() {
+  const { lang, setLang } = useLang()
   return (
-    <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
-      <span style={{ position:'absolute', left:8, fontSize:14, pointerEvents:'none', zIndex:1 }}>{cur.flag}</span>
-      <select
-        value={lang}
-        onChange={e => setLang(e.target.value)}
-        style={{ appearance:'none', WebkitAppearance:'none', background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 28px 5px 28px', color:'white', fontSize:12, cursor:'pointer', fontFamily:'DM Sans,sans-serif', outline:'none', colorScheme:'dark' }}>
-        {LANGUAGES.map(l => (
-          <option key={l.code} value={l.code} style={{ background:'#0D3545', color:'white' }}>
-            {l.flag} {l.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <select
+      value={lang}
+      onChange={e => setLang(e.target.value)}
+      style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 10px', color:'white', fontSize:12, cursor:'pointer', fontFamily:'DM Sans,sans-serif', outline:'none', colorScheme:'dark' }}>
+      {LANGUAGES.map(l => (
+        <option key={l.code} value={l.code} style={{ background:'#0D3545', color:'white' }}>
+          {l.flag} {l.label}
+        </option>
+      ))}
+    </select>
   )
 }
 
@@ -691,7 +688,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             <button onClick={onShowDeliveryZone} style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white',cursor:'pointer' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'#7EE8A2',display:'inline-block',animation:'pulse 1.5s infinite' }}/>Open 24/7
             </button>
-            <LanguagePicker lang={lang} setLang={setLang} />
+            <LanguagePicker />
           </div>
         </div>
         <AddressBar estimatedMins={estimatedMins} />
