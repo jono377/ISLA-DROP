@@ -199,31 +199,54 @@ function SplashScreen({ onEnter }) {
 
 // ── Language Picker ───────────────────────────────────────────
 function LanguagePicker() {
-  const { lang, setLang } = useLang()
+  const { lang, setLang, translating } = useLang()
   const [open, setOpen] = useState(false)
   const cur = LANGUAGES.find(l=>l.code===lang)||LANGUAGES[0]
-  const pick = (code) => { setLang(code); setOpen(false) }
+
+  const pick = (code) => {
+    setLang(code)
+    setOpen(false)
+  }
+
   return (
-    <div style={{ position:'relative', zIndex:500 }}>
-      <button onClick={()=>setOpen(o=>!o)}
-        style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 11px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontFamily:'DM Sans,sans-serif' }}>
-        <span style={{ fontSize:14 }}>{cur.flag}</span>{cur.code.toUpperCase()}
+    <>
+      {/* Trigger button */}
+      <button
+        onClick={() => setOpen(true)}
+        style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 11px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
+        {translating
+          ? <span style={{ fontSize:11, opacity:0.7 }}>...</span>
+          : <><span style={{ fontSize:14 }}>{cur.flag}</span>{cur.code.toUpperCase()}</>
+        }
       </button>
+
+      {/* Full-screen language sheet — rendered outside any stacking context */}
       {open && (
-        <>
-          {/* Backdrop to close on outside tap */}
-          <div onClick={()=>setOpen(false)} style={{ position:'fixed', inset:0, zIndex:490 }} />
-          <div style={{ position:'absolute', top:34, right:0, background:'white', borderRadius:12, boxShadow:'0 8px 32px rgba(0,0,0,0.25)', overflow:'hidden', zIndex:510, minWidth:160 }}>
-            {LANGUAGES.map(l=>(
-              <button key={l.code} onMouseDown={()=>pick(l.code)} onTouchStart={()=>pick(l.code)}
-                style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'10px 14px', border:'none', borderBottom:'0.5px solid rgba(0,0,0,0.06)', background:l.code===lang?'#F5F0E8':'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:13, color:'#2A2318', textAlign:'left' }}>
-                <span style={{ fontSize:16 }}>{l.flag}</span>{l.label}
+        <div
+          onClick={() => setOpen(false)}
+          style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width:'100%', maxWidth:480, background:'white', borderRadius:'20px 20px 0 0', paddingBottom:40, overflow:'hidden' }}>
+            {/* Handle */}
+            <div style={{ width:36, height:4, background:'rgba(0,0,0,0.15)', borderRadius:2, margin:'14px auto 0' }} />
+            <div style={{ padding:'14px 20px 10px', fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:700, color:'rgba(0,0,0,0.35)', textTransform:'uppercase', letterSpacing:'0.8px' }}>
+              Select language
+            </div>
+            {LANGUAGES.map(l => (
+              <button
+                key={l.code}
+                onClick={() => pick(l.code)}
+                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'13px 20px', border:'none', borderTop:'0.5px solid rgba(0,0,0,0.07)', background: l.code===lang ? '#F5F0E8' : 'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:15, color:'#1A1A1A', textAlign:'left' }}>
+                <span style={{ fontSize:22 }}>{l.flag}</span>
+                <span style={{ flex:1 }}>{l.label}</span>
+                {l.code === lang && <span style={{ fontSize:18, color:'#C4683A' }}>✓</span>}
               </button>
             ))}
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </>
   )
 }
 
