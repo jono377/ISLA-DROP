@@ -198,36 +198,34 @@ function SplashScreen({ onEnter }) {
 }
 
 // ── Language Picker ───────────────────────────────────────────
-function LanguagePicker() {
+function LangInline() {
   const { lang, setLang } = useLang()
   const [open, setOpen] = useState(false)
   const cur = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0]
   return (
-    <div style={{ position:'fixed', top:16, right:16, zIndex:300 }}>
-      <button
+    <span style={{ position:'relative' }}>
+      <span
         onClick={() => setOpen(o => !o)}
-        style={{ background:'rgba(13,53,69,0.95)', border:'0.5px solid rgba(255,255,255,0.25)', borderRadius:20, padding:'5px 12px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontFamily:'DM Sans,sans-serif', backdropFilter:'blur(8px)', boxShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>
-        {cur.flag} {cur.code.toUpperCase()} {open ? '▲' : '▼'}
-      </button>
+        style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'4px 9px', color:'white', fontSize:12, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:4, fontFamily:'DM Sans,sans-serif' }}>
+        {cur.flag} {cur.code.toUpperCase()}
+      </span>
       {open && (
-        <>
-          <div onClick={() => setOpen(false)} style={{ position:'fixed', inset:0, zIndex:-1 }} />
-          <div style={{ position:'absolute', top:36, right:0, background:'#0D3545', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:12, overflow:'hidden', minWidth:165, boxShadow:'0 8px 24px rgba(0,0,0,0.5)', maxHeight:320, overflowY:'auto' }}>
-            {LANGUAGES.map(l => (
-              <div key={l.code}
-                onClick={() => { setLang(l.code); setOpen(false) }}
-                style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 14px', cursor:'pointer', background: l.code === lang ? 'rgba(196,104,58,0.25)' : 'transparent', borderBottom:'0.5px solid rgba(255,255,255,0.06)', fontFamily:'DM Sans,sans-serif', fontSize:13, color:'white' }}>
-                <span style={{ fontSize:18 }}>{l.flag}</span>
-                <span style={{ flex:1 }}>{l.label}</span>
-                {l.code === lang && <span style={{ color:'#C4683A' }}>✓</span>}
-              </div>
-            ))}
-          </div>
-        </>
+        <span style={{ position:'absolute', top:30, right:0, background:'#0D3545', border:'0.5px solid rgba(255,255,255,0.2)', borderRadius:12, overflow:'hidden', display:'block', minWidth:160, boxShadow:'0 8px 24px rgba(0,0,0,0.5)', zIndex:9999 }}>
+          {LANGUAGES.map(l => (
+            <span key={l.code}
+              onClick={(e) => { e.stopPropagation(); setLang(l.code); setOpen(false) }}
+              style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px', cursor:'pointer', background: l.code === lang ? 'rgba(196,104,58,0.2)' : 'transparent', borderBottom:'0.5px solid rgba(255,255,255,0.07)', fontFamily:'DM Sans,sans-serif', fontSize:13, color:'white' }}>
+              <span style={{ fontSize:18 }}>{l.flag}</span>
+              <span style={{ flex:1 }}>{l.label}</span>
+              {l.code === lang && <span style={{ color:'#C4683A' }}>✓</span>}
+            </span>
+          ))}
+        </span>
       )}
-    </div>
+    </span>
   )
 }
+
 
 // ── Tab Bar — rendered ONLY on the home screen ────────────────
 function TabBar({ view, setView, cartCount }) {
@@ -703,6 +701,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             <button onClick={onShowDeliveryZone} style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white',cursor:'pointer' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'#7EE8A2',display:'inline-block',animation:'pulse 1.5s infinite' }}/>Open 24/7
             </button>
+            <LangInline />
           </div>
         </div>
         <AddressBar estimatedMins={estimatedMins} />
@@ -1470,7 +1469,6 @@ function CustomerAppInner() {
       {/* Floating cart bar on home only — Feature 7: press state */}
       {view===VIEWS.HOME && <FloatingBasketBar itemCount={cart.getItemCount()} subtotal={cart.getSubtotal()} onTap={()=>{haptic('medium');setView(VIEWS.BASKET)}} t={t} />}
 
-      {view === VIEWS.HOME && <LanguagePicker />}
       {/* Ambient music player — shows above tab bar when music enabled in ops */}
       {view !== VIEWS.SPLASH && view !== VIEWS.CHECKOUT && view !== VIEWS.TRACKING && view !== VIEWS.CONFIRMATION && <IslaPlayer />}
 
