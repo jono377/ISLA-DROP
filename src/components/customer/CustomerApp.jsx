@@ -202,54 +202,30 @@ function LanguagePicker() {
   const { lang, setLang } = useLang()
   const [open, setOpen] = useState(false)
   const cur = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0]
-
-  const handlePick = (code) => {
-    setOpen(false)
-    setLang(code)
-    // Write to localStorage directly as proof it fired
-    try { localStorage.setItem('isla_lang_debug', code + '_' + Date.now()) } catch {}
-  }
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'4px 10px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:4, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
-        <span style={{ fontSize:13 }}>{cur.flag}</span>
-        <span>{cur.code.toUpperCase()}</span>
-      </button>
-    )
-  }
-
-  // When open - render sheet and backdrop as siblings at top level
   return (
-    <>
+    <div style={{ position:'fixed', top:16, right:16, zIndex:300 }}>
       <button
-        onClick={() => setOpen(false)}
-        style={{ background:'rgba(255,255,255,0.3)', border:'0.5px solid rgba(255,255,255,0.5)', borderRadius:20, padding:'4px 10px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:4, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
-        <span style={{ fontSize:13 }}>{cur.flag}</span>
-        <span>✕</span>
+        onClick={() => setOpen(o => !o)}
+        style={{ background:'rgba(13,53,69,0.95)', border:'0.5px solid rgba(255,255,255,0.25)', borderRadius:20, padding:'5px 12px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontFamily:'DM Sans,sans-serif', backdropFilter:'blur(8px)', boxShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>
+        {cur.flag} {cur.code.toUpperCase()} {open ? '▲' : '▼'}
       </button>
-      <div onClick={() => setOpen(false)} style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:9998, background:'rgba(0,0,0,0.6)' }} />
-      <div style={{ position:'fixed', left:0, right:0, bottom:0, zIndex:9999, background:'#0D3B4A', borderRadius:'18px 18px 0 0', maxHeight:'60vh', display:'flex', flexDirection:'column', boxShadow:'0 -4px 30px rgba(0,0,0,0.5)' }}>
-        <div style={{ textAlign:'center', padding:'12px 0 6px' }}>
-          <div style={{ width:32, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, display:'inline-block' }} />
-        </div>
-        <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'1px', padding:'4px 16px 8px' }}>Select language</div>
-        <div style={{ overflowY:'scroll', flex:1, paddingBottom:40 }}>
-          {LANGUAGES.map(l => (
-            <div
-              key={l.code}
-              onClick={() => handlePick(l.code)}
-              style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', background: l.code === lang ? 'rgba(196,104,58,0.2)' : 'transparent', borderTop:'0.5px solid rgba(255,255,255,0.07)', cursor:'pointer' }}>
-              <span style={{ fontSize:24 }}>{l.flag}</span>
-              <span style={{ flex:1, fontFamily:'DM Sans,sans-serif', fontSize:15, color:'white' }}>{l.label}</span>
-              {l.code === lang && <span style={{ color:'#C4683A', fontSize:18, fontWeight:700 }}>✓</span>}
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position:'fixed', inset:0, zIndex:-1 }} />
+          <div style={{ position:'absolute', top:36, right:0, background:'#0D3545', border:'0.5px solid rgba(255,255,255,0.15)', borderRadius:12, overflow:'hidden', minWidth:165, boxShadow:'0 8px 24px rgba(0,0,0,0.5)', maxHeight:320, overflowY:'auto' }}>
+            {LANGUAGES.map(l => (
+              <div key={l.code}
+                onClick={() => { setLang(l.code); setOpen(false) }}
+                style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 14px', cursor:'pointer', background: l.code === lang ? 'rgba(196,104,58,0.25)' : 'transparent', borderBottom:'0.5px solid rgba(255,255,255,0.06)', fontFamily:'DM Sans,sans-serif', fontSize:13, color:'white' }}>
+                <span style={{ fontSize:18 }}>{l.flag}</span>
+                <span style={{ flex:1 }}>{l.label}</span>
+                {l.code === lang && <span style={{ color:'#C4683A' }}>✓</span>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
@@ -727,7 +703,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             <button onClick={onShowDeliveryZone} style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white',cursor:'pointer' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'#7EE8A2',display:'inline-block',animation:'pulse 1.5s infinite' }}/>Open 24/7
             </button>
-            <LanguagePicker />
           </div>
         </div>
         <AddressBar estimatedMins={estimatedMins} />
@@ -1495,6 +1470,7 @@ function CustomerAppInner() {
       {/* Floating cart bar on home only — Feature 7: press state */}
       {view===VIEWS.HOME && <FloatingBasketBar itemCount={cart.getItemCount()} subtotal={cart.getSubtotal()} onTap={()=>{haptic('medium');setView(VIEWS.BASKET)}} t={t} />}
 
+      {view === VIEWS.HOME && <LanguagePicker />}
       {/* Ambient music player — shows above tab bar when music enabled in ops */}
       {view !== VIEWS.SPLASH && view !== VIEWS.CHECKOUT && view !== VIEWS.TRACKING && view !== VIEWS.CONFIRMATION && <IslaPlayer />}
 
