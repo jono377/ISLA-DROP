@@ -982,25 +982,8 @@ export function useAbandonedBasketTracker() {
 
 // ── F18: First-order discount auto-apply ──────────────────────
 export function useFirstOrderDiscount() {
-  const [discount, setDiscount] = useState(null)
-  const { user } = useAuthStore()
-
-  useEffect(() => {
-    if (!user?.id) return
-    const check = async () => {
-      try {
-        const { supabase } = await import('../../lib/supabase')
-        const { count } = await supabase.from('orders')
-          .select('id', { count:'exact', head:true }).eq('customer_id', user.id)
-        if (count === 0) {
-          setDiscount({ amount:10, code:'WELCOME10', label:'Welcome gift — €10 off your first order 🎁' })
-        }
-      } catch {}
-    }
-    check()
-  }, [user?.id])
-
-  return discount
+  // DISABLED — enable from Ops Dashboard → Settings → Promotions
+  return null
 }
 
 export function FirstOrderDiscountBanner({ discount, onApply }) {

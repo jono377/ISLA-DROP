@@ -322,7 +322,11 @@ function BookingModal({ service, onClose, onBook }) {
   return (
     <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.8)', display:'flex', alignItems:'flex-end', justifyContent:'center' }} onClick={onClose}>
       <div style={{ background:'linear-gradient(170deg,#0D3545,#1A5060)', borderRadius:'22px 22px 0 0', padding:'24px 20px 44px', width:'100%', maxWidth:480, maxHeight:'92vh', overflowY:'auto' }} onClick={e=>e.stopPropagation()}>
-        <div style={{ width:36, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, margin:'0 auto 22px' }}/>
+        <div style={{ width:36, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, margin:'0 auto 16px' }}/>
+        <button onClick={onClose} style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'7px 14px 7px 10px',cursor:'pointer',marginBottom:12 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
+        </button>
 
         {/* Service header */}
         <div style={{ height:120, borderRadius:14, overflow:'hidden', marginBottom:18, position:'relative' }}>
@@ -461,7 +465,10 @@ function DesignExperiencePanel({ onBook }) {
   return (
     <div style={{ background:'rgba(255,255,255,0.04)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:20, padding:20, marginBottom:20 }}>
       <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-        <button onClick={()=>{setMode(null);setResult(null);setPrompt('')}} style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:20, padding:0, lineHeight:1 }}>←</button>
+        <button onClick={()=>{setMode(null);setResult(null);setPrompt('')}} style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'7px 14px 7px 10px',cursor:'pointer' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
+        </button>
         <div style={{ fontFamily:F.serif, fontSize:18, color:'white' }}>{mode==='day'?'☀️ Design My Day':'🌙 Design My Night'}</div>
       </div>
 
@@ -656,8 +663,9 @@ export default function Concierge({ onBack }) {
       {/* Sticky header */}
       <div style={{ background:C.header, padding:'16px 16px 14px', position:'sticky', top:0, zIndex:50 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
-          <button onClick={onBack} style={{ width:36,height:36,background:'rgba(255,255,255,0.1)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <button onClick={onBack} style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'7px 14px 7px 10px',cursor:'pointer' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
           </button>
           <div style={{ flex:1 }}>
             <div style={{ fontFamily:F.serif, fontSize:22, color:'white', lineHeight:1 }}>Isla Concierge</div>

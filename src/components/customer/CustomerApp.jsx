@@ -42,6 +42,7 @@ import {
   useOnboarding, OnboardingCarousel, ScrollToTop,
   FreeDeliveryBar, EarnStampsLine, DeleteAccountSheet,
   ChangeCredentialsSheet, HotelDeliverySheet, shareProduct, BeachDeliverySheet,
+  CarDeliverySheet,
 } from './CustomerFeatures_extra'
 import {
   useSavedCard, SavedCardRow, AddressAutocomplete,
@@ -656,7 +657,7 @@ function SearchView({ t, onAssist, onCategorySelect, onDetail, onShowBarcode }) 
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -919,6 +920,12 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Beach delivery</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Salinas, Bossa, Cala...</div>
             </button>
+            <button onClick={onShowCarDelivery}
+              style={{ padding:'14px', background:'linear-gradient(135deg,rgba(43,122,139,0.3),rgba(13,70,90,0.4))', border:'0.5px solid rgba(43,122,139,0.35)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
+              <div style={{ fontSize:22, marginBottom:4 }}>🚗</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Car delivery</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Order to your parked car</div>
+            </button>
           </div>
 
           {/* ── Villa presets — placed here, well below sticky nav ── */}
@@ -1075,6 +1082,7 @@ function CustomerAppInner() {
   const [showPreArrival, setShowPreArrival] = useState(false)
   const [showPoolParty, setShowPoolParty] = useState(false)
   const [showBeachDelivery, setShowBeachDelivery] = useState(false)
+  const [showCarDelivery, setShowCarDelivery] = useState(false)
   const [giftEnabled, setGiftEnabled] = useState(false)
   const [giftMessage, setGiftMessage] = useState('')
   const [substitution, setSubstitution] = useState('substitute')
@@ -1395,6 +1403,7 @@ function CustomerAppInner() {
   }
 
   // ── FULL-SCREEN VIEWS (no tab bar) ──────────────────────────
+  if (view===VIEWS.OCCASION && occasionId) return <OccasionPage occasionId={occasionId} onBack={()=>{ setOccasionId(null); goBack(VIEWS.HOME) }} />
   if (view===VIEWS.FAQ)             return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><FAQView onBack={()=>goBack(VIEWS.ACCOUNT)} /></div>
   if (view===VIEWS.VILLA_PRESETS)   return (
     <div style={{ background:'linear-gradient(170deg,#0A2A38,#0D3545)', minHeight:'100vh', paddingBottom:80, overflowY:'auto', maxWidth:480, margin:'0 auto', boxShadow:'0 0 60px rgba(0,0,0,0.5)' }}>
@@ -1430,7 +1439,7 @@ function CustomerAppInner() {
       {view===VIEWS.HOME && activeOrder && activeOrder.status !== 'delivered' && (
         <LiveOrderHomeCard order={activeOrder} etaMins={etaMins} onTrack={()=>setView(VIEWS.TRACKING)} />
       )}
-      {view===VIEWS.HOME     && <FadeIn><AppErrorBoundary><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>setView(VIEWS.VILLA_PRESETS)} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></AppErrorBoundary></FadeIn>}
+      {view===VIEWS.HOME     && <FadeIn><AppErrorBoundary><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>setView(VIEWS.VILLA_PRESETS)} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></AppErrorBoundary></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onShowBarcode={()=>setShowBarcodeScanner(true)} />}
       {view===VIEWS.BASKET && (
         <ExpressCheckoutBar
@@ -1445,7 +1454,6 @@ function CustomerAppInner() {
       {view===VIEWS.PARTY_NIGHT && <PartyBuilder initialType="design_night" onBack={()=>goBack(VIEWS.HOME)} />}
       {view===VIEWS.PARTY_DAY   && <PartyBuilder initialType="design_day"   onBack={()=>goBack(VIEWS.HOME)} />}
       {view===VIEWS.ARRIVAL     && <ArrivalPackage onBack={()=>goBack(VIEWS.HOME)} />}
-      {view===VIEWS.OCCASION && occasionId && <OccasionPage occasionId={occasionId} onBack={()=>{ setOccasionId(null); goBack(VIEWS.HOME) }} />}
       {view===VIEWS.BEST     && <AllProductsPage title={'🔥 Best Sellers'} products={BEST_SELLERS} onBack={()=>goBack(VIEWS.HOME)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />}
       {view===VIEWS.NEWIN   && <AllProductsPage title={'✨ New In'} products={NEW_IN} onBack={()=>goBack(VIEWS.HOME)} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} />}
 
@@ -1471,6 +1479,7 @@ function CustomerAppInner() {
       {showIssue && <ReportIssueSheet order={showIssue} onClose={()=>setShowIssue(null)} />}
       {/* POINT 15: PWA install */}
       <PWAInstallPrompt />
+      {showCarDelivery && <CarDeliverySheet onClose={()=>setShowCarDelivery(false)} onSet={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null); setShowCarDelivery(false); toast.success('🚗 Delivering to your car!') }} />}
       {showBeachDelivery && <BeachDeliverySheet onClose={()=>setShowBeachDelivery(false)} onSet={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null); setShowBeachDelivery(false); toast.success('📍 '+loc.address) }} />}
       {/* Post-delivery tip */}
       {showPostDeliveryTip && activeOrder && <PostDeliveryTipSheet order={activeOrder} driverName={null} onClose={()=>setShowPostDeliveryTip(false)} />}

@@ -15,8 +15,9 @@ const C = {
 }
 const hdr = { background:'linear-gradient(135deg,#0D3B4A,#1A5263)', padding:'16px 16px 20px', position:'sticky', top:0, zIndex:50 }
 const backBtn = (onBack) => (
-  <button onClick={onBack} style={{ width:36,height:36,background:'rgba(255,255,255,0.1)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+  <button onClick={onBack} style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'7px 14px 7px 10px',cursor:'pointer' }}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
   </button>
 )
 
@@ -891,6 +892,136 @@ export function BeachDeliverySheet({ onClose, onSet }) {
             )}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── Car Delivery Sheet ─────────────────────────────────────────
+// Deliver to where your car is parked — GPS + manual entry
+export function CarDeliverySheet({ onClose, onSet }) {
+  const [loading, setLoading] = useState(false)
+  const [manualNote, setManualNote] = useState('')
+  const [located, setLocated] = useState(null)
+  const [step, setStep] = useState('options') // options | manual | confirm
+
+  const useGPS = () => {
+    setLoading(true)
+    navigator.geolocation?.getCurrentPosition(
+      pos => {
+        const { latitude: lat, longitude: lng } = pos.coords
+        setLocated({ lat, lng })
+        setStep('confirm')
+        setLoading(false)
+      },
+      () => {
+        toast.error('Could not get your location — enter manually')
+        setStep('manual')
+        setLoading(false)
+      },
+      { timeout:8000, enableHighAccuracy:true }
+    )
+  }
+
+  const confirm = () => {
+    if (located) {
+      const address = manualNote
+        ? 'Your car — ' + manualNote
+        : 'Your car (GPS location)'
+      onSet({ lat:located.lat, lng:located.lng, address })
+    } else if (manualNote) {
+      // Use Ibiza town centre as fallback lat/lng with manual note
+      onSet({ lat:38.9067, lng:1.4326, address:'Your car — ' + manualNote })
+    }
+  }
+
+  return (
+    <div style={{ position:'fixed',inset:0,zIndex:600,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'flex-end' }} onClick={onClose}>
+      <div style={{ width:'100%',maxWidth:480,margin:'0 auto',background:'linear-gradient(170deg,#0D3545,#1A5060)',borderRadius:'24px 24px 0 0',padding:'20px 20px 44px' }} onClick={e=>e.stopPropagation()}>
+        <div style={{ width:36,height:4,background:'rgba(255,255,255,0.2)',borderRadius:2,margin:'0 auto 20px' }}/>
+
+        {/* Header */}
+        <div style={{ display:'flex',alignItems:'center',gap:12,marginBottom:20 }}>
+          {step !== 'options' && (
+            <button onClick={()=>setStep('options')}
+              style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'7px 14px 7px 10px',cursor:'pointer',flexShrink:0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+              <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
+            </button>
+          )}
+          <div>
+            <div style={{ fontFamily:'DM Serif Display,serif',fontSize:22,color:'white' }}>🚗 Deliver to my car</div>
+            <div style={{ fontSize:12,color:'rgba(255,255,255,0.5)',marginTop:2 }}>We will bring your order right to your parking spot</div>
+          </div>
+        </div>
+
+        {step === 'options' && (
+          <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
+            <button onClick={useGPS} disabled={loading}
+              style={{ padding:'16px',background:'rgba(43,122,139,0.25)',border:'0.5px solid rgba(43,122,139,0.4)',borderRadius:16,cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:14 }}>
+              {loading
+                ? <div style={{ width:24,height:24,border:'2px solid rgba(126,232,200,0.3)',borderTopColor:'#7EE8C8',borderRadius:'50%',animation:'carSpin 0.8s linear infinite',flexShrink:0 }}/>
+                : <span style={{ fontSize:28,flexShrink:0 }}>📍</span>
+              }
+              <div>
+                <div style={{ fontSize:15,fontWeight:600,color:'white',fontFamily:'DM Sans,sans-serif' }}>Use my current location</div>
+                <div style={{ fontSize:12,color:'rgba(255,255,255,0.5)',marginTop:2 }}>Pinpoints exactly where your car is parked</div>
+              </div>
+            </button>
+
+            <button onClick={()=>setStep('manual')}
+              style={{ padding:'16px',background:'rgba(255,255,255,0.06)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:16,cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:14 }}>
+              <span style={{ fontSize:28,flexShrink:0 }}>✏️</span>
+              <div>
+                <div style={{ fontSize:15,fontWeight:600,color:'white',fontFamily:'DM Sans,sans-serif' }}>Describe where I am parked</div>
+                <div style={{ fontSize:12,color:'rgba(255,255,255,0.5)',marginTop:2 }}>e.g. Platja den Bossa car park, level 2</div>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {step === 'manual' && (
+          <>
+            <div style={{ fontSize:13,color:'rgba(255,255,255,0.6)',marginBottom:10,fontFamily:'DM Sans,sans-serif' }}>
+              Describe your parking location so the driver can find you:
+            </div>
+            <textarea
+              value={manualNote}
+              onChange={e=>setManualNote(e.target.value)}
+              placeholder="e.g. Platja den Bossa car park, near entrance, white Seat Ibiza"
+              rows={3}
+              style={{ width:'100%',padding:'12px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:12,color:'white',fontSize:13,fontFamily:'DM Sans,sans-serif',resize:'none',outline:'none',boxSizing:'border-box',marginBottom:16 }}
+            />
+            <button onClick={()=>{ if(!manualNote.trim()){toast.error('Please describe your location');return} confirm() }}
+              style={{ width:'100%',padding:'15px',background:'#C4683A',border:'none',borderRadius:14,color:'white',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>
+              Set car location 🚗
+            </button>
+          </>
+        )}
+
+        {step === 'confirm' && located && (
+          <>
+            <div style={{ background:'rgba(126,232,162,0.1)',border:'0.5px solid rgba(126,232,162,0.3)',borderRadius:12,padding:'14px',marginBottom:16 }}>
+              <div style={{ fontSize:13,fontWeight:600,color:'#7EE8A2',marginBottom:4 }}>📍 Location found</div>
+              <div style={{ fontSize:12,color:'rgba(255,255,255,0.6)' }}>
+                {located.lat.toFixed(5)}, {located.lng.toFixed(5)}
+              </div>
+            </div>
+            <div style={{ fontSize:12,color:'rgba(255,255,255,0.5)',marginBottom:8 }}>Add a note for the driver (optional):</div>
+            <input
+              value={manualNote}
+              onChange={e=>setManualNote(e.target.value)}
+              placeholder="e.g. White Seat, level 2, bay 47"
+              style={{ width:'100%',padding:'11px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:10,color:'white',fontSize:13,fontFamily:'DM Sans,sans-serif',outline:'none',boxSizing:'border-box',marginBottom:16 }}
+            />
+            <button onClick={confirm}
+              style={{ width:'100%',padding:'15px',background:'#C4683A',border:'none',borderRadius:14,color:'white',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'DM Sans,sans-serif' }}>
+              Deliver to my car 🚗
+            </button>
+          </>
+        )}
+
+        <style>{'@keyframes carSpin{to{transform:rotate(360deg)}}'}</style>
       </div>
     </div>
   )
