@@ -200,21 +200,38 @@ function SplashScreen({ onEnter }) {
 // ── Language Picker ───────────────────────────────────────────
 function LanguagePicker() {
   const { lang, setLang, translating } = useLang()
+  const [open, setOpen] = useState(false)
   const cur = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0]
+
+  // Clicking the flag button toggles a language list below the header
   return (
-    <div style={{ position:'relative', display:'flex', alignItems:'center', gap:4 }}>
-      <select
-        value={lang}
-        onChange={e => { if (e.target.value !== lang) setLang(e.target.value) }}
-        style={{ appearance:'none', WebkitAppearance:'none', MozAppearance:'none', background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 32px 5px 10px', color:'white', fontSize:12, cursor:'pointer', fontFamily:'DM Sans,sans-serif', outline:'none', colorScheme:'dark', minWidth:60 }}>
-        {LANGUAGES.map(l => (
-          <option key={l.code} value={l.code}>{l.flag} {l.label}</option>
-        ))}
-      </select>
-      {/* Dropdown arrow + flag overlay */}
-      <div style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', fontSize:10, color:'rgba(255,255,255,0.6)' }}>▾</div>
-      {translating && <div style={{ width:8, height:8, borderRadius:'50%', background:'#7EE8A2', animation:'pulse 1s infinite', flexShrink:0 }} />}
-    </div>
+    <>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'4px 10px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:4, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
+        <span style={{ fontSize:14 }}>{cur.flag}</span>
+        <span>{cur.code.toUpperCase()}</span>
+        {translating && <span style={{ width:6, height:6, borderRadius:'50%', background:'#7EE8A2', display:'inline-block', animation:'pulse 1s infinite' }} />}
+      </button>
+      {open && (
+        <div style={{ position:'fixed', inset:0, zIndex:9999 }}>
+          <div onClick={() => setOpen(false)} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.5)' }} />
+          <div style={{ position:'absolute', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:480, background:'#0D3545', borderRadius:'20px 20px 0 0', padding:'16px 0 48px' }}>
+            <div style={{ width:36, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, margin:'0 auto 16px' }} />
+            <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'1px', padding:'0 20px 8px' }}>Language</div>
+            {LANGUAGES.map(l => (
+              <button key={l.code}
+                onClick={() => { setLang(l.code); setOpen(false) }}
+                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'13px 20px', background: l.code === lang ? 'rgba(196,104,58,0.2)' : 'transparent', border:'none', borderTop:'0.5px solid rgba(255,255,255,0.07)', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:15, color:'white', textAlign:'left' }}>
+                <span style={{ fontSize:22 }}>{l.flag}</span>
+                <span style={{ flex:1 }}>{l.label}</span>
+                {l.code === lang && <span style={{ color:'#C4683A', fontSize:18 }}>✓</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
