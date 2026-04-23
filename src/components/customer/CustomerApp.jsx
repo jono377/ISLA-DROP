@@ -203,14 +203,8 @@ function LanguagePicker() {
   const [open, setOpen] = useState(false)
   const cur = LANGUAGES.find(l=>l.code===lang)||LANGUAGES[0]
 
-  const pick = (code) => {
-    setLang(code)
-    setOpen(false)
-  }
-
   return (
     <>
-      {/* Trigger button */}
       <button
         onClick={() => setOpen(true)}
         style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 11px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
@@ -220,15 +214,15 @@ function LanguagePicker() {
         }
       </button>
 
-      {/* Full-screen language sheet — rendered outside any stacking context */}
       {open && (
-        <div
-          onClick={() => setOpen(false)}
-          style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+        <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+          {/* Backdrop — separate from sheet so it never captures sheet clicks */}
           <div
-            onClick={e => e.stopPropagation()}
-            style={{ width:'100%', maxWidth:480, background:'white', borderRadius:'20px 20px 0 0', paddingBottom:40, overflow:'hidden' }}>
-            {/* Handle */}
+            style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.6)' }}
+            onClick={() => setOpen(false)}
+          />
+          {/* Sheet — above backdrop, no stopPropagation needed */}
+          <div style={{ position:'relative', zIndex:1, width:'100%', maxWidth:480, background:'white', borderRadius:'20px 20px 0 0', paddingBottom:44, overflow:'hidden' }}>
             <div style={{ width:36, height:4, background:'rgba(0,0,0,0.15)', borderRadius:2, margin:'14px auto 0' }} />
             <div style={{ padding:'14px 20px 10px', fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:700, color:'rgba(0,0,0,0.35)', textTransform:'uppercase', letterSpacing:'0.8px' }}>
               Select language
@@ -236,11 +230,11 @@ function LanguagePicker() {
             {LANGUAGES.map(l => (
               <button
                 key={l.code}
-                onClick={() => pick(l.code)}
-                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'13px 20px', border:'none', borderTop:'0.5px solid rgba(0,0,0,0.07)', background: l.code===lang ? '#F5F0E8' : 'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:15, color:'#1A1A1A', textAlign:'left' }}>
+                onClick={() => { setLang(l.code); setOpen(false) }}
+                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'13px 20px', border:'none', borderTop:'0.5px solid rgba(0,0,0,0.07)', background:l.code===lang?'#FFF5EE':'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:15, color:'#1A1A1A' }}>
                 <span style={{ fontSize:22 }}>{l.flag}</span>
-                <span style={{ flex:1 }}>{l.label}</span>
-                {l.code === lang && <span style={{ fontSize:18, color:'#C4683A' }}>✓</span>}
+                <span style={{ flex:1, textAlign:'left' }}>{l.label}</span>
+                {l.code === lang && <span style={{ fontSize:16, color:'#C4683A' }}>✓</span>}
               </button>
             ))}
           </div>
