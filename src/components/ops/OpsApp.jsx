@@ -18,6 +18,7 @@ import WinBackManager from './WinBackManager'
 import ConciergePipeline from './ConciergePipeline'
 import DriverEarnings from './DriverEarnings'
 import ActivityLog from './ActivityLog'
+import MusicManager from './MusicManager'
 import ImageManager from './ImageManager'
 import PartnerManager from './PartnerManager'
 import FleetMap from './FleetMap'
@@ -433,7 +434,9 @@ export default function OpsApp() {
     clear()
   }
 
-  const [tab, setTab] = useState('overview')
+  const [tab, setTab]       = useState('overview')
+  const [opsLang, setOpsLang] = useState(() => { try { return localStorage.getItem('ops_lang')||'en' } catch { return 'en' } })
+  const saveOpsLang = (l) => { setOpsLang(l); try { localStorage.setItem('ops_lang', l) } catch {} }
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -478,10 +481,10 @@ export default function OpsApp() {
 
   const NAV = [
     { group: 'Live', items: [
-      { id: 'overview',  icon: '🏠', label: 'Overview' },
-      { id: 'orders',    icon: '📦', label: 'Orders' },
-      { id: 'fleet',     icon: '🛵', label: 'Fleet' },
-      { id: 'map',       icon: '🗺️', label: 'Live Map' },
+      { id: 'overview',  icon: '🏠', label: opsLang==='es'?'Resumen':'Overview' },
+      { id: 'orders',    icon: '📦', label: opsLang==='es'?'Pedidos':'Orders' },
+      { id: 'fleet',     icon: '🛵', label: opsLang==='es'?'Flota':'Fleet' },
+      { id: 'map',       icon: '🗺️', label: opsLang==='es'?'Mapa':'Live Map' },
     ]},
     { group: 'Business', items: [
       { id: 'analytics', icon: '📊', label: 'Analytics' },
@@ -508,6 +511,7 @@ export default function OpsApp() {
     ]},
     { group: 'Team', items: [
       { id: 'drivers',   icon: '👤', label: 'Drivers' },
+      { id: 'music',     icon: '🎵', label: 'Music' },
       { id: 'activity',  icon: '📝', label: 'Activity' },
     ]},
     { group: 'Dispatch', items: [
@@ -666,9 +670,17 @@ export default function OpsApp() {
                 {activeOrders.length} active {activeOrders.length === 1 ? 'order' : 'orders'}
               </div>
             )}
+            <div style={{ display:'flex', gap:4, background:'rgba(0,0,0,0.06)', borderRadius:8, padding:3 }}>
+              {[{code:'en',label:'EN'},{code:'es',label:'ES'}].map(lng => (
+                <button key={lng.code} onClick={()=>saveOpsLang(lng.code)}
+                  style={{ padding:'5px 11px', borderRadius:6, border:'none', fontSize:12, fontWeight:600, cursor:'pointer', background:opsLang===lng.code?'white':'transparent', color:opsLang===lng.code?'#2A2318':'#7A6E60', fontFamily:'DM Sans,sans-serif', boxShadow:opsLang===lng.code?'0 1px 3px rgba(0,0,0,0.1)':'none', transition:'all 0.15s' }}>
+                  {lng.label}
+                </button>
+              ))}
+            </div>
             <button onClick={handleSignOut}
               style={{ padding: '7px 14px', background: '#F5F0E8', border: '0.5px solid rgba(42,35,24,0.15)', borderRadius: 8, fontSize: 12, cursor: 'pointer', color: '#7A6E60', fontFamily: 'DM Sans, sans-serif' }}>
-              Sign out
+              {opsLang === 'es' ? 'Cerrar sesión' : 'Sign out'}
             </button>
           </div>
         </div>
@@ -699,6 +711,7 @@ export default function OpsApp() {
           {tab === 'pipeline'  && <ConciergePipeline />}
           {tab === 'partners'  && <PartnerManager />}
           {tab === 'drivers'   && <DriverApprovals />}
+          {tab === 'music'     && <MusicManager />}
           {tab === 'activity'    && <ActivityLog />}
           {tab === 'dispatch'    && <DispatchBoard />}
           {tab === 'sla'         && <SLAAlerts />}
