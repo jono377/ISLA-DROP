@@ -198,49 +198,22 @@ function SplashScreen({ onEnter }) {
 }
 
 // ── Language Picker ───────────────────────────────────────────
-function LanguagePicker() {
-  const { lang, setLang, translating } = useLang()
-  const [open, setOpen] = useState(false)
+function LanguagePicker({ lang, setLang }) {
   const cur = LANGUAGES.find(l=>l.code===lang)||LANGUAGES[0]
-
   return (
-    <>
-      {/* Trigger — fixed top-right, above everything */}
-      <button
-        onClick={() => setOpen(true)}
-        style={{ position:'fixed', top:14, right:16, zIndex:200, background:'rgba(13,59,74,0.85)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 11px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontFamily:'DM Sans,sans-serif', backdropFilter:'blur(8px)', boxShadow:'0 2px 12px rgba(0,0,0,0.3)' }}>
-        {translating
-          ? <span style={{ fontSize:11, opacity:0.7 }}>···</span>
-          : <><span style={{ fontSize:14 }}>{cur.flag}</span><span>{cur.code.toUpperCase()}</span></>
-        }
-      </button>
-
-      {/* Sheet — rendered at root level via fixed positioning */}
-      {open && (
-        <div style={{ position:'fixed', inset:0, zIndex:10000, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-          <div
-            style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.65)' }}
-            onClick={() => setOpen(false)}
-          />
-          <div style={{ position:'relative', zIndex:1, width:'100%', maxWidth:480, background:'white', borderRadius:'22px 22px 0 0', paddingBottom:48 }}>
-            <div style={{ width:36, height:4, background:'rgba(0,0,0,0.12)', borderRadius:2, margin:'14px auto 4px' }} />
-            <div style={{ padding:'10px 20px 12px', fontFamily:'DM Sans,sans-serif', fontSize:11, fontWeight:700, color:'rgba(0,0,0,0.35)', textTransform:'uppercase', letterSpacing:'1px' }}>
-              Select language
-            </div>
-            {LANGUAGES.map(l => (
-              <button
-                key={l.code}
-                onClick={() => { setLang(l.code); setOpen(false) }}
-                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'14px 20px', border:'none', borderTop:'0.5px solid rgba(0,0,0,0.06)', background:l.code===lang?'#FFF3ED':'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:15, color:'#1A1A1A' }}>
-                <span style={{ fontSize:22 }}>{l.flag}</span>
-                <span style={{ flex:1, textAlign:'left' }}>{l.label}</span>
-                {l.code === lang && <span style={{ color:'#C4683A', fontSize:18 }}>✓</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </>
+    <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
+      <span style={{ position:'absolute', left:8, fontSize:14, pointerEvents:'none', zIndex:1 }}>{cur.flag}</span>
+      <select
+        value={lang}
+        onChange={e => setLang(e.target.value)}
+        style={{ appearance:'none', WebkitAppearance:'none', background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 28px 5px 28px', color:'white', fontSize:12, cursor:'pointer', fontFamily:'DM Sans,sans-serif', outline:'none', colorScheme:'dark' }}>
+        {LANGUAGES.map(l => (
+          <option key={l.code} value={l.code} style={{ background:'#0D3545', color:'white' }}>
+            {l.flag} {l.label}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 
@@ -718,6 +691,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             <button onClick={onShowDeliveryZone} style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white',cursor:'pointer' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'#7EE8A2',display:'inline-block',animation:'pulse 1.5s infinite' }}/>Open 24/7
             </button>
+            <LanguagePicker lang={lang} setLang={setLang} />
           </div>
         </div>
         <AddressBar estimatedMins={estimatedMins} />
@@ -1464,7 +1438,7 @@ function CustomerAppInner() {
       {view===VIEWS.HOME && activeOrder && activeOrder.status !== 'delivered' && (
         <LiveOrderHomeCard order={activeOrder} etaMins={etaMins} onTrack={()=>setView(VIEWS.TRACKING)} />
       )}
-      {view===VIEWS.HOME     && <FadeIn><AppErrorBoundary><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.VILLA_PRESETS); window.scrollTo({top:0,behavior:'instant'}) }} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} onShowOccasion={(id)=>{ homeScrollRef.current=window.scrollY; setOccasionId(id); setView(VIEWS.OCCASION) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></AppErrorBoundary></FadeIn>}
+      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.VILLA_PRESETS); window.scrollTo({top:0,behavior:'instant'}) }} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} onShowOccasion={(id)=>{ homeScrollRef.current=window.scrollY; setOccasionId(id); setView(VIEWS.OCCASION) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} />
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onShowBarcode={()=>setShowBarcodeScanner(true)} />}
       {view===VIEWS.BASKET && (
         <ExpressCheckoutBar
@@ -1487,9 +1461,6 @@ function CustomerAppInner() {
 
       {/* Ambient music player — shows above tab bar when music enabled in ops */}
       {view !== VIEWS.SPLASH && view !== VIEWS.CHECKOUT && view !== VIEWS.TRACKING && view !== VIEWS.CONFIRMATION && <IslaPlayer />}
-
-      {/* Language picker — floats fixed top-right, always available on home */}
-      {view === VIEWS.HOME && <LanguagePicker />}
 
       {/* Tab bar — ONLY in the main shell, never on splash/checkout/tracking */}
       <TabBar view={view} setView={handleTabChange} cartCount={cart.getItemCount()} />
