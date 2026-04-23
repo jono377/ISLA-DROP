@@ -199,41 +199,56 @@ function SplashScreen({ onEnter }) {
 
 // ── Language Picker ───────────────────────────────────────────
 function LanguagePicker() {
-  const { lang, setLang, translating } = useLang()
+  const { lang, setLang } = useLang()
   const [open, setOpen] = useState(false)
   const cur = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0]
-  const pick = (code) => { setOpen(false); setLang(code) }
-  return (
-    <>
+
+  const handlePick = (code) => {
+    setOpen(false)
+    setLang(code)
+    // Write to localStorage directly as proof it fired
+    try { localStorage.setItem('isla_lang_debug', code + '_' + Date.now()) } catch {}
+  }
+
+  if (!open) {
+    return (
       <button
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setOpen(true)}
         style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'4px 10px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:4, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
         <span style={{ fontSize:13 }}>{cur.flag}</span>
         <span>{cur.code.toUpperCase()}</span>
       </button>
-      {open && <>
-        {/* Backdrop — separate fixed element, z-index BELOW sheet */}
-        <div
-          onClick={() => setOpen(false)}
-          style={{ position:'fixed', inset:0, zIndex:9998, background:'rgba(0,0,0,0.55)' }}
-        />
-        {/* Sheet — separate fixed element, z-index ABOVE backdrop */}
-        <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:480, zIndex:9999, background:'#0D3B4A', borderRadius:'18px 18px 0 0', maxHeight:'55vh', display:'flex', flexDirection:'column' }}>
-          <div style={{ width:32, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, margin:'12px auto 8px', flexShrink:0 }} />
-          <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'1px', padding:'0 16px 6px', flexShrink:0 }}>Select language</div>
-          <div style={{ overflowY:'auto', WebkitOverflowScrolling:'touch', flex:1, paddingBottom:32 }}>
-            {LANGUAGES.map(l => (
-              <button key={l.code}
-                onClick={() => pick(l.code)}
-                style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'13px 16px', background: l.code === lang ? 'rgba(196,104,58,0.2)' : 'transparent', border:'none', borderTop:'0.5px solid rgba(255,255,255,0.06)', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:15, color:'white', textAlign:'left', boxSizing:'border-box' }}>
-                <span style={{ fontSize:22, flexShrink:0 }}>{l.flag}</span>
-                <span style={{ flex:1 }}>{l.label}</span>
-                {l.code === lang && <span style={{ color:'#C4683A', fontSize:16 }}>✓</span>}
-              </button>
-            ))}
-          </div>
+    )
+  }
+
+  // When open - render sheet and backdrop as siblings at top level
+  return (
+    <>
+      <button
+        onClick={() => setOpen(false)}
+        style={{ background:'rgba(255,255,255,0.3)', border:'0.5px solid rgba(255,255,255,0.5)', borderRadius:20, padding:'4px 10px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:4, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
+        <span style={{ fontSize:13 }}>{cur.flag}</span>
+        <span>✕</span>
+      </button>
+      <div onClick={() => setOpen(false)} style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:9998, background:'rgba(0,0,0,0.6)' }} />
+      <div style={{ position:'fixed', left:0, right:0, bottom:0, zIndex:9999, background:'#0D3B4A', borderRadius:'18px 18px 0 0', maxHeight:'60vh', display:'flex', flexDirection:'column', boxShadow:'0 -4px 30px rgba(0,0,0,0.5)' }}>
+        <div style={{ textAlign:'center', padding:'12px 0 6px' }}>
+          <div style={{ width:32, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, display:'inline-block' }} />
         </div>
-      </>}
+        <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'1px', padding:'4px 16px 8px' }}>Select language</div>
+        <div style={{ overflowY:'scroll', flex:1, paddingBottom:40 }}>
+          {LANGUAGES.map(l => (
+            <div
+              key={l.code}
+              onClick={() => handlePick(l.code)}
+              style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', background: l.code === lang ? 'rgba(196,104,58,0.2)' : 'transparent', borderTop:'0.5px solid rgba(255,255,255,0.07)', cursor:'pointer' }}>
+              <span style={{ fontSize:24 }}>{l.flag}</span>
+              <span style={{ flex:1, fontFamily:'DM Sans,sans-serif', fontSize:15, color:'white' }}>{l.label}</span>
+              {l.code === lang && <span style={{ color:'#C4683A', fontSize:18, fontWeight:700 }}>✓</span>}
+            </div>
+          ))}
+        </div>
+      </div>
     </>
   )
 }
