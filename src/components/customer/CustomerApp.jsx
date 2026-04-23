@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { useCartStore, useAuthStore } from '../../lib/store'
 import { PRODUCTS, CATEGORIES, BEST_SELLERS, NEW_IN } from '../../lib/products'
-import { LANGUAGES, useT, setGlobalLang } from '../../i18n/translations'
-import { useLang } from '../../i18n/LangContext'
+import { LANGUAGES } from '../../i18n/translations'
+import { useLang, useAppT } from '../../i18n/LangContext'
 import AgeVerification from './AgeVerification'
 import StripeCheckout from './StripeCheckout'
 import DeliveryMap from './DeliveryMap'
@@ -81,7 +81,7 @@ import {
   TabIndicator, useAnimatedTotal, AddAllButton, CheckoutProgressBar, BackButton,
   useSwipeToDismiss, RatingPromptSheet, LegalLinks, useCookieConsent, CookieConsentBanner,
   FAQView, AllergenInfo, ResponsibleDrinkingBadge, CancellationPolicyNote,
-  detectDeviceLanguage, useCurrency, CurrencyToggle, shareProductBranded,
+  useCurrency, CurrencyToggle, shareProductBranded,
   FlightStatusBanner, useProximityVenueSuggestion, VenueSuggestionBanner,
 } from './CustomerFeatures_getir'
 import {
@@ -108,6 +108,7 @@ import {
   useWinBackDetection, WinBackBanner, useDebounce,
 } from './CustomerFeatures_perf'
 import OccasionPage from './OccasionPage'
+import IslaPlayer from './IslaPlayer'
 import {
   HomeSkeletonLoader, usePersonalisedCategories, VoiceSearchButton,
   useProductImages, ImageGallery, BecauseYouBoughtRow, useLoyaltyDelivery,
@@ -982,9 +983,9 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 function CustomerAppInner() {
   const [view, setView]               = useState(VIEWS.SPLASH)
   const [assistQuery, setAssistQuery] = useState('')
-  const [lang, setLangState]           = useState(()=>{ try{return localStorage.getItem('isla_lang')||detectDeviceLanguage()}catch{return 'en'} })
-  const { setLang: setLangCtx } = useLang()
-  const setLang = (l) => { setLangState(l); setGlobalLang(l); setLangCtx(l); try{localStorage.setItem('isla_lang',l)}catch{} }
+  // Lang comes from LangContext — single source of truth
+  // LangContext handles detection, localStorage, and Claude translation
+  const { lang, setLang, t: tCtx, translating: isTranslating } = useLang()
   const [categoryKey, setCategoryKey] = useState(null)
   const [locationSet, setLocationSet] = useState(false)
   const [activeOrder, setActiveOrder] = useState(null)
@@ -1120,8 +1121,6 @@ function CustomerAppInner() {
   }, [])
 
   useEffect(() => {
-    setGlobalLang(lang)
-    setLangCtx(lang)
     if (typeof registerServiceWorker === 'function') registerServiceWorker()
     setupNotificationActions()
     window.addEventListener('isla:repeat_order', e => {
@@ -1139,7 +1138,8 @@ function CustomerAppInner() {
   const cart = useCartStore()
   usePrefetch(view, cart)
   const proximitySuggestion = useProximityVenueSuggestion(cart.deliveryLat, cart.deliveryLng)
-  const t    = useT(lang)
+  // t comes from LangContext — Claude translates all strings when language changes
+  const t = tCtx
   const estimatedMins = cart.deliveryAddress ? 18 : null
 
   const goToCategory = (key) => { homeScrollRef.current=window.scrollY; setCategoryKey(key); setView(VIEWS.CATEGORY) }
@@ -1460,6 +1460,9 @@ function CustomerAppInner() {
 
       {/* Floating cart bar on home only — Feature 7: press state */}
       {view===VIEWS.HOME && <FloatingBasketBar itemCount={cart.getItemCount()} subtotal={cart.getSubtotal()} onTap={()=>{haptic('medium');setView(VIEWS.BASKET)}} t={t} />}
+
+      {/* Ambient music player — shows above tab bar when music enabled in ops */}
+      {view !== VIEWS.SPLASH && view !== VIEWS.CHECKOUT && view !== VIEWS.TRACKING && view !== VIEWS.CONFIRMATION && <IslaPlayer />}
 
       {/* Tab bar — ONLY in the main shell, never on splash/checkout/tracking */}
       <TabBar view={view} setView={handleTabChange} cartCount={cart.getItemCount()} />
