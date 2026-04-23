@@ -198,22 +198,30 @@ function SplashScreen({ onEnter }) {
 }
 
 // ── Language Picker ───────────────────────────────────────────
-function LanguagePicker({ lang, setLang }) {
+function LanguagePicker() {
+  const { lang, setLang } = useLang()
   const [open, setOpen] = useState(false)
   const cur = LANGUAGES.find(l=>l.code===lang)||LANGUAGES[0]
+  const pick = (code) => { setLang(code); setOpen(false) }
   return (
-    <div style={{ position:'relative' }}>
-      <button onClick={()=>setOpen(o=>!o)} style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 11px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontFamily:'DM Sans,sans-serif' }}>
+    <div style={{ position:'relative', zIndex:500 }}>
+      <button onClick={()=>setOpen(o=>!o)}
+        style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 11px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontFamily:'DM Sans,sans-serif' }}>
         <span style={{ fontSize:14 }}>{cur.flag}</span>{cur.code.toUpperCase()}
       </button>
       {open && (
-        <div style={{ position:'absolute', top:34, right:0, background:'white', borderRadius:12, boxShadow:'0 8px 32px rgba(0,0,0,0.18)', overflow:'hidden', zIndex:400, minWidth:148 }}>
-          {LANGUAGES.map(l=>(
-            <button key={l.code} onClick={()=>{setLang(l.code);setOpen(false)}} style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'10px 14px', border:'none', background:l.code===lang?'#F5F0E8':'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:13, color:'#2A2318' }}>
-              <span style={{ fontSize:16 }}>{l.flag}</span>{l.label}
-            </button>
-          ))}
-        </div>
+        <>
+          {/* Backdrop to close on outside tap */}
+          <div onClick={()=>setOpen(false)} style={{ position:'fixed', inset:0, zIndex:490 }} />
+          <div style={{ position:'absolute', top:34, right:0, background:'white', borderRadius:12, boxShadow:'0 8px 32px rgba(0,0,0,0.25)', overflow:'hidden', zIndex:510, minWidth:160 }}>
+            {LANGUAGES.map(l=>(
+              <button key={l.code} onMouseDown={()=>pick(l.code)} onTouchStart={()=>pick(l.code)}
+                style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'10px 14px', border:'none', borderBottom:'0.5px solid rgba(0,0,0,0.06)', background:l.code===lang?'#F5F0E8':'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:13, color:'#2A2318', textAlign:'left' }}>
+                <span style={{ fontSize:16 }}>{l.flag}</span>{l.label}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
@@ -658,7 +666,7 @@ function SearchView({ t, onAssist, onCategorySelect, onDetail, onShowBarcode }) 
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery, onShowOccasion }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -693,7 +701,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             <button onClick={onShowDeliveryZone} style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white',cursor:'pointer' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'#7EE8A2',display:'inline-block',animation:'pulse 1.5s infinite' }}/>Open 24/7
             </button>
-            <LanguagePicker lang={lang} setLang={setLang} />
+            <LanguagePicker />
           </div>
         </div>
         <AddressBar estimatedMins={estimatedMins} />
@@ -819,7 +827,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           {/* Feature 16: Weather-based product row */}
           <WeatherProductRow weather={weather} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* Occasion collections */}
-          <OccasionCollections onSelect={occ=>{ homeScrollRef.current=window.scrollY; setOccasionId(occ.id||occ); setView(VIEWS.OCCASION) }} />
+          <OccasionCollections onSelect={onShowOccasion} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
@@ -1440,7 +1448,7 @@ function CustomerAppInner() {
       {view===VIEWS.HOME && activeOrder && activeOrder.status !== 'delivered' && (
         <LiveOrderHomeCard order={activeOrder} etaMins={etaMins} onTrack={()=>setView(VIEWS.TRACKING)} />
       )}
-      {view===VIEWS.HOME     && <FadeIn><AppErrorBoundary><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.VILLA_PRESETS); window.scrollTo({top:0,behavior:'instant'}) }} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></AppErrorBoundary></FadeIn>}
+      {view===VIEWS.HOME     && <FadeIn><AppErrorBoundary><HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.VILLA_PRESETS); window.scrollTo({top:0,behavior:'instant'}) }} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} onShowOccasion={(id)=>{ homeScrollRef.current=window.scrollY; setOccasionId(id); setView(VIEWS.OCCASION) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} /></AppErrorBoundary></FadeIn>}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onShowBarcode={()=>setShowBarcodeScanner(true)} />}
       {view===VIEWS.BASKET && (
         <ExpressCheckoutBar
