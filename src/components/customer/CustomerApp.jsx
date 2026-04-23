@@ -199,18 +199,22 @@ function SplashScreen({ onEnter }) {
 
 // ── Language Picker ───────────────────────────────────────────
 function LanguagePicker() {
-  const { lang, setLang } = useLang()
+  const { lang, setLang, translating } = useLang()
+  const cur = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0]
   return (
-    <select
-      value={lang}
-      onChange={e => setLang(e.target.value)}
-      style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 10px', color:'white', fontSize:12, cursor:'pointer', fontFamily:'DM Sans,sans-serif', outline:'none', colorScheme:'dark' }}>
-      {LANGUAGES.map(l => (
-        <option key={l.code} value={l.code} style={{ background:'#0D3545', color:'white' }}>
-          {l.flag} {l.label}
-        </option>
-      ))}
-    </select>
+    <div style={{ position:'relative', display:'flex', alignItems:'center', gap:4 }}>
+      <select
+        value={lang}
+        onChange={e => { if (e.target.value !== lang) setLang(e.target.value) }}
+        style={{ appearance:'none', WebkitAppearance:'none', MozAppearance:'none', background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 32px 5px 10px', color:'white', fontSize:12, cursor:'pointer', fontFamily:'DM Sans,sans-serif', outline:'none', colorScheme:'dark', minWidth:60 }}>
+        {LANGUAGES.map(l => (
+          <option key={l.code} value={l.code}>{l.flag} {l.label}</option>
+        ))}
+      </select>
+      {/* Dropdown arrow + flag overlay */}
+      <div style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', pointerEvents:'none', fontSize:10, color:'rgba(255,255,255,0.6)' }}>▾</div>
+      {translating && <div style={{ width:8, height:8, borderRadius:'50%', background:'#7EE8A2', animation:'pulse 1s infinite', flexShrink:0 }} />}
+    </div>
   )
 }
 
