@@ -751,17 +751,19 @@ export function PoolPartyMode({ onClose, onAddAll }) {
     const p = aiPrompt || guests+' guests, pool party'
     setAiLoading(true); setAiResult(null); setAiError('')
     try {
-      const key = typeof window !== 'undefined' ? undefined : null
       const productList = PRODUCTS.slice(0,60).map(p=>p.id+'|'+p.name+'|EUR'+p.price+'|'+p.category).join(', ')
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+      if (!apiKey) throw new Error('No API key — add VITE_ANTHROPIC_API_KEY to Vercel')
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method:'POST',
-        headers:{ 'Content-Type':'application/json', 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true', 'x-api-key':import.meta.env.VITE_ANTHROPIC_API_KEY||'' },
+        headers:{ 'Content-Type':'application/json', 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true', 'x-api-key':apiKey },
         body: JSON.stringify({
           model:'claude-haiku-4-5-20251001', max_tokens:600,
-          system:'You are an Ibiza pool party planner. Build the perfect drinks order. Respond ONLY with valid JSON: {"summary":"string","items":[{"product_id":"string","quantity":number}]}',
+          system:'You are an Ibiza pool party planner. Build the perfect drinks order. Respond ONLY with valid JSON: {"summary":"string","items":[{"product_id":"string","quantity":1}]}',
           messages:[{role:'user',content:'Pool party for '+p+'. Products: '+productList+'. Pick 8-15 items. Only use product IDs from the list.'}]
         })
       })
+      if (!resp.ok) { const e=await resp.json().catch(()=>({})); throw new Error('API '+resp.status+': '+(e?.error?.message||resp.statusText)) }
       const data = await resp.json()
       const raw = data.content?.[0]?.text || ''
       const result = JSON.parse(raw.replace(/```json|```/g,'').trim())
@@ -772,7 +774,7 @@ export function PoolPartyMode({ onClose, onAddAll }) {
       setQuantities(prev=>({...prev,...newQtys}))
       setTab('build')
       toast.success('AI order built! Review and adjust below 🎉')
-    } catch { setAiError('Could not generate — try again or build manually') }
+    } catch(err) { setAiError('Could not generate — '+(err.message||'try again')) }
     setAiLoading(false)
   }
 

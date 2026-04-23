@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PRODUCTS } from '../../lib/products'
 import { useCartStore } from '../../lib/store'
 import { useT_ctx } from '../../i18n/TranslationContext'
@@ -233,6 +233,15 @@ export default function ArrivalPackage({ onBack }) {
   const { addItem } = useCartStore()
   const [selected, setSelected] = useState(null)
   const [mode, setMode] = useState('select')  // select | customise | isla
+
+  // Scroll to top on mount
+  useEffect(() => {
+    // Fire multiple times to override browser scroll restoration after content loads
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    const t1 = setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 50)
+    const t2 = setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 150)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [])
 
   const selectedPkg = ARRIVAL_PACKAGES.find(p => p.id === selected)
 

@@ -942,13 +942,11 @@ export function CarDeliverySheet({ onClose, onSet }) {
 
         {/* Header */}
         <div style={{ display:'flex',alignItems:'center',gap:12,marginBottom:20 }}>
-          {step !== 'options' && (
-            <button onClick={()=>setStep('options')}
-              style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'7px 14px 7px 10px',cursor:'pointer',flexShrink:0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-              <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
-            </button>
-          )}
+          <button onClick={step === 'options' ? onClose : ()=>setStep('options')}
+            style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'7px 14px 7px 10px',cursor:'pointer',flexShrink:0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            <span style={{ fontSize:12,color:'white',fontFamily:'DM Sans,sans-serif',fontWeight:500 }}>Back</span>
+          </button>
           <div>
             <div style={{ fontFamily:'DM Serif Display,serif',fontSize:22,color:'white' }}>🚗 Deliver to my car</div>
             <div style={{ fontSize:12,color:'rgba(255,255,255,0.5)',marginTop:2 }}>We will bring your order right to your parking spot</div>
