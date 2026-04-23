@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { DRIVER_LANGUAGES, useDriverT } from '../../i18n/DriverLang'
 import toast from 'react-hot-toast'
 import {
   getAvailableOrders, acceptOrder, updateOrderStatus,
@@ -1368,7 +1369,7 @@ function Sheet({ children, zIndex=600, onDismiss }) {
 // ─────────────────────────────────────────────────────────────
 // MAIN DRIVER APP
 // ─────────────────────────────────────────────────────────────
-function SettingsTab({ profile, stats, onSignOut, isDesktop, onExpenses, onPayslip, onIncident, onNotifs, onLock }) {
+function SettingsTab({ profile, stats, onSignOut, isDesktop, onExpenses, onPayslip, onIncident, onNotifs, onLock, activeLang, onSetLang }) {
   const [vehicle, setVehicle] = useState('scooter')
   const [notifSound, setNotifSound] = useState(true)
   const [screenLock, setScreenLock] = useState(true)
@@ -1506,6 +1507,18 @@ function SettingsTab({ profile, stats, onSignOut, isDesktop, onExpenses, onPaysl
         <span style={{ color:DS.t3 }}>›</span>
       </button>
 
+      {/* Language picker */}
+      <div style={{ fontSize:11, fontWeight:700, color:DS.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10, marginTop:16, fontFamily:DS.f }}>Language · Idioma</div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:16 }}>
+        {[{code:'en',label:'English',flag:'🇬🇧'},{code:'es',label:'Español',flag:'🇪🇸'}].map(lng => (
+          <button key={lng.code} onClick={()=>onSetLang(lng.code)}
+            style={{ padding:'12px 8px', background:activeLang===lng.code?'rgba(43,200,150,0.15)':DS.surface, border:'1px solid '+(activeLang===lng.code?DS.green:DS.border), borderRadius:DS.r1, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+            <span style={{ fontSize:20 }}>{lng.flag}</span>
+            <span style={{ fontSize:13, fontWeight:600, color:activeLang===lng.code?DS.green:DS.t2, fontFamily:DS.f }}>{lng.label}</span>
+          </button>
+        ))}
+      </div>
+
       <button onClick={onSignOut} style={{ width:'100%', marginTop:12, padding:14, background:DS.redDim, border:'1px solid '+DS.redBdr, borderRadius:DS.r1, color:DS.red, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:DS.f }}>
         🚪 Sign out
       </button>
@@ -1519,6 +1532,9 @@ export default function DriverApp() {
   const { isOnline, currentOrder, availableOrders, stats,
           setOnline, setCurrentOrder, setAvailableOrders, updateLocation } = useDriverStore()
 
+  const [lang, setLang] = useState(() => { try { return localStorage.getItem('driver_lang')||'en' } catch { return 'en' } })
+  const dt = useDriverT(lang)  // dt = driver translations
+  const saveLang = (l) => { setLang(l); try { localStorage.setItem('driver_lang', l) } catch {} }
   const [activeTab, setActiveTab]     = useState('home')
   const { canInstall, install }         = usePWAInstall()
   const { isOffline, getCachedOrder }   = useOfflineMode(currentOrder)
@@ -1957,7 +1973,7 @@ export default function DriverApp() {
         {activeTab === 'earnings' && <EarningsTab stats={stats} isDesktop={isWide} />}
         {activeTab === 'schedule' && <ScheduleAvailabilityTab profile={profile} />}
         {activeTab === 'performance' && <PerformanceTab stats={stats} onShowFeedback={() => setShowFeedback(true)} isDesktop={isWide} />}
-        {activeTab === 'settings' && <SettingsTab profile={profile} stats={stats} onSignOut={clear} isDesktop={isWide} onExpenses={() => setShowExpenses(true)} onPayslip={() => setShowPayslip(true)} onIncident={() => setShowIncident(true)} onNotifs={() => setShowNotifSetup(true)} onLock={() => setAppLocked(true)} />}
+        {activeTab === 'settings' && <SettingsTab profile={profile} stats={stats} onSignOut={clear} isDesktop={isWide} onExpenses={() => setShowExpenses(true)} onPayslip={() => setShowPayslip(true)} onIncident={() => setShowIncident(true)} onNotifs={() => setShowNotifSetup(true)} onLock={() => setAppLocked(true)} activeLang={lang} onSetLang={saveLang} />}
       </div>
 
       {/* Bottom tab bar - mobile only */}
