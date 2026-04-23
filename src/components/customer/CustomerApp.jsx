@@ -202,6 +202,7 @@ function LanguagePicker() {
   const { lang, setLang, translating } = useLang()
   const [open, setOpen] = useState(false)
   const cur = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0]
+  const pick = (code) => { setOpen(false); setLang(code) }
   return (
     <>
       <button
@@ -210,26 +211,29 @@ function LanguagePicker() {
         <span style={{ fontSize:13 }}>{cur.flag}</span>
         <span>{cur.code.toUpperCase()}</span>
       </button>
-      {open && (
-        <div style={{ position:'fixed', inset:0, zIndex:9999 }}>
-          <div onClick={() => setOpen(false)} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.55)' }} />
-          <div style={{ position:'absolute', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:480, background:'#0D3B4A', borderRadius:'18px 18px 0 0', maxHeight:'55vh', display:'flex', flexDirection:'column' }}>
-            <div style={{ width:32, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, margin:'12px auto 8px', flexShrink:0 }} />
-            <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'1px', padding:'0 16px 6px', flexShrink:0 }}>Select language</div>
-            <div style={{ overflowY:'auto', WebkitOverflowScrolling:'touch', flex:1, paddingBottom:32 }}>
-              {LANGUAGES.map(l => (
-                <button key={l.code}
-                  onClick={() => { setLang(l.code); setOpen(false) }}
-                  style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'11px 16px', background: l.code === lang ? 'rgba(196,104,58,0.18)' : 'transparent', border:'none', borderTop:'0.5px solid rgba(255,255,255,0.06)', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:14, color:'white', textAlign:'left', boxSizing:'border-box' }}>
-                  <span style={{ fontSize:20, flexShrink:0 }}>{l.flag}</span>
-                  <span style={{ flex:1 }}>{l.label}</span>
-                  {l.code === lang && <span style={{ color:'#C4683A' }}>✓</span>}
-                </button>
-              ))}
-            </div>
+      {open && <>
+        {/* Backdrop — separate fixed element, z-index BELOW sheet */}
+        <div
+          onClick={() => setOpen(false)}
+          style={{ position:'fixed', inset:0, zIndex:9998, background:'rgba(0,0,0,0.55)' }}
+        />
+        {/* Sheet — separate fixed element, z-index ABOVE backdrop */}
+        <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:480, zIndex:9999, background:'#0D3B4A', borderRadius:'18px 18px 0 0', maxHeight:'55vh', display:'flex', flexDirection:'column' }}>
+          <div style={{ width:32, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, margin:'12px auto 8px', flexShrink:0 }} />
+          <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'1px', padding:'0 16px 6px', flexShrink:0 }}>Select language</div>
+          <div style={{ overflowY:'auto', WebkitOverflowScrolling:'touch', flex:1, paddingBottom:32 }}>
+            {LANGUAGES.map(l => (
+              <button key={l.code}
+                onClick={() => pick(l.code)}
+                style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'13px 16px', background: l.code === lang ? 'rgba(196,104,58,0.2)' : 'transparent', border:'none', borderTop:'0.5px solid rgba(255,255,255,0.06)', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:15, color:'white', textAlign:'left', boxSizing:'border-box' }}>
+                <span style={{ fontSize:22, flexShrink:0 }}>{l.flag}</span>
+                <span style={{ flex:1 }}>{l.label}</span>
+                {l.code === lang && <span style={{ color:'#C4683A', fontSize:16 }}>✓</span>}
+              </button>
+            ))}
           </div>
         </div>
-      )}
+      </>}
     </>
   )
 }
@@ -854,7 +858,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
 
           {/* ── Bundle deals ─────────────────────── */}
           <div style={{ margin:'0 16px 22px' }}>
-            <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',marginBottom:12 }}>Bundle deals</div>
+            <div style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',marginBottom:12 }}>{t.bundleDeals||'Bundle deals'}</div>
             <div style={{ display:'flex',gap:10,overflowX:'auto',scrollbarWidth:'none',paddingBottom:4 }}>
               {[
                 { emoji:'🍸', name:'Cocktail Night',  desc:'Gin + Tonic + Ice + Lemon',  ids:['sp-012','sd-028','ic-002','fr-001'], save:'€4.50' },
@@ -890,14 +894,14 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <button onClick={onPartyNight}
                 style={{ background:'linear-gradient(135deg,rgba(196,104,58,0.35),rgba(139,60,20,0.5))',border:'0.5px solid rgba(196,104,58,0.4)',borderRadius:16,padding:'18px 14px',cursor:'pointer',textAlign:'left' }}>
                 <div style={{ fontSize:28,marginBottom:8 }}>🌙</div>
-                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:4 }}>Design My Night</div>
+                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:4 }}>{t.designNight||'Design My Night'}</div>
                 <div style={{ fontSize:11,color:'rgba(255,255,255,0.55)',lineHeight:1.4 }}>Club nights, villa parties, pre-drinks</div>
                 <div style={{ marginTop:10,fontSize:11,color:'#E8A070',fontWeight:600 }}>AI-powered →</div>
               </button>
               <button onClick={onPartyDay}
                 style={{ background:'linear-gradient(135deg,rgba(43,122,139,0.4),rgba(20,80,100,0.5))',border:'0.5px solid rgba(43,122,139,0.4)',borderRadius:16,padding:'18px 14px',cursor:'pointer',textAlign:'left' }}>
                 <div style={{ fontSize:28,marginBottom:8 }}>☀️</div>
-                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:4 }}>Design My Day</div>
+                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:16,color:'white',marginBottom:4 }}>{t.designDay||'Design My Day'}</div>
                 <div style={{ fontSize:11,color:'rgba(255,255,255,0.55)',lineHeight:1.4 }}>Pool parties, beach days, boat trips</div>
                 <div style={{ marginTop:10,fontSize:11,color:'#7EE8C8',fontWeight:600 }}>AI-powered →</div>
               </button>
@@ -909,37 +913,37 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             <button onClick={onShowClub}
               style={{ padding:'14px', background:'linear-gradient(135deg,rgba(90,30,120,0.4),rgba(30,60,120,0.4))', border:'0.5px solid rgba(150,80,200,0.4)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
               <div style={{ fontSize:22, marginBottom:4 }}>🍒</div>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Club delivery</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>{t.clubDelivery||'Club delivery'}</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Pacha, Ushuaia, DC-10...</div>
             </button>
             <button onClick={onShowBoat}
               style={{ padding:'14px', background:'linear-gradient(135deg,rgba(20,80,140,0.5),rgba(10,50,100,0.5))', border:'0.5px solid rgba(43,122,200,0.4)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
               <div style={{ fontSize:22, marginBottom:4 }}>⛵</div>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Boat delivery</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>{t.boatDelivery||'Boat delivery'}</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Marina, berth, superyacht</div>
             </button>
             <button onClick={onShowPreArrival}
               style={{ padding:'14px', background:'linear-gradient(135deg,rgba(200,168,75,0.25),rgba(196,104,58,0.2))', border:'0.5px solid rgba(200,168,75,0.35)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
               <div style={{ fontSize:22, marginBottom:4 }}>✈️</div>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Pre-arrival</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>{t.preArrival||'Pre-arrival'}</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Order before you land</div>
             </button>
             <button onClick={onShowPoolParty}
               style={{ padding:'14px', background:'linear-gradient(135deg,rgba(43,122,139,0.4),rgba(20,80,100,0.5))', border:'0.5px solid rgba(43,122,139,0.4)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
               <div style={{ fontSize:22, marginBottom:4 }}>🏊</div>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Pool party mode</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>{t.poolPartyMode||'Pool party mode'}</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Bulk ordering for groups</div>
             </button>
             <button onClick={onShowBeachDelivery}
               style={{ padding:'14px', background:'linear-gradient(135deg,rgba(196,104,58,0.3),rgba(139,60,20,0.4))', border:'0.5px solid rgba(196,104,58,0.35)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
               <div style={{ fontSize:22, marginBottom:4 }}>🏖️</div>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Beach delivery</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>{t.beachDelivery||'Beach delivery'}</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Salinas, Bossa, Cala...</div>
             </button>
             <button onClick={onShowCarDelivery}
               style={{ padding:'14px', background:'linear-gradient(135deg,rgba(43,122,139,0.3),rgba(13,70,90,0.4))', border:'0.5px solid rgba(43,122,139,0.35)', borderRadius:14, cursor:'pointer', textAlign:'left' }}>
               <div style={{ fontSize:22, marginBottom:4 }}>🚗</div>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>Car delivery</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:14, color:'white', marginBottom:2 }}>{t.carDelivery||'Car delivery'}</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Order to your parked car</div>
             </button>
           </div>
@@ -963,7 +967,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start' }}>
               <div>
                 <div style={{ fontSize:22,marginBottom:6 }}>✈️</div>
-                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:18,color:'white',marginBottom:4 }}>Just landed in Ibiza?</div>
+                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:18,color:'white',marginBottom:4 }}>{t.justLanded||'Just landed in Ibiza?'}</div>
                 <div style={{ fontSize:12,color:'rgba(255,255,255,0.55)',lineHeight:1.5,maxWidth:220 }}>Get everything you need delivered in under 30 minutes — drinks, food, sun cream, the works.</div>
               </div>
               <div style={{ fontSize:11,color:'#C8A84B',fontWeight:600,whiteSpace:'nowrap',marginLeft:12,marginTop:4 }}>See packages →</div>
