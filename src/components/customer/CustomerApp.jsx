@@ -205,36 +205,36 @@ function LanguagePicker() {
 
   return (
     <>
+      {/* Trigger — fixed top-right, above everything */}
       <button
         onClick={() => setOpen(true)}
-        style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 11px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
+        style={{ position:'fixed', top:14, right:16, zIndex:200, background:'rgba(13,59,74,0.85)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'5px 11px', color:'white', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontFamily:'DM Sans,sans-serif', backdropFilter:'blur(8px)', boxShadow:'0 2px 12px rgba(0,0,0,0.3)' }}>
         {translating
-          ? <span style={{ fontSize:11, opacity:0.7 }}>...</span>
-          : <><span style={{ fontSize:14 }}>{cur.flag}</span>{cur.code.toUpperCase()}</>
+          ? <span style={{ fontSize:11, opacity:0.7 }}>···</span>
+          : <><span style={{ fontSize:14 }}>{cur.flag}</span><span>{cur.code.toUpperCase()}</span></>
         }
       </button>
 
+      {/* Sheet — rendered at root level via fixed positioning */}
       {open && (
-        <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-          {/* Backdrop — separate from sheet so it never captures sheet clicks */}
+        <div style={{ position:'fixed', inset:0, zIndex:10000, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
           <div
-            style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.6)' }}
+            style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.65)' }}
             onClick={() => setOpen(false)}
           />
-          {/* Sheet — above backdrop, no stopPropagation needed */}
-          <div style={{ position:'relative', zIndex:1, width:'100%', maxWidth:480, background:'white', borderRadius:'20px 20px 0 0', paddingBottom:44, overflow:'hidden' }}>
-            <div style={{ width:36, height:4, background:'rgba(0,0,0,0.15)', borderRadius:2, margin:'14px auto 0' }} />
-            <div style={{ padding:'14px 20px 10px', fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:700, color:'rgba(0,0,0,0.35)', textTransform:'uppercase', letterSpacing:'0.8px' }}>
+          <div style={{ position:'relative', zIndex:1, width:'100%', maxWidth:480, background:'white', borderRadius:'22px 22px 0 0', paddingBottom:48 }}>
+            <div style={{ width:36, height:4, background:'rgba(0,0,0,0.12)', borderRadius:2, margin:'14px auto 4px' }} />
+            <div style={{ padding:'10px 20px 12px', fontFamily:'DM Sans,sans-serif', fontSize:11, fontWeight:700, color:'rgba(0,0,0,0.35)', textTransform:'uppercase', letterSpacing:'1px' }}>
               Select language
             </div>
             {LANGUAGES.map(l => (
               <button
                 key={l.code}
                 onClick={() => { setLang(l.code); setOpen(false) }}
-                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'13px 20px', border:'none', borderTop:'0.5px solid rgba(0,0,0,0.07)', background:l.code===lang?'#FFF5EE':'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:15, color:'#1A1A1A' }}>
+                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'14px 20px', border:'none', borderTop:'0.5px solid rgba(0,0,0,0.06)', background:l.code===lang?'#FFF3ED':'white', cursor:'pointer', fontFamily:'DM Sans,sans-serif', fontSize:15, color:'#1A1A1A' }}>
                 <span style={{ fontSize:22 }}>{l.flag}</span>
                 <span style={{ flex:1, textAlign:'left' }}>{l.label}</span>
-                {l.code === lang && <span style={{ fontSize:16, color:'#C4683A' }}>✓</span>}
+                {l.code === lang && <span style={{ color:'#C4683A', fontSize:18 }}>✓</span>}
               </button>
             ))}
           </div>
@@ -718,7 +718,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             <button onClick={onShowDeliveryZone} style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white',cursor:'pointer' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'#7EE8A2',display:'inline-block',animation:'pulse 1.5s infinite' }}/>Open 24/7
             </button>
-            <LanguagePicker />
           </div>
         </div>
         <AddressBar estimatedMins={estimatedMins} />
@@ -1488,6 +1487,9 @@ function CustomerAppInner() {
 
       {/* Ambient music player — shows above tab bar when music enabled in ops */}
       {view !== VIEWS.SPLASH && view !== VIEWS.CHECKOUT && view !== VIEWS.TRACKING && view !== VIEWS.CONFIRMATION && <IslaPlayer />}
+
+      {/* Language picker — floats fixed top-right, always available on home */}
+      {view === VIEWS.HOME && <LanguagePicker />}
 
       {/* Tab bar — ONLY in the main shell, never on splash/checkout/tracking */}
       <TabBar view={view} setView={handleTabChange} cartCount={cart.getItemCount()} />
