@@ -198,33 +198,47 @@ function SplashScreen({ onEnter }) {
 }
 
 // ── Language Picker ───────────────────────────────────────────
-function LangInline() {
-  const { lang, setLang } = useLang()
-  const [open, setOpen] = useState(false)
+function LangInline({ onOpen }) {
+  const { lang } = useLang()
   const cur = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0]
   return (
-    <span style={{ position:'relative' }}>
-      <span
-        onClick={() => setOpen(o => !o)}
-        style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'4px 9px', color:'white', fontSize:12, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:4, fontFamily:'DM Sans,sans-serif' }}>
-        {cur.flag} {cur.code.toUpperCase()}
-      </span>
-      {open && (
-        <span style={{ position:'absolute', top:30, right:0, background:'#0D3545', border:'0.5px solid rgba(255,255,255,0.2)', borderRadius:12, overflow:'hidden', display:'block', minWidth:160, boxShadow:'0 8px 24px rgba(0,0,0,0.5)', zIndex:9999 }}>
-          {LANGUAGES.map(l => (
-            <span key={l.code}
-              onClick={(e) => { e.stopPropagation(); setLang(l.code); setOpen(false) }}
-              style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px', cursor:'pointer', background: l.code === lang ? 'rgba(196,104,58,0.2)' : 'transparent', borderBottom:'0.5px solid rgba(255,255,255,0.07)', fontFamily:'DM Sans,sans-serif', fontSize:13, color:'white' }}>
-              <span style={{ fontSize:18 }}>{l.flag}</span>
-              <span style={{ flex:1 }}>{l.label}</span>
-              {l.code === lang && <span style={{ color:'#C4683A' }}>✓</span>}
-            </span>
-          ))}
-        </span>
-      )}
-    </span>
+    <button
+      onClick={onOpen}
+      style={{ background:'rgba(255,255,255,0.14)', border:'0.5px solid rgba(255,255,255,0.22)', borderRadius:20, padding:'4px 9px', color:'white', fontSize:12, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:4, fontFamily:'DM Sans,sans-serif', flexShrink:0 }}>
+      {cur.flag} {cur.code.toUpperCase()}
+    </button>
   )
 }
+
+function LangSheet({ onClose }) {
+  const { lang, setLang } = useLang()
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:9000, background:'rgba(0,0,0,0.6)' }}
+      />
+      <div style={{ position:'fixed', left:0, right:0, bottom:0, zIndex:9001, background:'#0D3545', borderRadius:'18px 18px 0 0', paddingBottom:40, maxHeight:'70vh', display:'flex', flexDirection:'column' }}>
+        <div style={{ textAlign:'center', padding:'12px 0 4px' }}>
+          <div style={{ width:32, height:4, background:'rgba(255,255,255,0.25)', borderRadius:2, display:'inline-block' }} />
+        </div>
+        <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'1px', padding:'8px 16px 4px' }}>Select language</div>
+        <div style={{ overflowY:'auto', flex:1 }}>
+          {LANGUAGES.map(l => (
+            <div key={l.code}
+              onClick={() => { setLang(l.code); onClose() }}
+              style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', cursor:'pointer', background: l.code === lang ? 'rgba(196,104,58,0.2)' : 'transparent', borderTop:'0.5px solid rgba(255,255,255,0.07)', fontFamily:'DM Sans,sans-serif', fontSize:15, color:'white' }}>
+              <span style={{ fontSize:22 }}>{l.flag}</span>
+              <span style={{ flex:1 }}>{l.label}</span>
+              {l.code === lang && <span style={{ color:'#C4683A', fontSize:18 }}>✓</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
 
 
 // ── Tab Bar — rendered ONLY on the home screen ────────────────
@@ -666,7 +680,7 @@ function SearchView({ t, onAssist, onCategorySelect, onDetail, onShowBarcode }) 
 }
 
 // ── Home view ─────────────────────────────────────────────────
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery, onShowOccasion }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery, onShowOccasion, onOpenLang }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -701,7 +715,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             <button onClick={onShowDeliveryZone} style={{ background:'rgba(255,255,255,0.12)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:20,fontSize:11,padding:'4px 10px',display:'flex',alignItems:'center',gap:5,color:'white',cursor:'pointer' }}>
               <span style={{ width:5,height:5,borderRadius:'50%',background:'#7EE8A2',display:'inline-block',animation:'pulse 1.5s infinite' }}/>Open 24/7
             </button>
-            <LangInline />
+            <LangInline onOpen={onOpenLang} />
           </div>
         </div>
         <AddressBar estimatedMins={estimatedMins} />
@@ -1092,6 +1106,7 @@ function CustomerAppInner() {
   const [showPoolParty, setShowPoolParty] = useState(false)
   const [showBeachDelivery, setShowBeachDelivery] = useState(false)
   const [showCarDelivery, setShowCarDelivery] = useState(false)
+  const [showLangPicker, setShowLangPicker] = useState(false)
   const [giftEnabled, setGiftEnabled] = useState(false)
   const [giftMessage, setGiftMessage] = useState('')
   const [substitution, setSubstitution] = useState('substitute')
@@ -1448,7 +1463,7 @@ function CustomerAppInner() {
       {view===VIEWS.HOME && activeOrder && activeOrder.status !== 'delivered' && (
         <LiveOrderHomeCard order={activeOrder} etaMins={etaMins} onTrack={()=>setView(VIEWS.TRACKING)} />
       )}
-      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.VILLA_PRESETS); window.scrollTo({top:0,behavior:'instant'}) }} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} onShowOccasion={(id)=>{ homeScrollRef.current=window.scrollY; setOccasionId(id); setView(VIEWS.OCCASION) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} />}
+      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.VILLA_PRESETS); window.scrollTo({top:0,behavior:'instant'}) }} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} onShowOccasion={(id)=>{ homeScrollRef.current=window.scrollY; setOccasionId(id); setView(VIEWS.OCCASION) }} onOpenLang={()=>setShowLangPicker(true)} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} />}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onShowBarcode={()=>setShowBarcodeScanner(true)} />}
       {view===VIEWS.BASKET && (
         <ExpressCheckoutBar
@@ -1469,6 +1484,7 @@ function CustomerAppInner() {
       {/* Floating cart bar on home only — Feature 7: press state */}
       {view===VIEWS.HOME && <FloatingBasketBar itemCount={cart.getItemCount()} subtotal={cart.getSubtotal()} onTap={()=>{haptic('medium');setView(VIEWS.BASKET)}} t={t} />}
 
+      {showLangPicker && <LangSheet onClose={()=>setShowLangPicker(false)} />}
       {/* Ambient music player — shows above tab bar when music enabled in ops */}
       {view !== VIEWS.SPLASH && view !== VIEWS.CHECKOUT && view !== VIEWS.TRACKING && view !== VIEWS.CONFIRMATION && <IslaPlayer />}
 
