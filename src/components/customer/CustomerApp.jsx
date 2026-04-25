@@ -108,6 +108,7 @@ import {
   useWinBackDetection, WinBackBanner, useDebounce,
 } from './CustomerFeatures_perf'
 import OccasionPage from './OccasionPage'
+import PackagePage, { PACKAGES } from './PackagePage'
 import IslaPlayer from './IslaPlayer'
 import {
   HomeSkeletonLoader, usePersonalisedCategories, VoiceSearchButton,
@@ -153,7 +154,7 @@ function useCountdown(endsAt) {
   return secs>0?(h>0?h+'h ':'')+m+'m '+s+'s':null
 }
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation', CONCIERGE:'concierge', ONBOARDING:'onboarding', NOTIFICATIONS_CENTRE:'notif_centre', FAQ:'faq', CREDITS:'credits', VILLA_PRESETS:'villa_presets', OCCASION:'occasion' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation', CONCIERGE:'concierge', ONBOARDING:'onboarding', NOTIFICATIONS_CENTRE:'notif_centre', FAQ:'faq', CREDITS:'credits', VILLA_PRESETS:'villa_presets', OCCASION:'occasion', PACKAGE:'package' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -666,33 +667,12 @@ function SearchView({ t, onAssist, onCategorySelect, onDetail, onShowBarcode }) 
 }
 
 // ── Home view ─────────────────────────────────────────────────
-// ── For the Girls ────────────────────────────────────────────────────────
-const GIRLS_PACKS = [
-  { id:'boat_day',    emoji:'🛥️', title:'Boat Day',       sub:'Rosé, bubbles & sun vibes',           color:'#E8897A', border:'rgba(232,137,122,0.4)', bg:'rgba(232,137,122,0.1)', products:['wn-021','wn-020','ch-008','sd-019','sn-003','sn-007'] },
-  { id:'girls_night', emoji:'💅',  title:"Girls' Night",  sub:'Champagne, cocktail mixers & treats', color:'#C4683A', border:'rgba(196,104,58,0.4)',   bg:'rgba(196,104,58,0.1)',  products:['ch-011','ch-008','sp-010','sp-044','sd-025','sn-003'] },
-  { id:'pool_slay',   emoji:'🌸', title:'Pool Slay',      sub:'Rosé, light bites & good vibes',      color:'#B080D8', border:'rgba(176,128,216,0.4)', bg:'rgba(176,128,216,0.1)', products:['wn-021','wn-015','sd-020','sd-019','sn-007','sn-002'] },
-  { id:'girly_day',   emoji:'🩷', title:'Girly Day Out',  sub:'Prosecco, snacks & good energy',      color:'#E870A0', border:'rgba(232,112,160,0.4)', bg:'rgba(232,112,160,0.1)', products:['wn-021','ch-010','sd-020','sd-021','sn-002','sn-003'] },
-]
+// ── Curated Pack data (Girls + Boys) ─────────────────────────
+const GIRLS_PACK_IDS = ['boat_day_girls','girls_night','pool_slay','girly_day']
+const BOYS_PACK_IDS  = ['lads_holiday','gentleman','boat_day_boys','villa_party']
 
-// ── For the Boys ─────────────────────────────────────────────────────────
-const BOYS_PACKS = [
-  { id:'lads_holiday', emoji:'🍺', title:'Lads Holiday',  sub:'Beer, shots & party fuel',            color:'#2B7A8B', border:'rgba(43,122,139,0.5)',  bg:'rgba(43,122,139,0.12)', products:['sp-033','sp-039','sp-003','sn-004','sn-006','sd-021'] },
-  { id:'gentleman',    emoji:'🥃', title:'Gentleman',     sub:'Premium spirits, cigars & refinement', color:'#8B6914', border:'rgba(139,105,20,0.5)',  bg:'rgba(139,105,20,0.12)', products:['sp-015','sp-021','sp-027','sp-032','sn-005','tb-001'] },
-  { id:'boat_boys',    emoji:'⛵', title:'Boat Day',       sub:'Cold beers, spirits & snacks',         color:'#1A5A8A', border:'rgba(26,90,138,0.5)',   bg:'rgba(26,90,138,0.12)',  products:['sp-033','sp-035','sp-003','sn-004','sn-009','sd-021'] },
-  { id:'villa_party',  emoji:'🏡', title:'Villa Party',   sub:'Magnums, mixers & the good stuff',    color:'#6B3AAA', border:'rgba(107,58,170,0.5)',   bg:'rgba(107,58,170,0.12)', products:['sp-034','sp-036','sd-024','sd-025','sn-004','sn-009'] },
-]
-
-function CuratedPackSection({ title, packs }) {
-  const { addItem } = useCartStore()
-  const [expanded, setExpanded] = useState(null)
-
-  const addPack = (pack, e) => {
-    e.stopPropagation()
-    const items = pack.products.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
-    items.forEach(p => addItem(p))
-    toast.success(pack.emoji + ' ' + pack.title + ' added!', { duration:1800 })
-  }
-
+function CuratedPackSection({ title, packIds, onOpenPackage }) {
+  const packs = packIds.map(id => PACKAGES.find(p => p.id === id)).filter(Boolean)
   return (
     <div style={{ marginBottom:24 }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0 16px', marginBottom:12 }}>
@@ -701,37 +681,27 @@ function CuratedPackSection({ title, packs }) {
       </div>
       <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
         {packs.map(pack => {
-          const isOpen = expanded === pack.id
-          const items  = pack.products.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
+          const previewItems = pack.preset.slice(0,4).map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
           return (
             <div key={pack.id}
-              onClick={() => setExpanded(isOpen ? null : pack.id)}
-              style={{ flexShrink:0, width:152, background:pack.bg, border:`0.5px solid ${pack.border}`, borderRadius:16, padding:14, cursor:'pointer' }}>
-              <div style={{ fontSize:26, marginBottom:5 }}>{pack.emoji}</div>
-              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:15, color:'white', marginBottom:3 }}>{pack.title}</div>
-              <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:8, lineHeight:1.4, fontFamily:'DM Sans,sans-serif' }}>{pack.sub}</div>
-              <div style={{ display:'flex', gap:3, marginBottom:10 }}>
-                {items.slice(0,5).map(p => <span key={p.id} style={{ fontSize:15 }}>{p.emoji}</span>)}
+              onClick={() => onOpenPackage(pack.id)}
+              style={{ flexShrink:0, width:155, background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:16, overflow:'hidden', cursor:'pointer' }}>
+              {/* Gradient header */}
+              <div style={{ background:pack.colour, padding:'16px 14px 12px' }}>
+                <div style={{ fontSize:28, marginBottom:6 }}>{pack.emoji}</div>
+                <div style={{ fontFamily:'DM Serif Display,serif', fontSize:15, color:'white' }}>{pack.label}</div>
               </div>
-              {isOpen && (
-                <div style={{ borderTop:`0.5px solid ${pack.border}`, paddingTop:8, marginBottom:8 }}>
-                  {items.map(p => (
-                    <div key={p.id} style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'rgba(255,255,255,0.7)', marginBottom:4, fontFamily:'DM Sans,sans-serif' }}>
-                      <span style={{ flex:1, marginRight:4 }}>{p.emoji} {p.name}</span>
-                      <span style={{ color:'#E8A070', flexShrink:0 }}>€{p.price.toFixed(2)}</span>
-                    </div>
-                  ))}
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, fontWeight:600, color:'white', paddingTop:6, borderTop:`0.5px solid ${pack.border}`, marginTop:4, fontFamily:'DM Sans,sans-serif' }}>
-                    <span>Total</span>
-                    <span style={{ color:'#E8A070' }}>€{items.reduce((s,p)=>s+p.price,0).toFixed(2)}</span>
-                  </div>
+              {/* Body */}
+              <div style={{ padding:'10px 14px 14px' }}>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:'DM Sans,sans-serif', lineHeight:1.4, marginBottom:10 }}>{pack.desc.split(' ').slice(0,8).join(' ')}...</div>
+                <div style={{ display:'flex', gap:3, marginBottom:12 }}>
+                  {previewItems.map(p => <span key={p.id} style={{ fontSize:16 }}>{p.emoji}</span>)}
                 </div>
-              )}
-              <button
-                onClick={e => addPack(pack, e)}
-                style={{ width:'100%', padding:'8px 0', background:pack.color, border:'none', borderRadius:10, color:'white', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
-                Add to basket
-              </button>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                  <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', fontFamily:'DM Sans,sans-serif' }}>Customise + AI</div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+              </div>
             </div>
           )
         })}
@@ -741,7 +711,7 @@ function CuratedPackSection({ title, packs }) {
 }
 
 
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery, onShowOccasion }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery, onShowOccasion, onOpenPackage }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -905,10 +875,10 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <OccasionCollections onSelect={onShowOccasion} />
 
           {/* ── For the Girls ── */}
-          <CuratedPackSection title="💕 For the Girls" packs={GIRLS_PACKS} />
+          <CuratedPackSection title="💕 For the Girls" packIds={GIRLS_PACK_IDS} onOpenPackage={onOpenPackage} />
 
           {/* ── For the Boys ── */}
-          <CuratedPackSection title="🍻 For the Boys" packs={BOYS_PACKS} />
+          <CuratedPackSection title="🍻 For the Boys" packIds={BOYS_PACK_IDS} onOpenPackage={onOpenPackage} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
@@ -1118,6 +1088,7 @@ function CustomerAppInner() {
   const [showOnboardingFull, setShowOnboardingFull] = useState(false)
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
   const [occasionId, setOccasionId] = useState(null)
+  const [packageId, setPackageId]   = useState(null)
   const [showExpressSheet, setShowExpressSheet] = useState(false)
   const [showFilterPanel, setShowFilterPanel] = useState(false)
   const { eligible: expressEligible, expressData } = useExpressCheckout()
@@ -1493,6 +1464,7 @@ function CustomerAppInner() {
 
   // ── FULL-SCREEN VIEWS (no tab bar) ──────────────────────────
   if (view===VIEWS.OCCASION && occasionId) return <OccasionPage occasionId={occasionId} onBack={()=>{ setOccasionId(null); goBack(VIEWS.HOME) }} />
+  if (view===VIEWS.PACKAGE && packageId) return <PackagePage packageId={packageId} onBack={()=>{ setPackageId(null); goBack(VIEWS.HOME) }} />
   if (view===VIEWS.FAQ)             return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><FAQView onBack={()=>goBack(VIEWS.ACCOUNT)} /></div>
   if (view===VIEWS.VILLA_PRESETS)   return (
     <div style={{ background:'linear-gradient(170deg,#0A2A38,#0D3545)', minHeight:'100vh', paddingBottom:80, overflowY:'auto', maxWidth:480, margin:'0 auto', boxShadow:'0 0 60px rgba(0,0,0,0.5)' }}>
@@ -1529,7 +1501,7 @@ function CustomerAppInner() {
       {view===VIEWS.HOME && activeOrder && activeOrder.status !== 'delivered' && (
         <LiveOrderHomeCard order={activeOrder} etaMins={etaMins} onTrack={()=>setView(VIEWS.TRACKING)} />
       )}
-      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.VILLA_PRESETS); window.scrollTo({top:0,behavior:'instant'}) }} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} onShowOccasion={(id)=>{ homeScrollRef.current=window.scrollY; setOccasionId(id); setView(VIEWS.OCCASION) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} />}
+      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.VILLA_PRESETS); window.scrollTo({top:0,behavior:'instant'}) }} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} onShowOccasion={(id)=>{ homeScrollRef.current=window.scrollY; setOccasionId(id); setView(VIEWS.OCCASION) }} onOpenPackage={(id)=>{ homeScrollRef.current=window.scrollY; setPackageId(id); setView(VIEWS.PACKAGE) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} />}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onShowBarcode={()=>setShowBarcodeScanner(true)} />}
       {view===VIEWS.BASKET && (
         <ExpressCheckoutBar
