@@ -666,6 +666,81 @@ function SearchView({ t, onAssist, onCategorySelect, onDetail, onShowBarcode }) 
 }
 
 // ── Home view ─────────────────────────────────────────────────
+// ── For the Girls ────────────────────────────────────────────────────────
+const GIRLS_PACKS = [
+  { id:'boat_day',    emoji:'🛥️', title:'Boat Day',       sub:'Rosé, bubbles & sun vibes',           color:'#E8897A', border:'rgba(232,137,122,0.4)', bg:'rgba(232,137,122,0.1)', products:['wn-021','wn-020','ch-008','sd-019','sn-003','sn-007'] },
+  { id:'girls_night', emoji:'💅',  title:"Girls' Night",  sub:'Champagne, cocktail mixers & treats', color:'#C4683A', border:'rgba(196,104,58,0.4)',   bg:'rgba(196,104,58,0.1)',  products:['ch-011','ch-008','sp-010','sp-044','sd-025','sn-003'] },
+  { id:'pool_slay',   emoji:'🌸', title:'Pool Slay',      sub:'Rosé, light bites & good vibes',      color:'#B080D8', border:'rgba(176,128,216,0.4)', bg:'rgba(176,128,216,0.1)', products:['wn-021','wn-015','sd-020','sd-019','sn-007','sn-002'] },
+  { id:'girly_day',   emoji:'🩷', title:'Girly Day Out',  sub:'Prosecco, snacks & good energy',      color:'#E870A0', border:'rgba(232,112,160,0.4)', bg:'rgba(232,112,160,0.1)', products:['wn-021','ch-010','sd-020','sd-021','sn-002','sn-003'] },
+]
+
+// ── For the Boys ─────────────────────────────────────────────────────────
+const BOYS_PACKS = [
+  { id:'lads_holiday', emoji:'🍺', title:'Lads Holiday',  sub:'Beer, shots & party fuel',            color:'#2B7A8B', border:'rgba(43,122,139,0.5)',  bg:'rgba(43,122,139,0.12)', products:['sp-033','sp-039','sp-003','sn-004','sn-006','sd-021'] },
+  { id:'gentleman',    emoji:'🥃', title:'Gentleman',     sub:'Premium spirits, cigars & refinement', color:'#8B6914', border:'rgba(139,105,20,0.5)',  bg:'rgba(139,105,20,0.12)', products:['sp-015','sp-021','sp-027','sp-032','sn-005','tb-001'] },
+  { id:'boat_boys',    emoji:'⛵', title:'Boat Day',       sub:'Cold beers, spirits & snacks',         color:'#1A5A8A', border:'rgba(26,90,138,0.5)',   bg:'rgba(26,90,138,0.12)',  products:['sp-033','sp-035','sp-003','sn-004','sn-009','sd-021'] },
+  { id:'villa_party',  emoji:'🏡', title:'Villa Party',   sub:'Magnums, mixers & the good stuff',    color:'#6B3AAA', border:'rgba(107,58,170,0.5)',   bg:'rgba(107,58,170,0.12)', products:['sp-034','sp-036','sd-024','sd-025','sn-004','sn-009'] },
+]
+
+function CuratedPackSection({ title, packs }) {
+  const { addItem } = useCartStore()
+  const [expanded, setExpanded] = useState(null)
+
+  const addPack = (pack, e) => {
+    e.stopPropagation()
+    const items = pack.products.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
+    items.forEach(p => addItem(p))
+    toast.success(pack.emoji + ' ' + pack.title + ' added!', { duration:1800 })
+  }
+
+  return (
+    <div style={{ marginBottom:24 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0 16px', marginBottom:12 }}>
+        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white' }}>{title}</div>
+        <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', fontFamily:'DM Sans,sans-serif' }}>curated drops</div>
+      </div>
+      <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
+        {packs.map(pack => {
+          const isOpen = expanded === pack.id
+          const items  = pack.products.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
+          return (
+            <div key={pack.id}
+              onClick={() => setExpanded(isOpen ? null : pack.id)}
+              style={{ flexShrink:0, width:152, background:pack.bg, border:`0.5px solid ${pack.border}`, borderRadius:16, padding:14, cursor:'pointer' }}>
+              <div style={{ fontSize:26, marginBottom:5 }}>{pack.emoji}</div>
+              <div style={{ fontFamily:'DM Serif Display,serif', fontSize:15, color:'white', marginBottom:3 }}>{pack.title}</div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:8, lineHeight:1.4, fontFamily:'DM Sans,sans-serif' }}>{pack.sub}</div>
+              <div style={{ display:'flex', gap:3, marginBottom:10 }}>
+                {items.slice(0,5).map(p => <span key={p.id} style={{ fontSize:15 }}>{p.emoji}</span>)}
+              </div>
+              {isOpen && (
+                <div style={{ borderTop:`0.5px solid ${pack.border}`, paddingTop:8, marginBottom:8 }}>
+                  {items.map(p => (
+                    <div key={p.id} style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'rgba(255,255,255,0.7)', marginBottom:4, fontFamily:'DM Sans,sans-serif' }}>
+                      <span style={{ flex:1, marginRight:4 }}>{p.emoji} {p.name}</span>
+                      <span style={{ color:'#E8A070', flexShrink:0 }}>€{p.price.toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, fontWeight:600, color:'white', paddingTop:6, borderTop:`0.5px solid ${pack.border}`, marginTop:4, fontFamily:'DM Sans,sans-serif' }}>
+                    <span>Total</span>
+                    <span style={{ color:'#E8A070' }}>€{items.reduce((s,p)=>s+p.price,0).toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={e => addPack(pack, e)}
+                style={{ width:'100%', padding:'8px 0', background:pack.color, border:'none', borderRadius:10, color:'white', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+                Add to basket
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+
 function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery, onShowOccasion }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
@@ -828,6 +903,12 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <WeatherProductRow weather={weather} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* Occasion collections */}
           <OccasionCollections onSelect={onShowOccasion} />
+
+          {/* ── For the Girls ── */}
+          <CuratedPackSection title="💕 For the Girls" packs={GIRLS_PACKS} />
+
+          {/* ── For the Boys ── */}
+          <CuratedPackSection title="🍻 For the Boys" packs={BOYS_PACKS} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
