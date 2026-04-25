@@ -816,17 +816,17 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </div>
           )}
           {/* Feature 5: Last order shortcut */}
-          <LastOrderShortcut onReorder={onReorder} />
-          <SmartReorderButton onReorder={onReorder} />
+          {prevItems.length > 0 && <LastOrderShortcut onReorder={onReorder} />}
+          {prevItems.length > 0 && <SmartReorderButton onReorder={onReorder} />}
 
           {/* Feature 13: Morning after kit */}
           {showMorningKit && <MorningAfterKitBanner onAddKit={()=>{}} onDismiss={dismissMorningKit} />}
           {/* Feature 9: Your usual order */}
-          <YourUsualCard productIds={[]} onAddAll={()=>setView(VIEWS.BASKET)} />
+          {prevItems.length > 0 && <YourUsualCard productIds={[]} onAddAll={()=>setView(VIEWS.BASKET)} />}
           {/* POINT 7: Recently viewed */}
           <RecentlyViewedRow onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* T2-6: Because you bought X */}
-          <BecauseYouBoughtRow previousItems={prevItems} onDetail={p=>{trackView(p);onDetail&&onDetail(p)}} />
+          {prevItems.length > 0 && <BecauseYouBoughtRow previousItems={prevItems} onDetail={p=>{trackView(p);onDetail&&onDetail(p)}} />}
 
           {prevItems.length>0 && (
             <div style={{ paddingTop:20,marginBottom:22 }}>
