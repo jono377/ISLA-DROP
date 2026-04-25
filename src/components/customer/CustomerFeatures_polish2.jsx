@@ -581,18 +581,24 @@ export function LiveOrderHomeCard({ order, etaMins, onTrack }) {
 
 // ── P14: Minimum order by zone ────────────────────────────────
 export function getMinimumOrderForZone(lat, lng) {
-  if (!lat || !lng) return 15
-  const distKm = haversineKm(DEPOT_LAT, DEPOT_LNG, lat, lng)
-  if (distKm > 20) return 25 // Far zones require higher minimum
-  return 15 // Standard minimum
+  return 30 // €30 minimum order across all Ibiza zones
 }
 
 export function ZoneMinimumBanner({ lat, lng, subtotal }) {
-  const min = getMinimumOrderForZone(lat, lng)
-  if (min <= 15 || subtotal >= min) return null
+  const MIN = 30
+  if (subtotal >= MIN) return null
+  const pct = Math.min(100, (subtotal / MIN) * 100)
+  const remaining = (MIN - subtotal).toFixed(2)
   return (
-    <div style={{ background:'rgba(196,104,58,0.12)',border:'0.5px solid rgba(196,104,58,0.3)',borderRadius:10,padding:'9px 12px',marginBottom:12,fontSize:12,color:'rgba(255,255,255,0.75)',fontFamily:F.sans }}>
-      📍 Minimum order for your area is €{min.toFixed(2)} — add €{(min-subtotal).toFixed(2)} more
+    <div style={{ background:'rgba(196,104,58,0.1)',border:'0.5px solid rgba(196,104,58,0.3)',borderRadius:12,padding:'12px 14px',marginBottom:12,fontFamily:F.sans }}>
+      <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8 }}>
+        <div style={{ fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.9)' }}>🛒 Minimum order €{MIN}</div>
+        <div style={{ fontSize:12,color:'rgba(196,104,58,0.9)',fontWeight:600 }}>€{remaining} to go</div>
+      </div>
+      <div style={{ height:5,background:'rgba(255,255,255,0.1)',borderRadius:999,overflow:'hidden' }}>
+        <div style={{ height:'100%',width:pct+'%',background:'linear-gradient(90deg,#C4683A,#E8A070)',borderRadius:999,transition:'width 0.4s ease' }} />
+      </div>
+      <div style={{ fontSize:11,color:'rgba(255,255,255,0.45)',marginTop:6 }}>Add €{remaining} more to place your order</div>
     </div>
   )
 }

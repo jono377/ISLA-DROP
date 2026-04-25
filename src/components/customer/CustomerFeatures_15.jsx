@@ -830,12 +830,28 @@ export function ScheduledDeliverySheet({ onClose, onSchedule }) {
   const [slot, setSlot] = useState('')
 
   const today = new Date()
-  const dates = Array.from({ length:7 }, (_,i) => {
+  const dates = Array.from({ length:14 }, (_,i) => {
     const d = new Date(today); d.setDate(today.getDate()+i)
     return { value: d.toISOString().split('T')[0], label: i===0?'Today':i===1?'Tomorrow':d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) }
   })
 
-  const SLOTS = ['10:00–11:00','11:00–12:00','12:00–13:00','14:00–15:00','15:00–16:00','16:00–17:00','18:00–19:00','19:00–20:00','20:00–21:00','21:00–22:00','22:00–23:00','23:00–00:00']
+  // 24/7 delivery — all hourly slots across the day and night
+  const now   = new Date()
+  const isToday = date === dates[0].value
+  const allSlots = [
+    '00:00–01:00','01:00–02:00','02:00–03:00','03:00–04:00',
+    '08:00–09:00','09:00–10:00','10:00–11:00','11:00–12:00',
+    '12:00–13:00','13:00–14:00','14:00–15:00','15:00–16:00',
+    '16:00–17:00','17:00–18:00','18:00–19:00','19:00–20:00',
+    '20:00–21:00','21:00–22:00','22:00–23:00','23:00–00:00',
+  ]
+  // For today filter out slots that have already passed (need 1hr lead time)
+  const SLOTS = isToday
+    ? allSlots.filter(s => {
+        const h = parseInt(s.split(':')[0])
+        return h > now.getHours() + 1 || h < 5 // late night slots always available
+      })
+    : allSlots
 
   const confirm = () => {
     if (!date || !slot) { toast.error('Please choose a date and time'); return }

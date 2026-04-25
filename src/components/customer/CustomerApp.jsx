@@ -108,7 +108,6 @@ import {
   useWinBackDetection, WinBackBanner, useDebounce,
 } from './CustomerFeatures_perf'
 import OccasionPage from './OccasionPage'
-import PackagePage, { PACKAGES } from './PackagePage'
 import IslaPlayer from './IslaPlayer'
 import {
   HomeSkeletonLoader, usePersonalisedCategories, VoiceSearchButton,
@@ -154,7 +153,7 @@ function useCountdown(endsAt) {
   return secs>0?(h>0?h+'h ':'')+m+'m '+s+'s':null
 }
 
-const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation', CONCIERGE:'concierge', ONBOARDING:'onboarding', NOTIFICATIONS_CENTRE:'notif_centre', FAQ:'faq', CREDITS:'credits', VILLA_PRESETS:'villa_presets', OCCASION:'occasion', PACKAGE:'package' }
+const VIEWS = { SPLASH:'splash', HOME:'home', CATEGORY:'category', SEARCH:'search', BASKET:'basket', ACCOUNT:'account', ASSIST:'assist', BEST:'best', NEWIN:'newin', AGE_VERIFY:'age_verify', CHECKOUT:'checkout', TRACKING:'tracking', PARTY_NIGHT:'party_night', PARTY_DAY:'party_day', ARRIVAL:'arrival', ORDER_HISTORY:'order_history', SAVED_ADDRESSES:'saved_addresses', EDIT_PROFILE:'edit_profile', WISHLIST:'wishlist', LOYALTY:'loyalty', REFERRAL:'referral', NOTIFICATIONS:'notifications', CONFIRMATION:'confirmation', CONCIERGE:'concierge', ONBOARDING:'onboarding', NOTIFICATIONS_CENTRE:'notif_centre', FAQ:'faq', CREDITS:'credits', VILLA_PRESETS:'villa_presets', OCCASION:'occasion' }
 
 // ── Ocean / Ibiza colour scheme (from earlier builds) ─────────
 const C = {
@@ -279,6 +278,8 @@ function MiniCard({ product, t, onDetail, weather }) {
       style={{ background:C.card, border:'0.5px solid '+C.cardBorder, borderRadius:14, overflow:'hidden', minWidth:134, maxWidth:134, flexShrink:0, position:'relative', cursor:'pointer', transition:'transform 0.1s' }}>
       <div style={{ position:'relative' }}>
         <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="mini" style={{ height:100 }} />
+        <OutOfStockOverlay productId={product.id} />
+        <StockBadge productId={product.id} style={{ position:'absolute',top:6,left:6 }} />
         <WeatherBadge product={product} weather={weather} />
         {product.popular && qty===0 && <div style={{ position:'absolute',top:5,left:5,background:'rgba(0,0,0,0.55)',borderRadius:8,padding:'2px 6px',fontSize:9,color:'rgba(255,255,255,0.9)',fontWeight:600 }}>🔥</div>}
         {qty===0
@@ -292,26 +293,44 @@ function MiniCard({ product, t, onDetail, weather }) {
       </div>
       <div style={{ padding:'8px 10px 10px' }}>
         <div style={{ fontSize:11, fontWeight:500, color:C.text, lineHeight:1.3, height:28, overflow:'hidden', marginBottom:3 }}>{product.name}</div>
-        <div style={{ fontSize:13, fontWeight:500, color:'#C4683A' }}>€{product.price.toFixed(2)}</div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ fontSize:13, fontWeight:500, color:'#C4683A' }}>€{product.price.toFixed(2)}</div>
+          <ProductRatingBadge productId={product.id} />
+        </div>
       </div>
     </div>
   )
 }
 
 // ── Basket ────────────────────────────────────────────────────
+const PROMO_CODES = {
+  'WELCOME20': { pct: 20, label: '20% off your first order' },
+  'ISLAND10':  { pct: 10, label: '10% off' },
+  'IBIZA15':   { pct: 15, label: '15% off' },
+  'ISLADROP':  { pct: 10, label: '10% off — welcome to Isla Drop!' },
+  'SUMMER25':  { pct: 25, label: '25% summer special' },
+  'VIP30':     { pct: 30, label: '30% VIP discount' },
+}
+
 function PromoCodeEntry({ onApply }) {
   const [code, setCode] = useState('')
   const [applied, setApplied] = useState(false)
+  const [discount, setDiscount] = useState(null)
   const apply = () => {
     if (!code.trim()) return
+    const promo = PROMO_CODES[code.trim().toUpperCase()]
+    if (!promo) { toast.error('Invalid promo code'); return }
+    setDiscount(promo)
     setApplied(true)
+    onApply && onApply(promo)
+    toast.success('🎉 ' + promo.label + ' applied!')
     toast.success('Promo code applied!')
     onApply(code)
   }
   if (applied) return (
     <div style={{ display:'flex',alignItems:'center',gap:8,padding:'10px 14px',background:'rgba(29,158,117,0.15)',border:'0.5px solid rgba(29,158,117,0.3)',borderRadius:10,marginBottom:10 }}>
       <span style={{ fontSize:16 }}>✅</span>
-      <span style={{ fontSize:13,color:'#7EE8A2',flex:1 }}>Promo code <strong>{code}</strong> applied</span>
+      <span style={{ fontSize:13,color:'#7EE8A2',flex:1 }}>{discount ? discount.label : 'Promo code '+code+' applied'}</span>
       <button onClick={()=>{setApplied(false);setCode('')}} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:13 }}>✕</button>
     </div>
   )
@@ -328,6 +347,7 @@ function PromoCodeEntry({ onApply }) {
 }
 
 function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, setLoyaltyRedeemed, itemNotes, setItemNote, groupToken, createGroupOrder, savedLater, removeFromSaved, firstOrderDiscount }) {
+  const [promoDiscount, setPromoDiscount] = useState(null)
   const cart = useCartStore()
   const { updateQuantity, addItem } = useCartStore()
   const { removing, animateRemove } = useSlideOut()
@@ -416,7 +436,13 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
         <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:5 }}><span>{t.delivery}</span><span>€3.50</span></div>
         {/* Feature 4: Tip in total */}
         <BasketTipLine tip={driverTipAmount||0} />
-        <div style={{ display:'flex',justifyContent:'space-between',fontSize:16,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{(cart.getTotal()+(driverTipAmount||0)).toFixed(2)}</span></div>
+        {promoDiscount && (
+          <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'#7EE8A2',marginBottom:4 }}>
+            <span>🎉 Promo ({promoDiscount.pct}% off)</span>
+            <span>-€{(cart.getTotal()*(promoDiscount.pct/100)).toFixed(2)}</span>
+          </div>
+        )}
+        <div style={{ display:'flex',justifyContent:'space-between',fontSize:16,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{(cart.getTotal()*(promoDiscount?1-promoDiscount.pct/100:1)+(driverTipAmount||0)).toFixed(2)}</span></div>
       </div>
       {cart.getHasAgeRestricted() && (
         <div style={{ background:'rgba(196,104,58,0.18)',border:'0.5px solid rgba(196,104,58,0.35)',borderRadius:10,padding:'9px 12px',display:'flex',gap:8,fontSize:11,color:'#E8C090',marginBottom:12 }}>
@@ -425,9 +451,10 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
       )}
       {/* Feature 6: Upsell suggestions */}
       <BasketUpsell cartItems={cart.items} />
+      <FrequentlyBoughtTogether cartItems={cart.items} />
       {/* Feature 7: Loyalty redemption */}
       <LoyaltyRedemptionRow redeemed={loyaltyRedeemed} onRedeem={()=>setLoyaltyRedeemed(true)} onRemove={()=>setLoyaltyRedeemed(false)} />
-      <PromoCodeEntry onApply={()=>{}} />
+      <PromoCodeEntry onApply={promo=>setPromoDiscount(promo)} />
       {/* Feature 7: Show warning if no address set */}
       {!cart.deliveryAddress && <NoAddressWarning onSetAddress={()=>toast('Set your address in checkout',{icon:'📍'})} />}
       <GroupOrderBanner groupToken={groupToken} onStart={()=>createGroupOrder()} />
@@ -667,51 +694,7 @@ function SearchView({ t, onAssist, onCategorySelect, onDetail, onShowBarcode }) 
 }
 
 // ── Home view ─────────────────────────────────────────────────
-// ── Curated Pack data (Girls + Boys) ─────────────────────────
-const GIRLS_PACK_IDS = ['boat_day_girls','girls_night','pool_slay','girly_day']
-const BOYS_PACK_IDS  = ['lads_holiday','gentleman','boat_day_boys','villa_party']
-
-function CuratedPackSection({ title, packIds, onOpenPackage }) {
-  const packs = packIds.map(id => PACKAGES.find(p => p.id === id)).filter(Boolean)
-  return (
-    <div style={{ marginBottom:24 }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0 16px', marginBottom:12 }}>
-        <div style={{ fontFamily:'DM Serif Display,serif', fontSize:20, color:'white' }}>{title}</div>
-        <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', fontFamily:'DM Sans,sans-serif' }}>curated drops</div>
-      </div>
-      <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
-        {packs.map(pack => {
-          const previewItems = pack.preset.slice(0,4).map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
-          return (
-            <div key={pack.id}
-              onClick={() => onOpenPackage(pack.id)}
-              style={{ flexShrink:0, width:155, background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:16, overflow:'hidden', cursor:'pointer' }}>
-              {/* Gradient header */}
-              <div style={{ background:pack.colour, padding:'16px 14px 12px' }}>
-                <div style={{ fontSize:28, marginBottom:6 }}>{pack.emoji}</div>
-                <div style={{ fontFamily:'DM Serif Display,serif', fontSize:15, color:'white' }}>{pack.label}</div>
-              </div>
-              {/* Body */}
-              <div style={{ padding:'10px 14px 14px' }}>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:'DM Sans,sans-serif', lineHeight:1.4, marginBottom:10 }}>{pack.desc.split(' ').slice(0,8).join(' ')}...</div>
-                <div style={{ display:'flex', gap:3, marginBottom:12 }}>
-                  {previewItems.map(p => <span key={p.id} style={{ fontSize:16 }}>{p.emoji}</span>)}
-                </div>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                  <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', fontFamily:'DM Sans,sans-serif' }}>Customise + AI</div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-
-function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery, onShowOccasion, onOpenPackage }) {
+function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery, onShowOccasion }) {
   const [searchQuery, setSearchQuery] = useState('')
   const cart = useCartStore()
   const { addItem } = useCartStore()
@@ -834,6 +817,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           )}
           {/* Feature 5: Last order shortcut */}
           <LastOrderShortcut onReorder={onReorder} />
+          <SmartReorderButton onReorder={onReorder} />
 
           {/* Feature 13: Morning after kit */}
           {showMorningKit && <MorningAfterKitBanner onAddKit={()=>{}} onDismiss={dismissMorningKit} />}
@@ -873,12 +857,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <WeatherProductRow weather={weather} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* Occasion collections */}
           <OccasionCollections onSelect={onShowOccasion} />
-
-          {/* ── For the Girls ── */}
-          <CuratedPackSection title="💕 For the Girls" packIds={GIRLS_PACK_IDS} onOpenPackage={onOpenPackage} />
-
-          {/* ── For the Boys ── */}
-          <CuratedPackSection title="🍻 For the Boys" packIds={BOYS_PACK_IDS} onOpenPackage={onOpenPackage} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
@@ -1088,7 +1066,6 @@ function CustomerAppInner() {
   const [showOnboardingFull, setShowOnboardingFull] = useState(false)
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
   const [occasionId, setOccasionId] = useState(null)
-  const [packageId, setPackageId]   = useState(null)
   const [showExpressSheet, setShowExpressSheet] = useState(false)
   const [showFilterPanel, setShowFilterPanel] = useState(false)
   const { eligible: expressEligible, expressData } = useExpressCheckout()
@@ -1232,6 +1209,11 @@ function CustomerAppInner() {
     if (!user && !guestUser) { setShowGuestCheckout(true); return }
     if (cart.getSubtotal() < 15) { toast.error('Minimum order is €15'); return }
     if (!hasValidAddress(cart)) { toast.error('Please set a delivery address first',{icon:'📍'}); return }
+    const MIN_ORDER = 30
+    if (cart.getSubtotal() < MIN_ORDER) {
+      toast.error('Minimum order is €'+MIN_ORDER+'. Add €'+(MIN_ORDER-cart.getSubtotal()).toFixed(2)+' more', { duration:3000, icon:'🛒' })
+      return
+    }
     if (cart.getHasAgeRestricted()) { setView(VIEWS.AGE_VERIFY); return }
     setView(VIEWS.CHECKOUT)
   }
@@ -1464,7 +1446,6 @@ function CustomerAppInner() {
 
   // ── FULL-SCREEN VIEWS (no tab bar) ──────────────────────────
   if (view===VIEWS.OCCASION && occasionId) return <OccasionPage occasionId={occasionId} onBack={()=>{ setOccasionId(null); goBack(VIEWS.HOME) }} />
-  if (view===VIEWS.PACKAGE && packageId) return <PackagePage packageId={packageId} onBack={()=>{ setPackageId(null); goBack(VIEWS.HOME) }} />
   if (view===VIEWS.FAQ)             return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><FAQView onBack={()=>goBack(VIEWS.ACCOUNT)} /></div>
   if (view===VIEWS.VILLA_PRESETS)   return (
     <div style={{ background:'linear-gradient(170deg,#0A2A38,#0D3545)', minHeight:'100vh', paddingBottom:80, overflowY:'auto', maxWidth:480, margin:'0 auto', boxShadow:'0 0 60px rgba(0,0,0,0.5)' }}>
@@ -1501,7 +1482,7 @@ function CustomerAppInner() {
       {view===VIEWS.HOME && activeOrder && activeOrder.status !== 'delivered' && (
         <LiveOrderHomeCard order={activeOrder} etaMins={etaMins} onTrack={()=>setView(VIEWS.TRACKING)} />
       )}
-      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.VILLA_PRESETS); window.scrollTo({top:0,behavior:'instant'}) }} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} onShowOccasion={(id)=>{ homeScrollRef.current=window.scrollY; setOccasionId(id); setView(VIEWS.OCCASION) }} onOpenPackage={(id)=>{ homeScrollRef.current=window.scrollY; setPackageId(id); setView(VIEWS.PACKAGE) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} />}
+      {view===VIEWS.HOME     && <HomeView t={t} lang={lang} setLang={setLang} onCategorySelect={goToCategory} estimatedMins={estimatedMins} onAssist={(q)=>{ setAssistQuery(q||''); setView(VIEWS.ASSIST) }} onBest={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.BEST) }} onNewIn={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.NEWIN) }} onPartyNight={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_NIGHT) }} onPartyDay={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.PARTY_DAY) }} onArrival={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.ARRIVAL) }} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onReorder={()=>setView(VIEWS.BASKET)} onShowClub={()=>{ homeScrollRef.current=window.scrollY; setShowClubPresets(true) }} onShowBoat={()=>{ homeScrollRef.current=window.scrollY; setShowBoatMode(true) }} onShowPreArrival={()=>{ homeScrollRef.current=window.scrollY; setShowPreArrival(true) }} onShowPoolParty={()=>{ homeScrollRef.current=window.scrollY; setShowPoolParty(true) }} showMorningKit={showMorningKit} dismissMorningKit={dismissMorningKit} loyaltyStamps={loyaltyStamps} unread={unread} onShowNotifs={()=>setShowNotifCentre(true)} liveOrderCount={liveOrderCount} events={events} weather={weather} onShowDeliveryZone={()=>setShowDeliveryZone(true)} collections={collections} depot={depot} flash={flash} currency={currency} onToggleCurrency={()=>setCurrency(currency==='EUR'?'GBP':'EUR')} onShowVillaPresets={()=>{ homeScrollRef.current=window.scrollY; setView(VIEWS.VILLA_PRESETS); window.scrollTo({top:0,behavior:'instant'}) }} onShowBeachDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowBeachDelivery(true) }} onShowCarDelivery={()=>{ homeScrollRef.current=window.scrollY; setShowCarDelivery(true) }} onShowOccasion={(id)=>{ homeScrollRef.current=window.scrollY; setOccasionId(id); setView(VIEWS.OCCASION) }} homeLoaded={homeLoaded} setHomeLoaded={setHomeLoaded} formatPrice={formatPrice} isAfterDark={isAfterDark} afterDarkProducts={afterDarkProducts} />}
       {view===VIEWS.SEARCH   && <SearchView t={t} onAssist={(q)=>{ setAssistQuery(q); setView(VIEWS.ASSIST) }} onCategorySelect={goToCategory} onDetail={p=>{trackView(p);Analytics.productView(p);setSelectedProduct(p)}} onShowBarcode={()=>setShowBarcodeScanner(true)} />}
       {view===VIEWS.BASKET && (
         <ExpressCheckoutBar
@@ -1574,6 +1555,7 @@ function CustomerAppInner() {
       {showRatingPrompt && ratingOrder && <RatingPromptSheet order={ratingOrder} onRate={()=>{ setShowRatingPrompt(false); setShowRating(ratingOrder) }} onLater={()=>setShowRatingPrompt(false)} onClose={()=>setShowRatingPrompt(false)} />}
       {/* Feature 16: Offline banner */}
       <OfflineBanner />
+      <NetworkErrorBanner />
       {/* Feature 14: Delivery zone */}
       {showDeliveryZone && <DeliveryZoneInfo onClose={()=>setShowDeliveryZone(false)} />}
       {/* Feature 3: Notification centre */}
