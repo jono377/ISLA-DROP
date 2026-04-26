@@ -468,7 +468,7 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
         <button onClick={onRequestSchedule}
           style={{ width:'100%',marginBottom:10,padding:'11px 14px',background:'rgba(43,122,139,0.1)',border:'0.5px solid rgba(43,122,139,0.3)',borderRadius:12,color:'rgba(126,232,200,0.8)',fontSize:13,cursor:'pointer',fontFamily:'DM Sans,sans-serif',textAlign:'left',display:'flex',alignItems:'center',gap:8 }}>
           <span>📅</span>
-          <div><div style={{fontWeight:600,fontSize:13}}>Schedule for later</div><div style={{fontSize:11,opacity:0.6,marginTop:1}}>Any time slot, today or up to 2 weeks ahead</div></div>
+          <div><div style={{fontWeight:600,fontSize:13}}>Schedule for later</div><div style={{fontSize:11,opacity:0.6,marginTop:1}}>Any slot, today or up to 2 weeks ahead</div></div>
         </button>
       ) : (
         <div style={{ marginBottom:10,padding:'10px 14px',background:'rgba(43,122,139,0.15)',border:'0.5px solid rgba(43,122,139,0.4)',borderRadius:12,display:'flex',justifyContent:'space-between',alignItems:'center' }}>
@@ -714,7 +714,7 @@ function CuratedPackSection({ title, packIds, onOpenPackage }) {
       </div>
       <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', scrollbarWidth:'none' }}>
         {packs.map(pack => {
-          const previewItems = pack.preset.slice(0,4).map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
+          const preview = pack.preset.slice(0,4).map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean)
           return (
             <div key={pack.id} onClick={() => onOpenPackage(pack.id)}
               style={{ flexShrink:0, width:155, background:'rgba(255,255,255,0.06)', border:'0.5px solid rgba(255,255,255,0.1)', borderRadius:16, overflow:'hidden', cursor:'pointer' }}>
@@ -725,7 +725,7 @@ function CuratedPackSection({ title, packIds, onOpenPackage }) {
               <div style={{ padding:'10px 14px 14px' }}>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontFamily:'DM Sans,sans-serif', lineHeight:1.4, marginBottom:10 }}>{pack.desc.split(' ').slice(0,8).join(' ')}...</div>
                 <div style={{ display:'flex', gap:3, marginBottom:12 }}>
-                  {previewItems.map(p => <span key={p.id} style={{ fontSize:16 }}>{p.emoji}</span>)}
+                  {preview.map(p => <span key={p.id} style={{ fontSize:16 }}>{p.emoji}</span>)}
                 </div>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                   <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', fontFamily:'DM Sans,sans-serif' }}>Customise + AI</div>
@@ -903,6 +903,8 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <WeatherProductRow weather={weather} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* Occasion collections */}
           <OccasionCollections onSelect={onShowOccasion} />
+          <CuratedPackSection title="💕 For the Girls" packIds={GIRLS_PACK_IDS} onOpenPackage={onOpenPackage} />
+          <CuratedPackSection title="🍻 For the Boys" packIds={BOYS_PACK_IDS} onOpenPackage={onOpenPackage} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
@@ -950,12 +952,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               })}
             </div>
           </div>
-
-          {/* ── For the Girls ── */}
-          <CuratedPackSection title="💕 For the Girls" packIds={GIRLS_PACK_IDS} onOpenPackage={onOpenPackage} />
-
-          {/* ── For the Boys ── */}
-          <CuratedPackSection title="🍻 For the Boys" packIds={BOYS_PACK_IDS} onOpenPackage={onOpenPackage} />
 
           {/* ── Design Your Experience ─────────────────────── */}
           <div style={{ margin:'4px 16px 22px' }}>
