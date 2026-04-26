@@ -279,8 +279,6 @@ function MiniCard({ product, t, onDetail, weather }) {
       style={{ background:C.card, border:'0.5px solid '+C.cardBorder, borderRadius:14, overflow:'hidden', minWidth:134, maxWidth:134, flexShrink:0, position:'relative', cursor:'pointer', transition:'transform 0.1s' }}>
       <div style={{ position:'relative' }}>
         <ProductImage productId={product.id} emoji={product.emoji} category={product.category} alt={product.name} size="mini" style={{ height:100 }} />
-        <OutOfStockOverlay productId={product.id} />
-        <StockBadge productId={product.id} style={{ position:'absolute',top:6,left:6 }} />
         <WeatherBadge product={product} weather={weather} />
         {product.popular && qty===0 && <div style={{ position:'absolute',top:5,left:5,background:'rgba(0,0,0,0.55)',borderRadius:8,padding:'2px 6px',fontSize:9,color:'rgba(255,255,255,0.9)',fontWeight:600 }}>🔥</div>}
         {qty===0
@@ -294,42 +292,26 @@ function MiniCard({ product, t, onDetail, weather }) {
       </div>
       <div style={{ padding:'8px 10px 10px' }}>
         <div style={{ fontSize:11, fontWeight:500, color:C.text, lineHeight:1.3, height:28, overflow:'hidden', marginBottom:3 }}>{product.name}</div>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:2 }}>
-          <div style={{ fontSize:13, fontWeight:500, color:'#C4683A' }}>€{product.price.toFixed(2)}</div>
-          <ProductRatingBadge productId={product.id} />
-        </div>
+        <div style={{ fontSize:13, fontWeight:500, color:'#C4683A' }}>€{product.price.toFixed(2)}</div>
       </div>
     </div>
   )
 }
 
 // ── Basket ────────────────────────────────────────────────────
-const PROMO_CODES = {
-  'WELCOME20': { pct:20, label:'20% off — welcome gift!' },
-  'ISLAND10':  { pct:10, label:'10% off your order' },
-  'IBIZA15':   { pct:15, label:'15% off — Ibiza special' },
-  'ISLADROP':  { pct:10, label:'10% off — thanks for using Isla Drop!' },
-  'SUMMER25':  { pct:25, label:'25% summer special' },
-  'VIP30':     { pct:30, label:'30% VIP discount' },
-}
-
 function PromoCodeEntry({ onApply }) {
   const [code, setCode] = useState('')
   const [applied, setApplied] = useState(false)
-  const [discount, setDiscount] = useState(null)
   const apply = () => {
     if (!code.trim()) return
-    const promo = PROMO_CODES[code.trim().toUpperCase()]
-    if (!promo) { toast.error('Invalid promo code — try WELCOME20'); return }
-    setDiscount(promo); setApplied(true); onApply && onApply(promo)
-    toast.success('🎉 ' + promo.label)
+    setApplied(true)
     toast.success('Promo code applied!')
     onApply(code)
   }
   if (applied) return (
     <div style={{ display:'flex',alignItems:'center',gap:8,padding:'10px 14px',background:'rgba(29,158,117,0.15)',border:'0.5px solid rgba(29,158,117,0.3)',borderRadius:10,marginBottom:10 }}>
       <span style={{ fontSize:16 }}>✅</span>
-      <span style={{ fontSize:13,color:'#7EE8A2',flex:1 }}>{discount ? discount.label : 'Promo code '+code+' applied'}</span>
+      <span style={{ fontSize:13,color:'#7EE8A2',flex:1 }}>Promo code <strong>{code}</strong> applied</span>
       <button onClick={()=>{setApplied(false);setCode('')}} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:13 }}>✕</button>
     </div>
   )
@@ -345,8 +327,7 @@ function PromoCodeEntry({ onApply }) {
   )
 }
 
-function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, setLoyaltyRedeemed, itemNotes, setItemNote, groupToken, createGroupOrder, savedLater, removeFromSaved, firstOrderDiscount }) {
-  const [promoDiscount, setPromoDiscount] = useState(null)
+function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, setLoyaltyRedeemed, itemNotes, setItemNote, groupToken, createGroupOrder, savedLater, removeFromSaved, firstOrderDiscount, scheduledTime, onRequestSchedule, onClearSchedule }) {
   const cart = useCartStore()
   const { updateQuantity, addItem } = useCartStore()
   const { removing, animateRemove } = useSlideOut()
@@ -358,7 +339,6 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
   const saveNotes = val => { setNotes(val); if(cart.setDeliveryNotes) cart.setDeliveryNotes(val) }
   if (cart.getItemCount()===0) return (
     <div style={{ padding:24 }}>
-      <EmptyBasketState onShop={onBack} />
       <button onClick={onBack}
         style={{ display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:20,padding:'6px 14px 6px 10px',cursor:'pointer',marginBottom:16 }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
@@ -436,7 +416,7 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
         <div style={{ display:'flex',justifyContent:'space-between',fontSize:13,color:'rgba(255,255,255,0.5)',marginBottom:5 }}><span>{t.delivery}</span><span>€3.50</span></div>
         {/* Feature 4: Tip in total */}
         <BasketTipLine tip={driverTipAmount||0} />
-        <div style={{ display:'flex',justifyContent:'space-between',fontSize:16,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{((cart.getTotal()*(promoDiscount?1-promoDiscount.pct/100:1))+(driverTipAmount||0)).toFixed(2)}</span></div>
+        <div style={{ display:'flex',justifyContent:'space-between',fontSize:16,fontWeight:500,color:'white' }}><span>{t.total}</span><span style={{ color:'#E8A070' }}>€{(cart.getTotal()+(driverTipAmount||0)).toFixed(2)}</span></div>
       </div>
       {cart.getHasAgeRestricted() && (
         <div style={{ background:'rgba(196,104,58,0.18)',border:'0.5px solid rgba(196,104,58,0.35)',borderRadius:10,padding:'9px 12px',display:'flex',gap:8,fontSize:11,color:'#E8C090',marginBottom:12 }}>
@@ -445,10 +425,9 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
       )}
       {/* Feature 6: Upsell suggestions */}
       <BasketUpsell cartItems={cart.items} />
-      <FrequentlyBoughtTogether cartItems={cart.items} />
       {/* Feature 7: Loyalty redemption */}
       <LoyaltyRedemptionRow redeemed={loyaltyRedeemed} onRedeem={()=>setLoyaltyRedeemed(true)} onRemove={()=>setLoyaltyRedeemed(false)} />
-      <PromoCodeEntry onApply={p=>setPromoDiscount(p)} />
+      <PromoCodeEntry onApply={()=>{}} />
       {/* Feature 7: Show warning if no address set */}
       {!cart.deliveryAddress && <NoAddressWarning onSetAddress={()=>toast('Set your address in checkout',{icon:'📍'})} />}
       <GroupOrderBanner groupToken={groupToken} onStart={()=>createGroupOrder()} />
@@ -462,6 +441,18 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
           <div style={{ fontSize:12,color:'rgba(255,255,255,0.75)',fontFamily:'DM Sans,sans-serif',lineHeight:1.5 }}>
             <strong style={{ color:'#C8A84B' }}>Large order ({cart.getItemCount()} items)</strong> — our warehouse team will need extra preparation time for this order. Please allow an additional 15–25 minutes on top of the standard delivery time. We will keep you updated.
           </div>
+        </div>
+      )}
+      {!scheduledTime ? (
+        <button onClick={onRequestSchedule}
+          style={{ width:'100%',marginBottom:10,padding:'11px 14px',background:'rgba(43,122,139,0.1)',border:'0.5px solid rgba(43,122,139,0.3)',borderRadius:12,color:'rgba(126,232,200,0.8)',fontSize:13,cursor:'pointer',fontFamily:'DM Sans,sans-serif',textAlign:'left',display:'flex',alignItems:'center',gap:8 }}>
+          <span>📅</span>
+          <div><div style={{fontWeight:600,fontSize:13}}>Schedule for later</div><div style={{fontSize:11,opacity:0.6,marginTop:1}}>Choose any time slot, today or up to 2 weeks ahead</div></div>
+        </button>
+      ) : (
+        <div style={{ marginBottom:10,padding:'10px 14px',background:'rgba(43,122,139,0.15)',border:'0.5px solid rgba(43,122,139,0.4)',borderRadius:12,display:'flex',justifyContent:'space-between',alignItems:'center' }}>
+          <div style={{fontSize:12,color:'#7EE8C8',display:'flex',alignItems:'center',gap:6}}>📅 <span>{scheduledTime}</span></div>
+          <button onClick={onClearSchedule} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:16}}>×</button>
         </div>
       )}
       <button onClick={onCheckout} disabled={belowMin}
@@ -688,7 +679,7 @@ function SearchView({ t, onAssist, onCategorySelect, onDetail, onShowBarcode }) 
 }
 
 // ── Home view ─────────────────────────────────────────────────
-// ── Curated Packs — Girls + Boys ─────────────────────────────
+// ── Curated Packs ─────────────────────────────────────────────
 const GIRLS_PACK_IDS = ['boat_day_girls','girls_night','pool_slay','girly_day']
 const BOYS_PACK_IDS  = ['lads_holiday','gentleman','boat_day_boys','villa_party']
 
@@ -727,7 +718,6 @@ function CuratedPackSection({ title, packIds, onOpenPackage }) {
     </div>
   )
 }
-
 
 function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist, onBest, onNewIn, onPartyNight, onPartyDay, onArrival, onDetail, onReorder, onShowClub, onShowBoat, onShowPreArrival, onShowPoolParty, showMorningKit, dismissMorningKit, loyaltyStamps, unread, onShowNotifs, liveOrderCount, events, weather, onShowDeliveryZone, collections, depot, flash, currency, onToggleCurrency, onShowVillaPresets, homeLoaded, setHomeLoaded, formatPrice, isAfterDark, afterDarkProducts, onShowBeachDelivery, onShowCarDelivery, onShowOccasion, onOpenPackage }) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -852,12 +842,11 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           )}
           {/* Feature 5: Last order shortcut */}
           {prevItems.length > 0 && <LastOrderShortcut onReorder={onReorder} />}
-          {prevItems.length > 0 && <SmartReorderButton onReorder={onReorder} />}
 
           {/* Feature 13: Morning after kit */}
           {showMorningKit && <MorningAfterKitBanner onAddKit={()=>{}} onDismiss={dismissMorningKit} />}
           {/* Feature 9: Your usual order */}
-          <YourUsualCard productIds={[]} onAddAll={()=>setView(VIEWS.BASKET)} />
+          {prevItems.length > 0 && <YourUsualCard productIds={[]} onAddAll={()=>setView(VIEWS.BASKET)} />}
           {/* POINT 7: Recently viewed */}
           <RecentlyViewedRow onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* T2-6: Because you bought X */}
@@ -892,11 +881,7 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <WeatherProductRow weather={weather} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* Occasion collections */}
           <OccasionCollections onSelect={onShowOccasion} />
-
-          {/* ── For the Girls ── */}
           <CuratedPackSection title="💕 For the Girls" packIds={GIRLS_PACK_IDS} onOpenPackage={onOpenPackage} />
-
-          {/* ── For the Boys ── */}
           <CuratedPackSection title="🍻 For the Boys" packIds={BOYS_PACK_IDS} onOpenPackage={onOpenPackage} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
@@ -1249,13 +1234,8 @@ function CustomerAppInner() {
     await checkOutOfStock()
     if (cart.getItemCount() === 0) return
     if (!user && !guestUser) { setShowGuestCheckout(true); return }
-    if (cart.getSubtotal() < 15) { toast.error('Minimum order is €15'); return }
+    if (cart.getSubtotal() < 30) { toast.error('Minimum order is €30 — add €'+(30-cart.getSubtotal()).toFixed(2)+' more', {icon:'🛒',duration:3000}); return }
     if (!hasValidAddress(cart)) { toast.error('Please set a delivery address first',{icon:'📍'}); return }
-    const MIN_ORDER = 30
-    if (cart.getSubtotal() < MIN_ORDER) {
-      toast.error('Minimum order is €'+MIN_ORDER+' — add €'+(MIN_ORDER-cart.getSubtotal()).toFixed(2)+' more', { duration:3000, icon:'🛒' })
-      return
-    }
     if (cart.getHasAgeRestricted()) { setView(VIEWS.AGE_VERIFY); return }
     setView(VIEWS.CHECKOUT)
   }
@@ -1533,7 +1513,7 @@ function CustomerAppInner() {
           onNormal={handleCheckoutStart}
         />
       )}
-      {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onBack={()=>goBack(VIEWS.HOME)} driverTipAmount={driverTipAmount} loyaltyRedeemed={loyaltyRedeemed} setLoyaltyRedeemed={setLoyaltyRedeemed} itemNotes={itemNotes} setItemNote={setItemNote} groupToken={groupToken} createGroupOrder={createGroupOrder} savedLater={savedLater} removeFromSaved={removeFromSaved} firstOrderDiscount={firstOrderDiscount} />}
+      {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onBack={()=>goBack(VIEWS.HOME)} scheduledTime={scheduledDelivery?.label} onRequestSchedule={()=>setShowSchedule(true)} onClearSchedule={()=>setScheduledDelivery(null)} driverTipAmount={driverTipAmount} loyaltyRedeemed={loyaltyRedeemed} setLoyaltyRedeemed={setLoyaltyRedeemed} itemNotes={itemNotes} setItemNote={setItemNote} groupToken={groupToken} createGroupOrder={createGroupOrder} savedLater={savedLater} removeFromSaved={removeFromSaved} firstOrderDiscount={firstOrderDiscount} />}
       {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.ORDER_HISTORY) }} onShowAddresses={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.SAVED_ADDRESSES) }} onShowEditProfile={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.EDIT_PROFILE) }} onShowLoyalty={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.LOYALTY) }} onShowReferral={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.REFERRAL) }} onShowWishlist={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.WISHLIST) }} onShowNotifications={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.NOTIFICATIONS) }} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onShowChallenges={()=>setShowChallenges(true)} onShowSupport={()=>setShowSupportChat(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.FAQ) }} onShowCredits={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.CREDITS) }} /></FadeIn>}
       {view===VIEWS.ASSIST   && <AssistBot initialQuery={assistQuery} onClose={()=>{ setAssistQuery(''); goBack(VIEWS.HOME) }} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>goBack(VIEWS.HOME)} />}
@@ -1598,7 +1578,6 @@ function CustomerAppInner() {
       {showRatingPrompt && ratingOrder && <RatingPromptSheet order={ratingOrder} onRate={()=>{ setShowRatingPrompt(false); setShowRating(ratingOrder) }} onLater={()=>setShowRatingPrompt(false)} onClose={()=>setShowRatingPrompt(false)} />}
       {/* Feature 16: Offline banner */}
       <OfflineBanner />
-      <NetworkErrorBanner />
       {/* Feature 14: Delivery zone */}
       {showDeliveryZone && <DeliveryZoneInfo onClose={()=>setShowDeliveryZone(false)} />}
       {/* Feature 3: Notification centre */}
