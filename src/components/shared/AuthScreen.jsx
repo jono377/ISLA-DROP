@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { signIn, signUp, getProfile } from '../../lib/supabase'
 import { useAuthStore } from '../../lib/store'
+import { SocialLoginButtons, PhoneOTPLogin } from '../customer/CustomerFeatures_world2'
 import toast from 'react-hot-toast'
 
 export default function AuthScreen() {
   const [mode, setMode] = useState('signin')
   const [form, setForm] = useState({ email: '', password: '', name: '', role: 'customer' })
   const [loading, setLoading] = useState(false)
+  const [showPhone, setShowPhone] = useState(false)
   const { setUser, setProfile } = useAuthStore()
 
   const handle = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
@@ -54,6 +56,19 @@ export default function AuthScreen() {
             ))}
           </div>
 
+          {/* Social login */}
+          <SocialLoginButtons onSuccess={()=>window.location.reload()} />
+
+          {/* Phone OTP */}
+          {mode === 'signin' && !showPhone && (
+            <button onClick={()=>setShowPhone(true)}
+              style={{ width:'100%', marginBottom:12, padding:'11px', background:'none', border:'0.5px solid rgba(42,35,24,0.18)', borderRadius:10, fontFamily:'DM Sans,sans-serif', fontSize:13, color:'#7A6E60', cursor:'pointer' }}>
+              📱 Sign in with phone number instead
+            </button>
+          )}
+          {showPhone ? (
+            <PhoneOTPLogin onSuccess={()=>window.location.reload()} onBack={()=>setShowPhone(false)} />
+          ) : (
           <form onSubmit={submit}>
             {mode === 'signup' && (
               <>
@@ -79,6 +94,7 @@ export default function AuthScreen() {
               {loading ? 'Loading…' : mode === 'signin' ? 'Sign in →' : 'Create account →'}
             </button>
           </form>
+          )}
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#7A6E60', lineHeight: 1.6 }}>
