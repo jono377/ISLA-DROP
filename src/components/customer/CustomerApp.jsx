@@ -861,18 +861,16 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               </div>
             </div>
           )}
-          {/* Feature 5: Last order shortcut */}
-          {prevItems.length > 0 && <LastOrderShortcut onReorder={onReorder} />}
-          {prevItems.length > 0 && <SmartReorderButton onReorder={onReorder} />}
-
           {/* Feature 13: Morning after kit */}
           {showMorningKit && <MorningAfterKitBanner onAddKit={()=>{}} onDismiss={dismissMorningKit} />}
-          {/* Feature 9: Your usual order */}
-          {prevItems.length > 0 && <YourUsualCard productIds={[]} onAddAll={()=>setView(VIEWS.BASKET)} />}
           {/* POINT 7: Recently viewed */}
           <RecentlyViewedRow onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
-          {/* T2-6: Because you bought X */}
-          {prevItems.length > 0 && <BecauseYouBoughtRow previousItems={prevItems} onDetail={p=>{trackView(p);onDetail&&onDetail(p)}} />}
+          {/* Reorder sections — only shown to users with previous orders */}
+          {prevItems.length > 0 && <>
+            <LastOrderShortcut onReorder={onReorder} />
+            <YourUsualCard productIds={[]} onAddAll={()=>setView(VIEWS.BASKET)} />
+            <BecauseYouBoughtRow previousItems={prevItems} onDetail={p=>{trackView(p);onDetail&&onDetail(p)}} />
+          </>}
 
           {prevItems.length>0 && (
             <div style={{ paddingTop:20,marginBottom:22 }}>
@@ -880,6 +878,23 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               <div style={{ display:'flex',gap:10,overflowX:'auto',padding:'0 16px 4px',scrollbarWidth:'none' }}>{prevItems.slice(0,8).map(p=><MiniCard key={p.id} product={p} t={t} onDetail={onDetail} weather={weather}/>)}</div>
             </div>
           )}
+          {/* Loyalty progress strip */}
+          {loyaltyStamps > 0 && loyaltyStamps < 10 && (
+            <div onClick={()=>setView(VIEWS.LOYALTY)}
+              style={{ margin:'0 16px 16px',background:'rgba(196,104,58,0.1)',border:'0.5px solid rgba(196,104,58,0.3)',borderRadius:14,padding:'12px 14px',cursor:'pointer' }}>
+              <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8 }}>
+                <div style={{ fontSize:13,fontWeight:600,color:'white',fontFamily:'DM Sans,sans-serif' }}>☕ {loyaltyStamps}/10 stamps</div>
+                <div style={{ fontSize:11,color:'rgba(196,104,58,0.9)',fontFamily:'DM Sans,sans-serif' }}>{10-loyaltyStamps} to free delivery →</div>
+              </div>
+              <div style={{ display:'flex',gap:4,marginBottom:6 }}>
+                {Array.from({length:10},(_,i)=>(
+                  <div key={i} style={{ flex:1,height:8,borderRadius:4,background:i<loyaltyStamps?'linear-gradient(90deg,#C4683A,#E8A070)':'rgba(255,255,255,0.1)',transition:'background 0.3s' }} />
+                ))}
+              </div>
+              <div style={{ height:4,background:'rgba(255,255,255,0.05)',borderRadius:999 }} />
+            </div>
+          )}
+
           {/* Feature 14: Seasonal banner */}
           <SeasonalBanner />
 
@@ -1281,8 +1296,43 @@ function CustomerAppInner() {
       })
       cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION); fireOrderConfirmedHaptic(); setShowConfetti(true); setTimeout(()=>setShowConfetti(false),3500)
       Analytics.checkoutComplete(order.total||cart.getTotal())
+      // Email receipt (fire-and-forget via Supabase Edge Function)
+      try {
+        const { supabase: sb } = await import('../../lib/supabase')
+        sb.functions.invoke('send-order-receipt', {
+          body: { orderId:order.id, orderNumber:order.order_number, email:user?.email, items:cart.items, total:order.total||cart.getTotal() }
+        }).catch(()=>{})
+      } catch {}
       addNotif({ type:'order', title:'Order confirmed! 🛵', body:'Order #'+order.order_number+' is being prepared. Estimated arrival: '+(order.estimated_minutes||18)+' min.' })
-      const sub = subToOrder(order.id, u=>{ setActiveOrder(u); if(u.status==='delivered'){toast.success('🎉 Delivered!');addNotif({type:'order',title:'Delivered! 🎉',body:'Your order #'+u.order_number+' has been delivered.'});setTimeout(()=>setShowPostDeliveryTip(true),8000);setTimeout(()=>setShowDriverRating(true),12000);sub.unsubscribe()} })
+      const sub = subToOrder(order.id, u=>{
+        setActiveOrder(u)
+        // Push notifications for status changes
+        const notify = (title, body) => {
+          try {
+            if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+              navigator.serviceWorker.ready.then(sw => sw.showNotification(title, {
+                body, icon:'/icon-192.png', badge:'/badge-72.png', tag:'order-'+u.id,
+                data:{ orderId:u.id }
+              })).catch(()=>{})
+            }
+          } catch {}
+        }
+        if (u.status === 'driver_assigned') {
+          notify('Driver assigned 🛵', 'Your Isla Drop driver is on the way!')
+          addNotif({type:'order',title:'Driver assigned 🛵',body:'Your driver is heading to you now.'})
+        }
+        if (u.status === 'out_for_delivery') {
+          notify('Almost there! 🚀', 'Your order is nearly at your location.')
+        }
+        if (u.status === 'delivered') {
+          toast.success('🎉 Delivered!')
+          notify('Order delivered! 🎉', 'Your Isla Drop order has arrived. Enjoy!')
+          addNotif({type:'order',title:'Delivered! 🎉',body:'Your order #'+u.order_number+' has been delivered.'})
+          setTimeout(()=>setShowPostDeliveryTip(true),8000)
+          setTimeout(()=>setShowDriverRating(true),12000)
+          sub.unsubscribe()
+        }
+      })
       if (user?.id) checkStreak(user.id)
       // Show push prompt after order 3+
       try {
