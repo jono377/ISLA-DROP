@@ -1078,9 +1078,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </button>
           </div>
 
-          {/* ── Floating support button ── */}
-          <SupportChatWidget />
-
           {/* ── One horizontal scroll row per category ─────────── */}
           {orderedCategories.map(cat => {
             const catProducts = PRODUCTS.filter(p => p.category === cat.key).slice(0, 10)
