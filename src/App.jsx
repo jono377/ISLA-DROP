@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import { useAuthStore } from './lib/store'
 import CustomerApp from './components/customer/CustomerApp'
 import DriverApp from './components/driver/DriverApp'
-import OpsApp from './components/ops/OpsApp' 
+import OpsApp from './components/ops/OpsApp'  
 
 // ── Subdomain detection — runs once at module load ────────────
 const HOST = window.location.hostname
