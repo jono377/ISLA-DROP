@@ -4,7 +4,7 @@ import { useAuthStore } from '../../lib/store'
 import { SocialLoginButtons, PhoneOTPLogin } from '../customer/CustomerFeatures_world2'
 import toast from 'react-hot-toast'
 
-export default function AuthScreen() {
+export default function AuthScreen({ requiredRole }) {
   const [mode, setMode] = useState('signin')
   const [form, setForm] = useState({ email: '', password: '', name: '', role: 'customer' })
   const [loading, setLoading] = useState(false)
@@ -40,12 +40,16 @@ export default function AuthScreen() {
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontFamily: 'DM Serif Display, serif', fontSize: 36, color: '#2A2318', letterSpacing: '-0.5px' }}>Isla Drop</div>
-          <div style={{ fontSize: 14, color: '#7A6E60', marginTop: 4 }}>Ibiza · 24/7 Beverage Delivery</div>
+          <div style={{ fontSize: 14, color: '#7A6E60', marginTop: 4 }}>
+            {requiredRole === 'ops'    ? '🖥️ Ops Dashboard'    :
+             requiredRole === 'driver' ? '🛵 Driver Portal'     :
+             'Ibiza · 24/7 Beverage Delivery'}
+          </div>
         </div>
 
         <div style={{ background: '#FEFCF9', borderRadius: 20, padding: 28, boxShadow: '0 4px 32px rgba(42,35,24,0.08)' }}>
           <div style={{ display: 'flex', gap: 4, background: '#F5F0E8', borderRadius: 10, padding: 4, marginBottom: 24 }}>
-            {['signin', 'signup'].map(m => (
+            {(requiredRole ? ['signin'] : ['signin', 'signup']).map(m => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
@@ -56,8 +60,8 @@ export default function AuthScreen() {
             ))}
           </div>
 
-          {/* Social login */}
-          <SocialLoginButtons onSuccess={()=>window.location.reload()} />
+          {/* Social login — hide on staff subdomains */}
+          {!requiredRole && <SocialLoginButtons onSuccess={()=>window.location.reload()} />}
 
           {/* Phone OTP */}
           {mode === 'signin' && !showPhone && (
