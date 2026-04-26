@@ -314,13 +314,40 @@ export function ProductReviews({ productId }) {
 }
 
 // Avg rating badge for product cards
+// Cache to avoid re-fetching same product ratings
+const ratingCache = {}
+
 export function ProductRatingBadge({ productId, avgRating, reviewCount }) {
-  if (!avgRating || avgRating === '0.0') return null
+  const [avg, setAvg]   = useState(avgRating || null)
+  const [count, setCount] = useState(reviewCount || null)
+
+  useEffect(() => {
+    if (!productId || avgRating) return // use passed props if available
+    if (ratingCache[productId]) {
+      setAvg(ratingCache[productId].avg)
+      setCount(ratingCache[productId].count)
+      return
+    }
+    import('../../lib/supabase').then(({ supabase }) => {
+      supabase.from('product_ratings')
+        .select('rating')
+        .eq('product_id', productId)
+        .then(({ data }) => {
+          if (!data?.length) return
+          const a = (data.reduce((s,r) => s+r.rating, 0) / data.length).toFixed(1)
+          ratingCache[productId] = { avg: a, count: data.length }
+          setAvg(a)
+          setCount(data.length)
+        }).catch(() => {})
+    }).catch(() => {})
+  }, [productId])
+
+  if (!avg || avg === '0.0') return null
   return (
-    <div style={{ display:'inline-flex', alignItems:'center', gap:3, background:'rgba(200,168,75,0.15)', borderRadius:99, padding:'2px 8px' }}>
-      <span style={{ color:C.gold, fontSize:11 }}>★</span>
-      <span style={{ fontSize:11, fontWeight:600, color:'white' }}>{avgRating}</span>
-      {reviewCount && <span style={{ fontSize:10, color:C.muted }}>({reviewCount})</span>}
+    <div style={{ display:'inline-flex', alignItems:'center', gap:3, background:'rgba(200,168,75,0.15)', borderRadius:99, padding:'2px 7px', flexShrink:0 }}>
+      <span style={{ color:C.gold, fontSize:10 }}>★</span>
+      <span style={{ fontSize:10, fontWeight:600, color:'white' }}>{avg}</span>
+      {count > 0 && <span style={{ fontSize:9, color:C.muted }}>({count})</span>}
     </div>
   )
 }

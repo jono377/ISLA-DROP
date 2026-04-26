@@ -133,12 +133,27 @@ export function GuestCheckoutModal({ onClose, onContinue }) {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState(null)
+
+  const signInWith = async (provider) => {
+    setOauthLoading(provider)
+    try {
+      const { supabase } = await import('../../lib/supabase')
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin + '/?auth=complete' }
+      })
+      if (error) throw error
+    } catch (err) {
+      toast.error('Sign in failed — try guest checkout instead')
+      setOauthLoading(null)
+    }
+  }
 
   const proceed = async () => {
     if (!email.trim() || !email.includes('@')) { toast.error('Enter a valid email address'); return }
     if (!name.trim()) { toast.error('Enter your name'); return }
     setSaving(true)
-    // Store guest details in sessionStorage for order creation
     try {
       sessionStorage.setItem('isla_guest', JSON.stringify({ email: email.trim(), name: name.trim() }))
     } catch {}
@@ -151,8 +166,32 @@ export function GuestCheckoutModal({ onClose, onContinue }) {
     <div style={{ position:'fixed', inset:0, zIndex:600, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'flex-end' }} onClick={onClose}>
       <div style={{ width:'100%', maxWidth:480, margin:'0 auto', background:'#0D3545', borderRadius:'24px 24px 0 0', padding:'24px 20px 48px' }} onClick={e=>e.stopPropagation()}>
         <div style={{ width:36, height:4, background:'rgba(255,255,255,0.2)', borderRadius:2, margin:'0 auto 20px' }}/>
-        <div style={{ fontFamily:F.serif, fontSize:24, color:'white', marginBottom:6 }}>Continue as guest</div>
-        <div style={{ fontSize:13, color:C.muted, marginBottom:22, lineHeight:1.6 }}>No account needed. Enter your details to receive your order confirmation.</div>
+        <div style={{ fontFamily:F.serif, fontSize:24, color:'white', marginBottom:4 }}>Sign in to checkout</div>
+        <div style={{ fontSize:13, color:C.muted, marginBottom:20, lineHeight:1.6 }}>One tap with Google or Apple, or continue as a guest.</div>
+
+        {/* ── One-tap Google / Apple ── */}
+        <button onClick={()=>signInWith('google')} disabled={oauthLoading==='google'}
+          style={{ width:'100%', padding:'13px', background:'white', border:'none', borderRadius:12, fontFamily:F.sans, fontSize:14, fontWeight:500, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:10, color:'#2A2318', marginBottom:10 }}>
+          {oauthLoading==='google'
+            ? <div style={{ width:16,height:16,border:'2px solid #E0D8C8',borderTopColor:'#C4683A',borderRadius:'50%',animation:'gcmSpin 0.8s linear infinite' }}/>
+            : <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          }
+          Continue with Google
+        </button>
+        <button onClick={()=>signInWith('apple')} disabled={oauthLoading==='apple'}
+          style={{ width:'100%', padding:'13px', background:'#1C1C1E', border:'none', borderRadius:12, fontFamily:F.sans, fontSize:14, fontWeight:500, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:10, color:'white', marginBottom:16 }}>
+          {oauthLoading==='apple'
+            ? <div style={{ width:16,height:16,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'white',borderRadius:'50%',animation:'gcmSpin 0.8s linear infinite' }}/>
+            : <svg width="15" height="18" viewBox="0 0 814 1000" fill="white"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-38.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.5 135.4-317.3 269-317.3 70.1 0 128.4 46.4 172.5 46.4 42.8 0 109.2-49 188.5-49C765.1 222 788.1 340.9 788.1 340.9z"/></svg>
+          }
+          Continue with Apple
+        </button>
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+          <div style={{ flex:1, height:'0.5px', background:'rgba(255,255,255,0.12)' }}/>
+          <span style={{ fontSize:11, color:'rgba(255,255,255,0.35)', fontFamily:F.sans }}>or continue as guest</span>
+          <div style={{ flex:1, height:'0.5px', background:'rgba(255,255,255,0.12)' }}/>
+        </div>
+        <style>{'@keyframes gcmSpin{to{transform:rotate(360deg)}}'}</style>
         {[['Your name','Alex Smith',name,setName,'text'],['Email address','hello@example.com',email,setEmail,'email']].map(([label,ph,val,setter,type])=>(
           <div key={label} style={{ marginBottom:14 }}>
             <div style={{ fontSize:12, color:C.muted, marginBottom:8 }}>{label}</div>
@@ -173,17 +212,30 @@ export function GuestCheckoutModal({ onClose, onContinue }) {
 }
 
 // ── FEATURE 6: Stock quantity on product card ─────────────────
-export function StockBadge({ product, style={} }) {
-  const qty = product?.stock_quantity
+export function StockBadge({ productId, product, style={} }) {
+  // Accept either productId (for realtime) or product object (legacy)
+  const [qty, setQty] = useState(product?.stock_quantity ?? null)
+  useEffect(() => {
+    if (!productId) return
+    import('../../lib/supabase').then(({ supabase }) => {
+      supabase.from('product_stock').select('quantity,low_stock_threshold').eq('product_id', productId).single()
+        .then(({ data }) => { if (data) setQty(data.quantity) })
+      const ch = supabase.channel('stock:'+productId)
+        .on('postgres_changes', { event:'UPDATE', schema:'public', table:'product_stock', filter:'product_id=eq.'+productId },
+          p => setQty(p.new.quantity))
+        .subscribe()
+      return () => supabase.removeChannel(ch)
+    }).catch(() => {})
+  }, [productId])
   if (qty == null) return null
   if (qty === 0) return (
-    <div style={{ position:'absolute', bottom:6, left:6, background:'rgba(60,60,60,0.9)', color:'rgba(255,255,255,0.6)', fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:6, fontFamily:F.sans, ...style }}>
+    <div style={{ position:'absolute', bottom:6, left:6, background:'rgba(30,30,30,0.88)', color:'rgba(255,255,255,0.65)', fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:6, fontFamily:F.sans, ...style }}>
       Out of stock
     </div>
   )
-  if (qty <= 5) return (
-    <div style={{ position:'absolute', bottom:6, left:6, background:'rgba(200,50,50,0.85)', color:'white', fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:6, fontFamily:F.sans, ...style }}>
-      Only {qty} left
+  if (qty <= 3) return (
+    <div style={{ position:'absolute', bottom:6, left:6, background:'rgba(200,60,60,0.88)', color:'white', fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:6, fontFamily:F.sans, ...style }}>
+      Only {qty} left!
     </div>
   )
   return null
@@ -191,18 +243,26 @@ export function StockBadge({ product, style={} }) {
 
 // ── FEATURE 7: Out-of-stock greyed state ──────────────────────
 // Use this wrapper on any product card — dims it when OOS
-export function OutOfStockOverlay({ product, children }) {
-  const oos = product?.stock_quantity === 0
+export function OutOfStockOverlay({ productId, product }) {
+  const [outOfStock, setOutOfStock] = useState(product?.stock_quantity === 0)
+  useEffect(() => {
+    if (!productId) return
+    import('../../lib/supabase').then(({ supabase }) => {
+      supabase.from('product_stock').select('quantity').eq('product_id', productId).single()
+        .then(({ data }) => { if (data) setOutOfStock(data.quantity === 0) })
+      const ch = supabase.channel('oos:'+productId)
+        .on('postgres_changes', { event:'UPDATE', schema:'public', table:'product_stock', filter:'product_id=eq.'+productId },
+          p => setOutOfStock(p.new.quantity === 0))
+        .subscribe()
+      return () => supabase.removeChannel(ch)
+    }).catch(() => {})
+  }, [productId])
+  if (!outOfStock) return null
   return (
-    <div style={{ position:'relative', opacity: oos ? 0.55 : 1 }}>
-      {children}
-      {oos && (
-        <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none' }}>
-          <div style={{ background:'rgba(13,30,40,0.7)', borderRadius:8, padding:'4px 12px', fontSize:11, color:'rgba(255,255,255,0.7)', fontWeight:600, fontFamily:F.sans }}>
-            Out of stock
-          </div>
-        </div>
-      )}
+    <div style={{ position:'absolute', inset:0, background:'rgba(13,30,40,0.65)', display:'flex', alignItems:'center', justifyContent:'center', borderRadius:10, zIndex:2 }}>
+      <div style={{ background:'rgba(0,0,0,0.75)', borderRadius:8, padding:'4px 12px', fontSize:11, color:'rgba(255,255,255,0.8)', fontWeight:600, fontFamily:F.sans }}>
+        Out of stock
+      </div>
     </div>
   )
 }
@@ -902,6 +962,8 @@ export function BeachDeliverySheet({ onClose, onSet }) {
 export function CarDeliverySheet({ onClose, onSet }) {
   const [loading, setLoading] = useState(false)
   const [manualNote, setManualNote] = useState('')
+  const [plate, setPlate]         = useState('')
+  const [carDesc, setCarDesc]     = useState('')
   const [located, setLocated] = useState(null)
   const [step, setStep] = useState('options') // options | manual | confirm
 
@@ -924,14 +986,13 @@ export function CarDeliverySheet({ onClose, onSet }) {
   }
 
   const confirm = () => {
+    if (!plate.trim()) { toast.error('Please enter your number plate'); return }
+    const carInfo = plate.trim().toUpperCase() + (carDesc.trim() ? ' · ' + carDesc.trim() : '')
     if (located) {
-      const address = manualNote
-        ? 'Your car — ' + manualNote
-        : 'Your car (GPS location)'
+      const address = 'Car: ' + carInfo + (manualNote ? ' · ' + manualNote : '')
       onSet({ lat:located.lat, lng:located.lng, address })
     } else if (manualNote) {
-      // Use Ibiza town centre as fallback lat/lng with manual note
-      onSet({ lat:38.9067, lng:1.4326, address:'Your car — ' + manualNote })
+      onSet({ lat:38.9067, lng:1.4326, address:'Car: ' + carInfo + ' · ' + manualNote })
     }
   }
 
@@ -981,8 +1042,22 @@ export function CarDeliverySheet({ onClose, onSet }) {
         {step === 'manual' && (
           <>
             <div style={{ fontSize:13,color:'rgba(255,255,255,0.6)',marginBottom:10,fontFamily:'DM Sans,sans-serif' }}>
-              Describe your parking location so the driver can find you:
+              Enter your car details so the driver can find you:
             </div>
+            <input
+              value={plate}
+              onChange={e=>setPlate(e.target.value.toUpperCase())}
+              placeholder="Number plate (e.g. MA 1234 XY)"
+              maxLength={12}
+              style={{ width:'100%',padding:'12px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:12,color:'white',fontSize:14,fontFamily:'DM Sans,sans-serif',outline:'none',boxSizing:'border-box',marginBottom:10,letterSpacing:1 }}
+            />
+            <input
+              value={carDesc}
+              onChange={e=>setCarDesc(e.target.value)}
+              placeholder="Car colour & make (e.g. White Fiat 500)"
+              style={{ width:'100%',padding:'12px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.18)',borderRadius:12,color:'white',fontSize:14,fontFamily:'DM Sans,sans-serif',outline:'none',boxSizing:'border-box',marginBottom:10 }}
+            />
+            <div style={{ fontSize:12,color:'rgba(255,255,255,0.45)',marginBottom:8,fontFamily:'DM Sans,sans-serif' }}>Parking location (optional):</div>
             <textarea
               value={manualNote}
               onChange={e=>setManualNote(e.target.value)}
@@ -1001,15 +1076,26 @@ export function CarDeliverySheet({ onClose, onSet }) {
           <>
             <div style={{ background:'rgba(126,232,162,0.1)',border:'0.5px solid rgba(126,232,162,0.3)',borderRadius:12,padding:'14px',marginBottom:16 }}>
               <div style={{ fontSize:13,fontWeight:600,color:'#7EE8A2',marginBottom:4 }}>📍 Location found</div>
-              <div style={{ fontSize:12,color:'rgba(255,255,255,0.6)' }}>
-                {located.lat.toFixed(5)}, {located.lng.toFixed(5)}
-              </div>
+              <div style={{ fontSize:12,color:'rgba(255,255,255,0.6)' }}>{located.lat.toFixed(5)}, {located.lng.toFixed(5)}</div>
             </div>
-            <div style={{ fontSize:12,color:'rgba(255,255,255,0.5)',marginBottom:8 }}>Add a note for the driver (optional):</div>
+            <input
+              value={plate}
+              onChange={e=>setPlate(e.target.value.toUpperCase())}
+              placeholder="Number plate (e.g. MA 1234 XY)"
+              maxLength={12}
+              style={{ width:'100%',padding:'11px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:10,color:'white',fontSize:14,fontFamily:'DM Sans,sans-serif',outline:'none',boxSizing:'border-box',marginBottom:10,letterSpacing:1 }}
+            />
+            <input
+              value={carDesc}
+              onChange={e=>setCarDesc(e.target.value)}
+              placeholder="Car colour & make (e.g. White Fiat 500)"
+              style={{ width:'100%',padding:'11px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:10,color:'white',fontSize:14,fontFamily:'DM Sans,sans-serif',outline:'none',boxSizing:'border-box',marginBottom:10 }}
+            />
+            <div style={{ fontSize:12,color:'rgba(255,255,255,0.5)',marginBottom:8 }}>Any extra note for the driver (optional):</div>
             <input
               value={manualNote}
               onChange={e=>setManualNote(e.target.value)}
-              placeholder="e.g. White Seat, level 2, bay 47"
+              placeholder="e.g. Level 2, bay 47"
               style={{ width:'100%',padding:'11px 14px',background:'rgba(255,255,255,0.08)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:10,color:'white',fontSize:13,fontFamily:'DM Sans,sans-serif',outline:'none',boxSizing:'border-box',marginBottom:16 }}
             />
             <button onClick={confirm}

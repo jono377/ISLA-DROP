@@ -112,21 +112,30 @@ export function useRealtimeStock() {
   const [stockMap, setStockMap] = useState({})
   useEffect(() => {
     import('../../lib/supabase').then(({ supabase }) => {
-      // Load initial stock
-      supabase.from('products').select('id,stock_quantity')
-        .then(({ data }) => {
-          if (!data) return
+      // Load from product_stock table (preferred) with fallback to products.stock_quantity
+      supabase.from('product_stock').select('product_id,quantity')
+        .then(({ data, error }) => {
+          if (error || !data?.length) {
+            // Fallback: read from products table
+            return supabase.from('products').select('id,stock_quantity')
+              .then(({ data: pd }) => {
+                if (!pd) return
+                const map = {}
+                pd.forEach(p => { if (p.stock_quantity != null) map[p.id] = p.stock_quantity })
+                setStockMap(map)
+              })
+          }
           const map = {}
-          data.forEach(p => { map[p.id] = p.stock_quantity })
+          data.forEach(p => { map[p.product_id] = p.quantity })
           setStockMap(map)
         }).catch(() => {})
-      // Subscribe to realtime changes
-      const channel = supabase.channel('stock-changes')
-        .on('postgres_changes', { event:'UPDATE', schema:'public', table:'products' }, payload => {
-          const { id, stock_quantity } = payload.new
-          setStockMap(prev => ({ ...prev, [id]: stock_quantity }))
+      // Realtime: subscribe to product_stock changes
+      const ch = supabase.channel('realtime-stock')
+        .on('postgres_changes', { event:'*', schema:'public', table:'product_stock' }, payload => {
+          const { product_id, quantity } = payload.new || {}
+          if (product_id != null) setStockMap(prev => ({ ...prev, [product_id]: quantity }))
         }).subscribe()
-      return () => { supabase.removeChannel(channel) }
+      return () => supabase.removeChannel(ch)
     }).catch(() => {})
   }, [])
   return stockMap
