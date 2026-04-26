@@ -243,7 +243,7 @@ function TabBar({ view, setView, cartCount }) {
       {tabs.map(t => {
         const on = view === t.id
         return (
-          <button key={t.id} onClick={()=>setView(t.id)}
+          <button key={t.id} onClick={()=>{ navigator.vibrate&&navigator.vibrate(8); setView(t.id) }}
             onTouchStart={()=>haptic('light')}
             style={{ flex:1, padding:'11px 4px 9px', border:'none', background:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, fontFamily:'DM Sans,sans-serif', fontSize:10, color:on?'#7EE8C8':'rgba(150,220,200,0.35)', fontWeight:on?500:400, position:'relative', transition:'color 0.15s' }}>
             <div style={{ position:'relative' }}>
@@ -351,8 +351,26 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
   const { updateQuantity, addItem } = useCartStore()
   const { removing, animateRemove } = useSlideOut()
   const [notes, setNotes] = useState(cart.deliveryNotes||'')
-  const MIN = 15
+  const MIN = 30
   const sub = cart.getSubtotal()
+
+  // Track abandoned baskets
+  useEffect(() => {
+    if (cart.getItemCount() === 0) return
+    const save = async () => {
+      try {
+        const { user: u } = useAuthStore.getState()
+        if (!u) return
+        const { supabase: sb } = await import('../../lib/supabase')
+        await sb.from('abandoned_baskets').upsert({
+          user_id: u.id, total: cart.getTotal(), abandoned_at: new Date().toISOString(), reminded: false,
+          items: cart.items.map(i=>({id:i.product.id,name:i.product.name,emoji:i.product.emoji,qty:i.quantity}))
+        }, { onConflict: 'user_id' })
+      } catch {}
+    }
+    const t = setTimeout(save, 3000)
+    return () => clearTimeout(t)
+  }, [cart.items])
   const belowMin = sub < MIN
   const progress = Math.min(100,(sub/MIN)*100)
   const saveNotes = val => { setNotes(val); if(cart.setDeliveryNotes) cart.setDeliveryNotes(val) }
@@ -1060,6 +1078,9 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
             </button>
           </div>
 
+          {/* ── Floating support button ── */}
+          <SupportChatWidget />
+
           {/* ── One horizontal scroll row per category ─────────── */}
           {orderedCategories.map(cat => {
             const catProducts = PRODUCTS.filter(p => p.category === cat.key).slice(0, 10)
@@ -1296,6 +1317,11 @@ function CustomerAppInner() {
       })
       cart.clearCart(); setActiveOrder(order); setView(VIEWS.CONFIRMATION); fireOrderConfirmedHaptic(); setShowConfetti(true); setTimeout(()=>setShowConfetti(false),3500)
       Analytics.checkoutComplete(order.total||cart.getTotal())
+      // Clear abandoned basket record on successful order
+      try {
+        const { supabase: sbClr } = await import('../../lib/supabase')
+        sbClr.from('abandoned_baskets').delete().eq('user_id', user.id).then(()=>{})
+      } catch {}
       // Email receipt (fire-and-forget via Supabase Edge Function)
       try {
         const { supabase: sb } = await import('../../lib/supabase')
@@ -1416,7 +1442,7 @@ function CustomerAppInner() {
               <button onClick={()=>setScheduledDelivery(null)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:18 }}>×</button>
             </div>
           ) : (
-            <button onClick={()=>setShowSchedule(true)} style={{ width:'100%',marginBottom:16,padding:'12px',background:'rgba(255,255,255,0.06)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:12,color:'rgba(255,255,255,0.6)',fontSize:13,cursor:'pointer',fontFamily:'DM Sans,sans-serif',textAlign:'left',display:'flex',alignItems:'center',gap:8 }}>
+            <button onClick={()=>{ navigator.vibrate&&navigator.vibrate([5,20,5]); setShowSchedule(true) }} style={{ width:'100%',marginBottom:16,padding:'12px',background:'rgba(255,255,255,0.06)',border:'0.5px solid rgba(255,255,255,0.15)',borderRadius:12,color:'rgba(255,255,255,0.6)',fontSize:13,cursor:'pointer',fontFamily:'DM Sans,sans-serif',textAlign:'left',display:'flex',alignItems:'center',gap:8 }}>
               <span>📅</span> Schedule for later (optional)
             </button>
           )}
@@ -1624,7 +1650,7 @@ function CustomerAppInner() {
       {/* POINT 6: Report issue */}
       {showIssue && <ReportIssueSheet order={showIssue} onClose={()=>setShowIssue(null)} />}
       {/* POINT 15: PWA install */}
-      <PWAInstallPrompt />
+      {activeOrder || cart.previousItems?.length > 0 ? <PWAInstallPrompt /> : null}
       {showCarDelivery && <CarDeliverySheet onClose={()=>setShowCarDelivery(false)} onSet={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null); setShowCarDelivery(false); toast.success('🚗 Delivering to your car!') }} />}
       {showBeachDelivery && <BeachDeliverySheet onClose={()=>setShowBeachDelivery(false)} onSet={loc=>{ cart.setDeliveryLocation(loc.lat,loc.lng,loc.address,null); setShowBeachDelivery(false); toast.success('📍 '+loc.address) }} />}
       {/* Post-delivery tip */}
