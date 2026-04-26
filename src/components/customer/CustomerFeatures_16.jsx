@@ -580,7 +580,6 @@ export function ClubPresetsSheet({ onClose, onSelect }) {
     { name:'Amnesia', emoji:'🌀', address:'Carretera Ibiza-Sant Antoni, Sant Rafael', lat:38.9614, lng:1.3899, note:'Main entrance on the main road' },
     { name:'Eden', emoji:'🌿', address:'Carrer de Salvador Espriu, Sant Antoni', lat:38.9784, lng:1.3021, note:'Opposite the West End' },
     { name:'UNVRS', emoji:'🌌', address:'Carretera Ibiza-Sant Antoni, Sant Rafael', lat:38.9620, lng:1.3905, note:'The immersive experience club — arrive before midnight for best entry' },
-    { name:'Hï Ibiza Beach', emoji:'🏖', address:'Platja d\'en Bossa beach area', lat:38.8780, lng:1.4050, note:'At the beach, look for the Isla Drop spot' },
   ]
 
   return (
