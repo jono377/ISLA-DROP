@@ -1,4 +1,4 @@
-import { useEffect, Component } from 'react'
+ import { useEffect, Component } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './lib/store'
 import CustomerApp from './components/customer/CustomerApp'
