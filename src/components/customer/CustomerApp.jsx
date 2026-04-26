@@ -327,7 +327,7 @@ function PromoCodeEntry({ onApply }) {
   )
 }
 
-function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, setLoyaltyRedeemed, itemNotes, setItemNote, groupToken, createGroupOrder, savedLater, removeFromSaved, firstOrderDiscount, scheduledTime, onRequestSchedule, onClearSchedule }) {
+function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, setLoyaltyRedeemed, itemNotes, setItemNote, groupToken, createGroupOrder, savedLater, removeFromSaved, firstOrderDiscount }) {
   const cart = useCartStore()
   const { updateQuantity, addItem } = useCartStore()
   const { removing, animateRemove } = useSlideOut()
@@ -441,18 +441,6 @@ function BasketView({ t, onCheckout, onBack, driverTipAmount, loyaltyRedeemed, s
           <div style={{ fontSize:12,color:'rgba(255,255,255,0.75)',fontFamily:'DM Sans,sans-serif',lineHeight:1.5 }}>
             <strong style={{ color:'#C8A84B' }}>Large order ({cart.getItemCount()} items)</strong> — our warehouse team will need extra preparation time for this order. Please allow an additional 15–25 minutes on top of the standard delivery time. We will keep you updated.
           </div>
-        </div>
-      )}
-      {!scheduledTime ? (
-        <button onClick={onRequestSchedule}
-          style={{ width:'100%',marginBottom:10,padding:'11px 14px',background:'rgba(43,122,139,0.1)',border:'0.5px solid rgba(43,122,139,0.3)',borderRadius:12,color:'rgba(126,232,200,0.8)',fontSize:13,cursor:'pointer',fontFamily:'DM Sans,sans-serif',textAlign:'left',display:'flex',alignItems:'center',gap:8 }}>
-          <span>📅</span>
-          <div><div style={{fontWeight:600,fontSize:13}}>Schedule for later</div><div style={{fontSize:11,opacity:0.6,marginTop:1}}>Choose any time slot, today or up to 2 weeks ahead</div></div>
-        </button>
-      ) : (
-        <div style={{ marginBottom:10,padding:'10px 14px',background:'rgba(43,122,139,0.15)',border:'0.5px solid rgba(43,122,139,0.4)',borderRadius:12,display:'flex',justifyContent:'space-between',alignItems:'center' }}>
-          <div style={{fontSize:12,color:'#7EE8C8',display:'flex',alignItems:'center',gap:6}}>📅 <span>{scheduledTime}</span></div>
-          <button onClick={onClearSchedule} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',cursor:'pointer',fontSize:16}}>×</button>
         </div>
       )}
       <button onClick={onCheckout} disabled={belowMin}
@@ -881,8 +869,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <WeatherProductRow weather={weather} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* Occasion collections */}
           <OccasionCollections onSelect={onShowOccasion} />
-          <CuratedPackSection title="💕 For the Girls" packIds={GIRLS_PACK_IDS} onOpenPackage={onOpenPackage} />
-          <CuratedPackSection title="🍻 For the Boys" packIds={BOYS_PACK_IDS} onOpenPackage={onOpenPackage} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
@@ -930,6 +916,26 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               })}
             </div>
           </div>
+
+          {/* ── Just Landed in Ibiza ────────────────────────────── */}
+          <div style={{ margin:'0 16px 22px',background:'linear-gradient(135deg,rgba(200,168,75,0.15),rgba(196,104,58,0.1))',border:'0.5px solid rgba(200,168,75,0.3)',borderRadius:16,padding:'18px 16px',cursor:'pointer' }}
+            onClick={onArrival}>
+            <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start' }}>
+              <div>
+                <div style={{ fontSize:22,marginBottom:6 }}>✈️</div>
+                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:18,color:'white',marginBottom:4 }}>{t.justLanded||'Just landed in Ibiza?'}</div>
+                <div style={{ fontSize:12,color:'rgba(255,255,255,0.55)',lineHeight:1.5,maxWidth:220 }}>Get everything you need delivered in under 30 minutes — drinks, food, sun cream, the works.</div>
+              </div>
+              <div style={{ fontSize:11,color:'#C8A84B',fontWeight:600,whiteSpace:'nowrap',marginLeft:12,marginTop:4 }}>See packages →</div>
+            </div>
+          </div>
+
+
+          {/* ── For the Girls ── */}
+          <CuratedPackSection title="💕 For the Girls" packIds={GIRLS_PACK_IDS} onOpenPackage={onOpenPackage} />
+
+          {/* ── For the Boys ── */}
+          <CuratedPackSection title="🍻 For the Boys" packIds={BOYS_PACK_IDS} onOpenPackage={onOpenPackage} />
 
           {/* ── Design Your Experience ─────────────────────── */}
           <div style={{ margin:'4px 16px 22px' }}>
@@ -1003,19 +1009,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               </div>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
             </button>
-          </div>
-
-          {/* ── Just Landed in Ibiza ────────────────────────────── */}
-          <div style={{ margin:'0 16px 22px',background:'linear-gradient(135deg,rgba(200,168,75,0.15),rgba(196,104,58,0.1))',border:'0.5px solid rgba(200,168,75,0.3)',borderRadius:16,padding:'18px 16px',cursor:'pointer' }}
-            onClick={onArrival}>
-            <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start' }}>
-              <div>
-                <div style={{ fontSize:22,marginBottom:6 }}>✈️</div>
-                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:18,color:'white',marginBottom:4 }}>{t.justLanded||'Just landed in Ibiza?'}</div>
-                <div style={{ fontSize:12,color:'rgba(255,255,255,0.55)',lineHeight:1.5,maxWidth:220 }}>Get everything you need delivered in under 30 minutes — drinks, food, sun cream, the works.</div>
-              </div>
-              <div style={{ fontSize:11,color:'#C8A84B',fontWeight:600,whiteSpace:'nowrap',marginLeft:12,marginTop:4 }}>See packages →</div>
-            </div>
           </div>
 
           {/* ── One horizontal scroll row per category ─────────── */}
@@ -1234,7 +1227,7 @@ function CustomerAppInner() {
     await checkOutOfStock()
     if (cart.getItemCount() === 0) return
     if (!user && !guestUser) { setShowGuestCheckout(true); return }
-    if (cart.getSubtotal() < 30) { toast.error('Minimum order is €30 — add €'+(30-cart.getSubtotal()).toFixed(2)+' more', {icon:'🛒',duration:3000}); return }
+    if (cart.getSubtotal() < 30) { toast.error('Minimum order is €30 — add €'+(30-cart.getSubtotal()).toFixed(2)+' more',{icon:'🛒',duration:3000}); return }
     if (!hasValidAddress(cart)) { toast.error('Please set a delivery address first',{icon:'📍'}); return }
     if (cart.getHasAgeRestricted()) { setView(VIEWS.AGE_VERIFY); return }
     setView(VIEWS.CHECKOUT)
@@ -1468,7 +1461,7 @@ function CustomerAppInner() {
 
   // ── FULL-SCREEN VIEWS (no tab bar) ──────────────────────────
   if (view===VIEWS.OCCASION && occasionId) return <OccasionPage occasionId={occasionId} onBack={()=>{ setOccasionId(null); goBack(VIEWS.HOME) }} />
-  if (view===VIEWS.PACKAGE  && packageId)  return <PackagePage  packageId={packageId}   onBack={()=>{ setPackageId(null);  goBack(VIEWS.HOME) }} />
+  if (view===VIEWS.PACKAGE && packageId) return <PackagePage packageId={packageId} onBack={()=>{ setPackageId(null); goBack(VIEWS.HOME) }} />
   if (view===VIEWS.FAQ)             return <div onTouchStart={swipeBackStart} onTouchEnd={swipeBackEnd} style={{minHeight:'100vh'}}><FAQView onBack={()=>goBack(VIEWS.ACCOUNT)} /></div>
   if (view===VIEWS.VILLA_PRESETS)   return (
     <div style={{ background:'linear-gradient(170deg,#0A2A38,#0D3545)', minHeight:'100vh', paddingBottom:80, overflowY:'auto', maxWidth:480, margin:'0 auto', boxShadow:'0 0 60px rgba(0,0,0,0.5)' }}>
@@ -1513,7 +1506,7 @@ function CustomerAppInner() {
           onNormal={handleCheckoutStart}
         />
       )}
-      {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onBack={()=>goBack(VIEWS.HOME)} scheduledTime={scheduledDelivery?.label} onRequestSchedule={()=>setShowSchedule(true)} onClearSchedule={()=>setScheduledDelivery(null)} driverTipAmount={driverTipAmount} loyaltyRedeemed={loyaltyRedeemed} setLoyaltyRedeemed={setLoyaltyRedeemed} itemNotes={itemNotes} setItemNote={setItemNote} groupToken={groupToken} createGroupOrder={createGroupOrder} savedLater={savedLater} removeFromSaved={removeFromSaved} firstOrderDiscount={firstOrderDiscount} />}
+      {view===VIEWS.BASKET   && <BasketView t={t} onCheckout={handleCheckoutStart} onBack={()=>goBack(VIEWS.HOME)} driverTipAmount={driverTipAmount} loyaltyRedeemed={loyaltyRedeemed} setLoyaltyRedeemed={setLoyaltyRedeemed} itemNotes={itemNotes} setItemNote={setItemNote} groupToken={groupToken} createGroupOrder={createGroupOrder} savedLater={savedLater} removeFromSaved={removeFromSaved} firstOrderDiscount={firstOrderDiscount} />}
       {view===VIEWS.ACCOUNT  && <FadeIn><AccountView t={t} onShowHistory={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.ORDER_HISTORY) }} onShowAddresses={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.SAVED_ADDRESSES) }} onShowEditProfile={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.EDIT_PROFILE) }} onShowLoyalty={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.LOYALTY) }} onShowReferral={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.REFERRAL) }} onShowWishlist={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.WISHLIST) }} onShowNotifications={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.NOTIFICATIONS) }} dark={dark} onToggleDark={toggleDark} onDeleteAccount={()=>setShowDeleteAccount(true)} onShowChallenges={()=>setShowChallenges(true)} onShowSupport={()=>setShowSupportChat(true)} onChangeEmail={()=>setShowChangeEmail(true)} onChangePassword={()=>setShowChangePassword(true)} onShowFAQ={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.FAQ) }} onShowCredits={()=>{ accountScrollRef.current=window.scrollY; setView(VIEWS.CREDITS) }} /></FadeIn>}
       {view===VIEWS.ASSIST   && <AssistBot initialQuery={assistQuery} onClose={()=>{ setAssistQuery(''); goBack(VIEWS.HOME) }} />}
       {view===VIEWS.CONCIERGE && <Concierge onBack={()=>goBack(VIEWS.HOME)} />}
