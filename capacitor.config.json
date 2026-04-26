@@ -1,0 +1,28 @@
+{
+  "appId": "net.isladrop.app",
+  "appName": "Isla Drop",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "App": {
+      "backgroundColor": "#0D3545"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0D3545",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    }
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#0D3545"
+  },
+  "android": {
+    "backgroundColor": "#0D3545"
+  }
+}

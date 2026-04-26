@@ -1,0 +1,17 @@
+{
+  "note": "Add these to your package.json devDependencies then run: npm install && npx cap init && npx cap add ios && npx cap add android",
+  "dependencies_to_add": {
+    "@capacitor/core": "^5.0.0",
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/ios": "^5.0.0",
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/push-notifications": "^5.0.0",
+    "@capacitor/haptics": "^5.0.0",
+    "@capacitor/splash-screen": "^5.0.0",
+    "@capacitor/app": "^5.0.0"
+  },
+  "scripts_to_add": {
+    "build:ios": "vite build && npx cap sync ios && npx cap open ios",
+    "build:android": "vite build && npx cap sync android && npx cap open android"
+  }
+}
