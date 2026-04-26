@@ -571,14 +571,20 @@ export default function OpsApp() {
     ]},
   ]
 
+  const [isTablet, setIsTablet]       = useState(window.innerWidth >= 768)
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 900)
+  useEffect(() => {
+    const onResize = () => setIsTablet(window.innerWidth >= 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#F5F0E8', fontFamily: 'DM Sans, sans-serif' }}>
 
       {/* Sidebar */}
       <div style={{
-        width: sidebarOpen ? 220 : 60, flexShrink: 0, background: '#1A1208',
+        width: sidebarOpen ? (isTablet ? 240 : 220) : 60, flexShrink: 0, background: '#1A1208',
         display: 'flex', flexDirection: 'column', transition: 'width 0.2s',
         position: 'sticky', top: 0, height: '100vh', overflowY: 'auto', overflowX: 'hidden',
         zIndex: 100,
@@ -688,7 +694,7 @@ export default function OpsApp() {
         {/* Tab content */}
         <div style={{ flex: 1, padding: 24, maxWidth: 1400 }}>
           {tab === 'overview'  && <OverviewTab activeOrders={activeOrders} drivers={drivers} alerts={alerts} stats={stats} />}
-          {tab === 'orders'    && <OrdersTab orders={liveOrders} />}
+          {tab === 'orders'    && <OrdersTab orders={liveOrders} isTablet={isTablet} />}
           {tab === 'fleet'     && <FleetTab drivers={drivers} />}
           {tab === 'map'       && <MapTab drivers={drivers} orders={activeOrders} />}
           {tab === 'analytics' && <Analytics />}
@@ -847,7 +853,7 @@ function OverviewTab({ activeOrders, drivers, alerts }) {
   )
 }
 
-function OrdersTab({ orders }) {
+function OrdersTab({ orders, isTablet }) {
   const [filter, setFilter] = useState('active')
   const filtered = filter === 'active'
     ? orders.filter(o => !['delivered', 'cancelled'].includes(o.status))
@@ -856,7 +862,8 @@ function OrdersTab({ orders }) {
     : orders
 
   return (
-    <>
+    <div style={{ display: isTablet ? 'grid' : 'block', gridTemplateColumns: isTablet ? '1fr 1fr' : '1fr', gap: isTablet ? 16 : 0 }}>
+      <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {['active', 'delivered', 'all'].map(f => (
           <button key={f} onClick={() => setFilter(f)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: filter === f ? 500 : 400, background: filter === f ? '#2A2318' : '#F5F0E8', color: filter === f ? 'white' : '#7A6E60', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', textTransform: 'capitalize' }}>{f}</button>
@@ -864,7 +871,8 @@ function OrdersTab({ orders }) {
       </div>
       {filtered.map(order => <FullOrderCard key={order.id} order={order} />)}
       {filtered.length === 0 && <EmptyState icon="📋" text="No orders in this category" />}
-    </>
+      </div>
+    </div>
   )
 }
 
