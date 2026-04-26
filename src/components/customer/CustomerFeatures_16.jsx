@@ -481,8 +481,8 @@ export function TimeGreetingBanner({ greeting, vibe }) {
   const hero = h >= 6 && h < 11  ? { emoji:'☀️', mood:'Good morning, Ibiza', sub:'Fresh start — grab your morning essentials' }
              : h >= 11 && h < 16 ? { emoji:'🌊', mood:'Afternoon on the island', sub:'Beach, pool, boat — we deliver everywhere' }
              : h >= 16 && h < 20 ? { emoji:'🌅', mood:'Golden hour in Ibiza', sub:'Sundowner time — rosé, ice, snacks sorted' }
-             : h >= 20 && h < 23 ? { emoji:'🌙', mood:'Night's just getting started', sub:'Pre-drinks, spirits, champagne — delivered now' }
-             : { emoji:'⭐', mood:'Ibiza never sleeps', sub:'Late night delivery — we're still open' }
+             : h >= 20 && h < 23 ? { emoji:'🌙', mood:'Night just getting started', sub:'Pre-drinks, spirits, champagne — delivered now' }
+             : { emoji:'⭐', mood:'Ibiza never sleeps', sub:'Late night delivery — still open' }
   return (
     <div style={{ padding:'4px 16px 12px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2 }}>
