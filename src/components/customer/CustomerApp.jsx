@@ -903,8 +903,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
           <WeatherProductRow weather={weather} onDetail={p=>{trackView(p);setSelectedProduct&&setSelectedProduct(p)}} />
           {/* Occasion collections */}
           <OccasionCollections onSelect={onShowOccasion} />
-          <CuratedPackSection title="💕 For the Girls" packIds={GIRLS_PACK_IDS} onOpenPackage={onOpenPackage} />
-          <CuratedPackSection title="🍻 For the Boys" packIds={BOYS_PACK_IDS} onOpenPackage={onOpenPackage} />
           <div style={{ paddingTop:prevItems.length?0:20,marginBottom:22 }}>
             <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0 16px',marginBottom:12 }}>
               <button onClick={onBest} style={{ fontFamily:'DM Serif Display,serif',fontSize:20,color:'white',background:'none',border:'none',cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:6 }}>🔥 {t.bestSellers}</button>
@@ -952,6 +950,26 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               })}
             </div>
           </div>
+
+          {/* ── Just Landed in Ibiza ────────────────────────────── */}
+          <div style={{ margin:'0 16px 22px',background:'linear-gradient(135deg,rgba(200,168,75,0.15),rgba(196,104,58,0.1))',border:'0.5px solid rgba(200,168,75,0.3)',borderRadius:16,padding:'18px 16px',cursor:'pointer' }}
+            onClick={onArrival}>
+            <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start' }}>
+              <div>
+                <div style={{ fontSize:22,marginBottom:6 }}>✈️</div>
+                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:18,color:'white',marginBottom:4 }}>{t.justLanded||'Just landed in Ibiza?'}</div>
+                <div style={{ fontSize:12,color:'rgba(255,255,255,0.55)',lineHeight:1.5,maxWidth:220 }}>Get everything you need delivered in under 30 minutes — drinks, food, sun cream, the works.</div>
+              </div>
+              <div style={{ fontSize:11,color:'#C8A84B',fontWeight:600,whiteSpace:'nowrap',marginLeft:12,marginTop:4 }}>See packages →</div>
+            </div>
+          </div>
+
+
+          {/* ── For the Girls ── */}
+          <CuratedPackSection title="💕 For the Girls" packIds={GIRLS_PACK_IDS} onOpenPackage={onOpenPackage} />
+
+          {/* ── For the Boys ── */}
+          <CuratedPackSection title="🍻 For the Boys" packIds={BOYS_PACK_IDS} onOpenPackage={onOpenPackage} />
 
           {/* ── Design Your Experience ─────────────────────── */}
           <div style={{ margin:'4px 16px 22px' }}>
@@ -1025,19 +1043,6 @@ function HomeView({ t, lang, setLang, onCategorySelect, estimatedMins, onAssist,
               </div>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
             </button>
-          </div>
-
-          {/* ── Just Landed in Ibiza ────────────────────────────── */}
-          <div style={{ margin:'0 16px 22px',background:'linear-gradient(135deg,rgba(200,168,75,0.15),rgba(196,104,58,0.1))',border:'0.5px solid rgba(200,168,75,0.3)',borderRadius:16,padding:'18px 16px',cursor:'pointer' }}
-            onClick={onArrival}>
-            <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start' }}>
-              <div>
-                <div style={{ fontSize:22,marginBottom:6 }}>✈️</div>
-                <div style={{ fontFamily:'DM Serif Display,serif',fontSize:18,color:'white',marginBottom:4 }}>{t.justLanded||'Just landed in Ibiza?'}</div>
-                <div style={{ fontSize:12,color:'rgba(255,255,255,0.55)',lineHeight:1.5,maxWidth:220 }}>Get everything you need delivered in under 30 minutes — drinks, food, sun cream, the works.</div>
-              </div>
-              <div style={{ fontSize:11,color:'#C8A84B',fontWeight:600,whiteSpace:'nowrap',marginLeft:12,marginTop:4 }}>See packages →</div>
-            </div>
           </div>
 
           {/* ── One horizontal scroll row per category ─────────── */}
