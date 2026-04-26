@@ -7,36 +7,29 @@ import OpsApp from './components/ops/OpsApp'
 import AuthScreen from './components/shared/AuthScreen'
 
 // ── Subdomain detection ───────────────────────────────────────
-// Returns 'ops', 'driver', or 'customer' based on hostname
 function getSubdomain() {
-  const hostname = window.location.hostname
-  if (hostname === 'ops.isladrop.net'    || hostname.startsWith('ops.'))    return 'ops'
-  if (hostname === 'driver.isladrop.net' || hostname.startsWith('driver.')) return 'driver'
+  const h = window.location.hostname
+  if (h === 'ops.isladrop.net'    || h.startsWith('ops.'))    return 'ops'
+  if (h === 'driver.isladrop.net' || h.startsWith('driver.')) return 'driver'
   return 'customer'
 }
-
 const SUBDOMAIN = getSubdomain()
 
 // ── Error boundary ────────────────────────────────────────────
 class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props)
-    this.state = { error: null }
-  }
-  static getDerivedStateFromError(error) {
-    return { error }
-  }
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(error) { return { error } }
   render() {
     if (this.state.error) {
       return (
-        <div style={{ padding: 40, fontFamily: 'sans-serif', textAlign: 'center', background: '#0D3B4A', minHeight: '100vh', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🌴</div>
-          <div style={{ fontFamily: 'serif', fontSize: 28, marginBottom: 8 }}>Isla Drop</div>
-          <div style={{ fontSize: 14, opacity: 0.7, marginBottom: 24 }}>Something went wrong loading the app</div>
-          <div style={{ fontSize: 11, opacity: 0.4, maxWidth: 400, wordBreak: 'break-all', background: 'rgba(0,0,0,0.3)', padding: 12, borderRadius: 8 }}>
+        <div style={{ padding:40, fontFamily:'sans-serif', textAlign:'center', background:'#0D3B4A', minHeight:'100vh', color:'white', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ fontSize:48, marginBottom:16 }}>🌴</div>
+          <div style={{ fontFamily:'serif', fontSize:28, marginBottom:8 }}>Isla Drop</div>
+          <div style={{ fontSize:14, opacity:0.7, marginBottom:24 }}>Something went wrong loading the app</div>
+          <div style={{ fontSize:11, opacity:0.4, maxWidth:400, wordBreak:'break-all', background:'rgba(0,0,0,0.3)', padding:12, borderRadius:8 }}>
             {this.state.error?.message || 'Unknown error'}
           </div>
-          <button onClick={() => window.location.reload()} style={{ marginTop: 24, padding: '12px 24px', background: '#C4683A', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
+          <button onClick={()=>window.location.reload()} style={{ marginTop:24, padding:'12px 24px', background:'#C4683A', color:'white', border:'none', borderRadius:10, fontSize:14, cursor:'pointer' }}>
             Reload app
           </button>
         </div>
@@ -49,8 +42,24 @@ class ErrorBoundary extends Component {
 const toastStyle = {
   position: 'top-center',
   toastOptions: {
-    style: { fontFamily: 'DM Sans, sans-serif', fontSize: 14, borderRadius: 10, background: '#0D3B4A', color: 'white' }
+    style: { fontFamily:'DM Sans, sans-serif', fontSize:14, borderRadius:10, background:'#0D3B4A', color:'white' }
   }
+}
+
+// ── Access denied screen ──────────────────────────────────────
+function AccessDenied({ role, onSignOut }) {
+  return (
+    <div style={{ minHeight:'100vh', background:'#0D3545', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16, padding:32 }}>
+      <div style={{ fontSize:48 }}>🔒</div>
+      <div style={{ color:'white', fontFamily:'DM Serif Display,serif', fontSize:22 }}>Access restricted</div>
+      <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, textAlign:'center', maxWidth:280 }}>
+        This portal is for Isla Drop {role} staff only.
+      </div>
+      <button onClick={onSignOut} style={{ marginTop:8, padding:'12px 28px', background:'#C4683A', color:'white', border:'none', borderRadius:10, fontSize:14, cursor:'pointer', fontFamily:'DM Sans,sans-serif' }}>
+        Sign out
+      </button>
+    </div>
+  )
 }
 
 function AppInner() {
@@ -82,41 +91,19 @@ function AppInner() {
     }).catch(() => {})
   }, [])
 
-  // ── Subdomain-first routing ───────────────────────────────────
-  // ops.isladrop.net → always OpsApp
+  // ── ops.isladrop.net ──────────────────────────────────────────
   if (SUBDOMAIN === 'ops') {
-    // Require ops-role login on this subdomain
     if (!user) return <AuthScreen requiredRole="ops" />
-    if (profile && profile.role !== 'ops') {
-      return (
-        <div style={{ minHeight:'100vh', background:'#0D3545', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16, padding:32 }}>
-          <div style={{ fontSize:40 }}>🔒</div>
-          <div style={{ color:'white', fontFamily:'DM Serif Display,serif', fontSize:22 }}>Access restricted</div>
-          <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, textAlign:'center' }}>This portal is for Isla Drop ops staff only.</div>
-          <button onClick={clear} style={{ marginTop:8, padding:'12px 24px', background:'#C4683A', color:'white', border:'none', borderRadius:10, fontSize:14, cursor:'pointer' }}>
-            Sign out
-          </button>
-        </div>
-      )
-    }
+    if (profile && profile.role !== 'ops') return <AccessDenied role="ops" onSignOut={clear} />
+    if (!profile) return null // still loading profile
     return <OpsApp />
   }
 
-  // driver.isladrop.net → always DriverApp
+  // ── driver.isladrop.net ───────────────────────────────────────
   if (SUBDOMAIN === 'driver') {
     if (!user) return <AuthScreen requiredRole="driver" />
-    if (profile && profile.role !== 'driver') {
-      return (
-        <div style={{ minHeight:'100vh', background:'#0D3545', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16, padding:32 }}>
-          <div style={{ fontSize:40 }}>🔒</div>
-          <div style={{ color:'white', fontFamily:'DM Serif Display,serif', fontSize:22 }}>Access restricted</div>
-          <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, textAlign:'center' }}>This portal is for Isla Drop drivers only.</div>
-          <button onClick={clear} style={{ marginTop:8, padding:'12px 24px', background:'#C4683A', color:'white', border:'none', borderRadius:10, fontSize:14, cursor:'pointer' }}>
-            Sign out
-          </button>
-        </div>
-      )
-    }
+    if (profile && profile.role !== 'driver') return <AccessDenied role="driver" onSignOut={clear} />
+    if (!profile) return null // still loading profile
     return (
       <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}>
         <DriverApp />
@@ -124,13 +111,10 @@ function AppInner() {
     )
   }
 
-  // www.isladrop.net / isladrop.net → CustomerApp (role-based fallback kept)
+  // ── www.isladrop.net (customer) ───────────────────────────────
+  // Keep role-based fallback so staff who visit customer URL get redirected
   if (user && profile?.role === 'driver') {
-    return (
-      <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}>
-        <DriverApp />
-      </div>
-    )
+    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><DriverApp /></div>
   }
   if (user && profile?.role === 'ops') {
     return <OpsApp />
