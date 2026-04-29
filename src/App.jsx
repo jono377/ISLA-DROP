@@ -77,20 +77,23 @@ function AppInner() {
   }
 
   // ── www.isladrop.net ──────────────────────────────────────
-  /*
+  
   if (user && profile?.role === 'driver') {
     return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><DriverApp /></div>
   }
   else if (user && profile?.role === 'ops') {
     return <OpsApp />
   }
-  else
-  */
-  return (
-    <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh', position:'relative' }}>
-      <CustomerApp />
-    </div>
-  )
+  else{
+    if(!user){
+      return <CustomerAuthScreen />
+    }
+    return (
+        <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh', position:'relative' }}>
+          <CustomerApp />
+        </div>
+    )
+  }
 }
 
 export default function App() {
