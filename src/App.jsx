@@ -1,12 +1,16 @@
 import { useEffect, Component } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './lib/store'
-import CustomerApp from './components/customer/CustomerApp'
-import DriverApp from './components/driver/DriverApp'
-import OpsApp from './components/ops/OpsApp'
-import CustomerAuthScreen from './components/shared/CustomerAuthScreen'
-import OpsAuthScreen from './components/shared/OpsAuthScreen'
-import DriverAuthScreen from './components/shared/DriverAuthScreen'
+
+const CustomerApp = lazy(() => import('./components/customer/CustomerApp'));
+const DriverApp = lazy(() => import('./components/driver/DriverApp'));
+const OpsApp = lazy(() => import('./components/ops/OpsApp'));
+
+
+const CustomerAuthScreen = lazy(() => import('./components/shared/CustomerAuthScreen'));
+const OpsAuthScreen = lazy(() => import('./components/shared/OpsAuthScreen'));
+const DriverAuthScreen = lazy(() => import('./components/shared/DriverAuthScreen'));
+
 
 // Subdomain detection
 const _h      = window.location.hostname
@@ -66,30 +70,31 @@ function AppInner() {
 
   // ── ops.isladrop.net ──────────────────────────────────────
   if (_isOps) {
-    if ((!user)||(!profile)|| (profile.role !== 'ops')) return <OpsAuthScreen />
-    return <OpsApp />
+    if ((!user)||(!profile)|| (profile.role !== 'ops')) return <div>OPS LOGIN<OpsAuthScreen /></div>
+    return <div>OPS APP<OpsApp /></div>
   }
 
   // ── driver.isladrop.net ───────────────────────────────────
   if (_isDriver) {
-    if ((!user)||(!profile)|| (profile.role !== 'driver')) return <DriverAuthScreen />
-    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><DriverApp /></div>
+    if ((!user)||(!profile)|| (profile.role !== 'driver')) return <div>DRIVER AUTH <DriverAuthScreen /></div>
+    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}>DRIVER APP <DriverApp /></div>
   }
 
   // ── www.isladrop.net ──────────────────────────────────────
   
   if (user && profile?.role === 'driver') {
-    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><DriverApp /></div>
+    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}>DRIVER APP <DriverApp /></div>
   }
   else if (user && profile?.role === 'ops') {
-    return <OpsApp />
+    return <div>OPS APP<OpsApp /></div>
   }
   else{
     if(!user){
-      return <CustomerAuthScreen />
+      return <div>CUSTOMER LOGIN<CustomerAuthScreen /></div>
     }
     return (
         <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh', position:'relative' }}>
+          CUSTOMER APP
           <CustomerApp />
         </div>
     )
