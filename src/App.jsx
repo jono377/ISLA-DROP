@@ -11,6 +11,8 @@ const CustomerAuthScreen = lazy(() => import('./components/shared/CustomerAuthSc
 const OpsAuthScreen = lazy(() => import('./components/shared/OpsAuthScreen'));
 const DriverAuthScreen = lazy(() => import('./components/shared/DriverAuthScreen'));
 
+import { getOrderNumberFromURL } from './components/customer/CustomerFeatures_launch'
+
 const trackingOrderNumber = getOrderNumberFromURL();
 
 // Subdomain detection
