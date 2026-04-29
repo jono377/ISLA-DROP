@@ -1,4 +1,4 @@
-import { useEffect, Component } from 'react'
+import { useEffect, Component, lazy, Suspense } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './lib/store'
 
@@ -111,7 +111,9 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Toaster position="top-center" toastOptions={{ style:{ fontFamily:'DM Sans,sans-serif', fontSize:14, borderRadius:10, background:'#0D3B4A', color:'white' } }} />
-      <AppInner />
+      <Suspense fallback={<div style={{ color: 'white', textAlign: 'center', marginTop: '20vh' }}>Loading...</div>}>
+        <AppInner />
+      </Suspense>
     </ErrorBoundary>
   )
 }
