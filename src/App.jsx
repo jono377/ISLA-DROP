@@ -11,6 +11,7 @@ const CustomerAuthScreen = lazy(() => import('./components/shared/CustomerAuthSc
 const OpsAuthScreen = lazy(() => import('./components/shared/OpsAuthScreen'));
 const DriverAuthScreen = lazy(() => import('./components/shared/DriverAuthScreen'));
 
+const trackingOrderNumber = getOrderNumberFromURL();
 
 // Subdomain detection
 const _h      = window.location.hostname
@@ -68,6 +69,7 @@ function AppInner() {
     }).catch(() => {})
   }, [])
 
+
   // ── ops.isladrop.net ──────────────────────────────────────
   if (_isOps) {
     if ((!user)||(!profile)|| (profile.role !== 'ops')) return <div>OPS LOGIN<OpsAuthScreen /></div>
@@ -81,7 +83,7 @@ function AppInner() {
   }
 
   // ── www.isladrop.net ──────────────────────────────────────
-  
+  /*
   if (user && profile?.role === 'driver') {
     return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}>DRIVER APP <DriverApp /></div>
   }
@@ -89,6 +91,10 @@ function AppInner() {
     return <div>OPS APP<OpsApp /></div>
   }
   else{
+    */
+    if (trackingOrderNumber) {
+      return <PublicTrackingPage orderNumber={trackingOrderNumber} />
+    }
     if(!user){
       return <div>CUSTOMER LOGIN<CustomerAuthScreen /></div>
     }
@@ -98,7 +104,7 @@ function AppInner() {
           <CustomerApp />
         </div>
     )
-  }
+  //}
 }
 
 export default function App() {
