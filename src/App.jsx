@@ -66,27 +66,26 @@ function AppInner() {
 
   // ── ops.isladrop.net ──────────────────────────────────────
   if (_isOps) {
-    if (!user)                   return <OpsAuthScreen />
-    if (!profile)                return <OpsAuthScreen />
-    if (profile.role !== 'ops')  return <OpsAuthScreen />
+    if ((!user)||(!profile)|| (profile.role !== 'ops')) return <OpsAuthScreen />
     return <OpsApp />
   }
 
   // ── driver.isladrop.net ───────────────────────────────────
   if (_isDriver) {
-    if (!user)                      return <DriverAuthScreen />
-    if (!profile)                   return <DriverAuthScreen />
-    if (profile.role !== 'driver')  return <DriverAuthScreen />
+    if ((!user)||(!profile)|| (profile.role !== 'driver')) return <DriverAuthScreen />
     return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><DriverApp /></div>
   }
 
   // ── www.isladrop.net ──────────────────────────────────────
+  /*
   if (user && profile?.role === 'driver') {
     return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><DriverApp /></div>
   }
-  if (user && profile?.role === 'ops') {
+  else if (user && profile?.role === 'ops') {
     return <OpsApp />
   }
+  else
+  */
   return (
     <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh', position:'relative' }}>
       <CustomerApp />
