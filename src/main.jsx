@@ -6,8 +6,8 @@ import App from './App'
 
 
 // Deep link: ?order=ID opens direct to tracking
-const urlParams  = new URLSearchParams(window.location.search)
-const deepLinkOrder = urlParams.get('order')
+//const urlParams  = new URLSearchParams(window.location.search)
+//const deepLinkOrder = urlParams.get('order')
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

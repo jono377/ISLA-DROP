@@ -74,14 +74,14 @@ function AppInner() {
 
   // ── ops.isladrop.net ──────────────────────────────────────
   if (_isOps) {
-    if ((!user)||(!profile)|| (profile.role !== 'ops')) return <div>OPS LOGIN<OpsAuthScreen /></div>
-    return <div>OPS APP<OpsApp /></div>
+    if ((!user)||(!profile)|| (profile.role !== 'ops')) return <OpsAuthScreen />
+    return <OpsApp />
   }
 
   // ── driver.isladrop.net ───────────────────────────────────
   if (_isDriver) {
-    if ((!user)||(!profile)|| (profile.role !== 'driver')) return <div>DRIVER AUTH <DriverAuthScreen /></div>
-    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}>DRIVER APP <DriverApp /></div>
+    if ((!user)||(!profile)|| (profile.role !== 'driver')) return <DriverAuthScreen />
+    return <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh' }}><DriverApp /></div>
   }
 
   // ── www.isladrop.net ──────────────────────────────────────
@@ -97,12 +97,13 @@ function AppInner() {
     if (trackingOrderNumber) {
       return <PublicTrackingPage orderNumber={trackingOrderNumber} />
     }
+    /*
     if(!user){
-      return <div>CUSTOMER LOGIN<CustomerAuthScreen /></div>
+      return <CustomerAuthScreen />
     }
+    */
     return (
         <div style={{ maxWidth:480, margin:'0 auto', minHeight:'100vh', position:'relative' }}>
-          CUSTOMER APP
           <CustomerApp />
         </div>
     )
